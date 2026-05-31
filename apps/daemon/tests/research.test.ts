@@ -609,6 +609,33 @@ describe('research search', () => {
     });
   });
 
+  it('reports malformed Tavily results lists as provider failures', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+        new Response(
+          JSON.stringify({
+            answer: 'Malformed results payload.',
+            results: { title: 'not an array' },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      ),
+    );
+
+    await expect(
+      searchResearch({
+        projectRoot: await tempProjectRoot(),
+        query: 'Open Design malformed provider results list',
+      }),
+    ).rejects.toMatchObject({
+      code: 'RESEARCH_PROVIDER_FAILED',
+      message: 'Tavily returned invalid results list',
+      status: 502,
+    });
+  });
+
   it('compacts Tavily error response bodies before surfacing them', async () => {
     const noisyBody = `  Too many requests\n${'retry later '.repeat(40)}`;
     vi.stubGlobal(
