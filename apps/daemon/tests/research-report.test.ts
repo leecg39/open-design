@@ -92,6 +92,9 @@ describe('research report helpers', () => {
     expect(report).toContain('# Research: Open Design research quality');
     expect(report).toContain('## Warnings');
     expect(report.indexOf('## Warnings')).toBeLessThan(report.indexOf('## Summary'));
+    expect(report.indexOf('## Evidence Safety')).toBeLessThan(
+      report.indexOf('## Summary'),
+    );
     expect(report).toContain('- Topic: news');
     expect(report).toContain('- Time range: week');
     expect(report).toContain('- Include domains: openai.com, docs.openai.com');
