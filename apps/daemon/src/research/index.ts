@@ -88,13 +88,11 @@ export async function searchResearch(
   if (rawQuery.length > RESEARCH_QUERY_LIMIT) {
     warnings.push(`Truncated query to ${RESEARCH_QUERY_LIMIT} characters.`);
   }
-  const depth = normalizeResearchDepth(input.depth);
+  const normalizedDepth = normalizeResearchDepthValue(input.depth);
+  const depth = normalizedDepth ?? 'shallow';
   if (
     hasInvalidStringControl(input.depth) ||
-    (hasNonEmptyString(input.depth) &&
-      input.depth !== 'shallow' &&
-      input.depth !== 'medium' &&
-      input.depth !== 'deep')
+    (hasNonEmptyString(input.depth) && !normalizedDepth)
   ) {
     warnings.push('Ignored invalid depth; expected shallow, medium, or deep.');
   }
@@ -396,13 +394,25 @@ export async function searchResearch(
   };
 }
 
-function normalizeResearchDepth(value: unknown): ResearchDepth {
-  return value === 'medium' || value === 'deep' ? value : 'shallow';
+function normalizeResearchDepthValue(value: unknown): ResearchDepth | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = stripResearchWrappingQuotes(value).toLowerCase();
+  return normalized === 'shallow' ||
+    normalized === 'medium' ||
+    normalized === 'deep'
+    ? normalized
+    : undefined;
 }
 
 function normalizeResearchTopic(value: unknown): ResearchTopic | undefined {
-  return value === 'general' || value === 'news' || value === 'finance'
-    ? value
+  const normalized =
+    typeof value === 'string'
+      ? stripResearchWrappingQuotes(value).toLowerCase()
+      : '';
+  return normalized === 'general' ||
+    normalized === 'news' ||
+    normalized === 'finance'
+    ? normalized
     : undefined;
 }
 

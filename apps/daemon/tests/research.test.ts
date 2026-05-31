@@ -985,6 +985,40 @@ describe('research search', () => {
     expect(body.time_range).toBe('week');
   });
 
+  it('normalizes direct Tavily quoted enum filters before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Quoted enum filter summary.',
+          results: [
+            {
+              title: 'Quoted enum filter source',
+              url: 'https://example.com/quoted-enum-filter',
+              content: 'Quoted enum filters should be normalized before Tavily.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily quoted enum filters',
+      topic: '"News"',
+      searchDepth: "'FAST'",
+    } as any);
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({
+      topic: 'news',
+      search_depth: 'fast',
+    });
+  });
+
   it('normalizes direct Tavily search depth before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
@@ -1565,6 +1599,47 @@ describe('research search', () => {
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );
     expect(body.time_range).toBe('week');
+  });
+
+  it('normalizes quoted and cased research enum controls before provider requests', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Quoted enum controls summary.',
+          results: [
+            {
+              title: 'Quoted enum source',
+              url: 'https://example.com/quoted-enum',
+              content: 'Quoted enum controls should normalize cleanly.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design quoted enum controls',
+      depth: '"Deep"',
+      topic: "'News'",
+    });
+
+    expect(findings).toMatchObject({
+      depth: 'deep',
+      topic: 'news',
+    });
+    expect(findings.warnings).toBeUndefined();
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({
+      search_depth: 'advanced',
+      topic: 'news',
+      include_answer: 'advanced',
+    });
   });
 
   it('warns when enum-like research controls are ignored', async () => {

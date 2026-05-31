@@ -446,17 +446,24 @@ function normalizeTavilyCountry(value: string | undefined): string {
 function normalizeTavilyTopic(
   value: ResearchTopic | undefined,
 ): ResearchTopic | undefined {
-  return typeof value === 'string' && TAVILY_TOPICS.has(value)
-    ? value
+  const normalized =
+    typeof value === 'string'
+      ? stripTavilyWrappingQuotes(value).toLowerCase()
+      : '';
+  return TAVILY_TOPICS.has(normalized)
+    ? (normalized as ResearchTopic)
     : undefined;
 }
 
 function normalizeTavilySearchDepth(
   value: TavilySearchDepth | undefined,
 ): TavilySearchDepth | undefined {
-  return typeof value === 'string' &&
-    TAVILY_SEARCH_DEPTHS.has(value)
-    ? value
+  const normalized =
+    typeof value === 'string'
+      ? stripTavilyWrappingQuotes(value).toLowerCase()
+      : '';
+  return TAVILY_SEARCH_DEPTHS.has(normalized)
+    ? (normalized as TavilySearchDepth)
     : undefined;
 }
 
