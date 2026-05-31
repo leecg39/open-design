@@ -921,6 +921,38 @@ describe('research search', () => {
     expect(body.country).toBe('south korea');
   });
 
+  it('omits invalid direct Tavily exact date filters before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Invalid date summary.',
+          results: [
+            {
+              title: 'Invalid date source',
+              url: 'https://example.com/invalid-date',
+              content: 'Invalid exact date filters should not reach Tavily.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily exact dates',
+      startDate: '2026-99-01',
+      endDate: 'not-a-date',
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).not.toHaveProperty('start_date');
+    expect(body).not.toHaveProperty('end_date');
+  });
+
   it('cleans direct Tavily domain filters before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(

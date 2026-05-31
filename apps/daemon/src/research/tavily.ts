@@ -23,6 +23,7 @@ const TAVILY_ANSWER_LIMIT = 4_000;
 const TAVILY_RAW_CONTENT_LIMIT = 4_000;
 const TAVILY_ERROR_TEXT_LIMIT = 200;
 const TAVILY_DOMAIN_FILTER_LIMIT = 20;
+const TAVILY_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TAVILY_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 const TAVILY_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
@@ -123,8 +124,8 @@ export async function tavilySearch(
     throw new TavilyError('Tavily query is required');
   }
   const country = normalizeTavilyCountry(input.country);
-  const startDate = input.startDate?.trim() ?? '';
-  const endDate = input.endDate?.trim() ?? '';
+  const startDate = normalizeTavilyDate(input.startDate);
+  const endDate = normalizeTavilyDate(input.endDate);
   const includeDomains = normalizeTavilyDomainFilters(input.includeDomains);
   const includeDomainSet = new Set(includeDomains);
   const excludeDomains = normalizeTavilyDomainFilters(input.excludeDomains).filter(
@@ -392,6 +393,25 @@ function normalizeTavilyCountry(value: string | undefined): string {
   const alias = TAVILY_COUNTRY_ALIASES[key];
   const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   return TAVILY_COUNTRY_RE.test(normalized) ? normalized : '';
+}
+
+function normalizeTavilyDate(value: string | undefined): string {
+  if (value == null) return '';
+  const trimmed = value.trim();
+  const match = TAVILY_DATE_RE.exec(trimmed);
+  if (!match) return '';
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return '';
+  }
+  return trimmed;
 }
 
 function stripTavilyWrappingQuotes(value: string): string {
