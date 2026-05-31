@@ -4,7 +4,7 @@ const RESEARCH_DOMAIN_FILTER_LIMIT = 20;
 const RESEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const RESEARCH_TOPICS = new Set(['general', 'news', 'finance']);
 const RESEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
-const RESEARCH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const RESEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const RESEARCH_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 const RESEARCH_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
@@ -205,7 +205,17 @@ function normalizeTimeRange(
 function normalizeDate(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
-  return RESEARCH_DATE_RE.test(trimmed) ? trimmed : undefined;
+  const match = RESEARCH_DATE_RE.exec(trimmed);
+  if (!match) return undefined;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? trimmed
+    : undefined;
 }
 
 function normalizeDomains(value: unknown): string[] {

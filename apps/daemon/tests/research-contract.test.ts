@@ -123,4 +123,16 @@ describe('renderResearchCommandContract', () => {
       '--depth shallow --max-sources 20',
     );
   });
+
+  it('omits impossible exact date filters from the command examples', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design impossible dates',
+      startDate: '2026-02-30',
+      endDate: '2026-99-01',
+    });
+
+    expect(prompt).not.toContain('--start-date 2026-02-30');
+    expect(prompt).not.toContain('--end-date 2026-99-01');
+    expect(prompt).toContain('--depth shallow --max-sources 5');
+  });
 });
