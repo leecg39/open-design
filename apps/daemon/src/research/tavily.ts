@@ -94,7 +94,11 @@ export async function tavilySearch(
       : undefined;
   const body = {
     query: input.query,
-    search_depth: input.searchDepth ?? 'basic',
+    ...(input.searchDepth
+      ? { search_depth: input.searchDepth }
+      : input.autoParameters
+        ? {}
+        : { search_depth: 'basic' }),
     ...(input.topic ? { topic: input.topic } : {}),
     ...(input.country ? { country: input.country } : {}),
     ...(input.timeRange ? { time_range: input.timeRange } : {}),

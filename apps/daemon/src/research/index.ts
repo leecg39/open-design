@@ -170,7 +170,9 @@ export async function searchResearch(
     const out = await tavilySearch({
       apiKey: cfg.apiKey,
       query,
-      searchDepth: depth === 'shallow' ? 'basic' : 'advanced',
+      ...(autoParameters && depth === 'shallow'
+        ? {}
+        : { searchDepth: depth === 'shallow' ? 'basic' : 'advanced' }),
       ...(topic ? { topic } : {}),
       ...(country ? { country } : {}),
       ...(timeRange ? { timeRange } : {}),

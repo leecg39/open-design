@@ -553,6 +553,45 @@ describe('research search', () => {
       include_raw_content: false,
       max_results: 5,
     });
+    expect(autoBody).not.toHaveProperty('search_depth');
+  });
+
+  it('keeps explicit deep search depth when automatic tuning is also requested', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Explicit deep auto-tuned summary.',
+          auto_parameters: { topic: 'general', search_depth: 'advanced' },
+          results: [
+            {
+              title: 'Deep source',
+              url: 'https://example.com/deep-auto',
+              content: 'Deep source content.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design deep market scan',
+      depth: 'deep',
+      autoParameters: true,
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({
+      auto_parameters: true,
+      search_depth: 'advanced',
+      include_answer: 'advanced',
+      chunks_per_source: 3,
+    });
   });
 
   it('forwards valid exact date range filters to Tavily', async () => {
