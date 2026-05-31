@@ -41,6 +41,7 @@ export interface ResearchCommandContractOptions {
   minScore?: number;
   includeImages?: boolean;
   includeRawContent?: boolean;
+  autoParameters?: boolean;
 }
 
 export function renderResearchCommandContract(
@@ -60,13 +61,17 @@ export function renderResearchCommandContract(
   const minScore = normalizeMinScore(options.minScore);
   const includeImages = options.includeImages === true;
   const includeRawContent = options.includeRawContent === true;
+  const autoParameters = options.autoParameters === true;
   const maxSources = normalizeMaxSources(options.maxSources, depth);
   const sourceExample = includeRawContent
     ? '{ "title": "...", "url": "...", "snippet": "...", "rawContent": "...", "score": 0.9, "provider": "tavily" }'
     : '{ "title": "...", "url": "...", "snippet": "...", "score": 0.9, "provider": "tavily" }';
+  const autoParametersExample = autoParameters
+    ? ', "autoParameters": true, "selectedParameters": { "topic": "general", "searchDepth": "basic" }'
+    : '';
   const stdoutExample = includeImages
-    ? `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "includeImages": true, "fetchedAt": 0 }`
-    : `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "provider": "tavily", "depth": "${depth}", "fetchedAt": 0 }`;
+    ? `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "includeImages": true${autoParametersExample}, "fetchedAt": 0 }`
+    : `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "provider": "tavily", "depth": "${depth}"${autoParametersExample}, "fetchedAt": 0 }`;
   const commandSuffix = [
     `--depth ${depth}`,
     ...(topic ? [`--topic ${topic}`] : []),
@@ -84,6 +89,7 @@ export function renderResearchCommandContract(
     ...(minScore != null ? [`--min-score ${minScore}`] : []),
     ...(includeImages ? ['--include-images'] : []),
     ...(includeRawContent ? ['--include-raw-content'] : []),
+    ...(autoParameters ? ['--auto-parameters'] : []),
     `--max-sources ${maxSources}`,
   ].join(' ');
   const lines = [
@@ -124,6 +130,9 @@ export function renderResearchCommandContract(
       : []),
     ...(includeRawContent
       ? ['If the JSON includes rawContent fields, use them only as source evidence and keep quoted excerpts short.']
+      : []),
+    ...(autoParameters
+      ? ['If the JSON includes selectedParameters, briefly note how the provider tuned the search.']
       : []),
     'Mention the report path in the final answer so the user can reopen or reference it later.',
   ];

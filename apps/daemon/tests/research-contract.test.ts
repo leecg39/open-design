@@ -82,6 +82,18 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('keep quoted excerpts short');
   });
 
+  it('includes auto parameter flags when adaptive provider tuning is requested', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design market update',
+      autoParameters: true,
+      maxSources: 5,
+    });
+
+    expect(prompt).toContain('--depth shallow --auto-parameters --max-sources 5');
+    expect(prompt).toContain('"selectedParameters": { "topic": "general", "searchDepth": "basic" }');
+    expect(prompt).toContain('provider tuned the search');
+  });
+
   it('defaults and clamps the requested source cap to the supported range', () => {
     expect(renderResearchCommandContract()).toContain('--depth shallow --max-sources 5');
     expect(renderResearchCommandContract({ depth: 'medium' })).toContain(

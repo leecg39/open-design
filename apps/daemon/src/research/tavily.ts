@@ -1,5 +1,6 @@
 import type {
   ResearchImage,
+  ResearchSelectedParameters,
   ResearchSource,
   ResearchTimeRange,
   ResearchTopic,
@@ -26,6 +27,7 @@ export interface TavilySearchInput {
   exactMatch?: boolean;
   includeImages?: boolean;
   includeRawContent?: boolean;
+  autoParameters?: boolean;
   maxResults?: number;
   includeAnswer?: boolean | 'basic' | 'advanced';
   chunksPerSource?: number;
@@ -47,6 +49,7 @@ interface TavilyRawResponse {
   images?: unknown;
   request_id?: unknown;
   response_time?: unknown;
+  auto_parameters?: unknown;
   results?: unknown;
   usage?: unknown;
 }
@@ -58,6 +61,7 @@ export interface TavilySearchOutput {
   usage?: ResearchUsage;
   requestId?: string;
   responseTime?: number;
+  selectedParameters?: ResearchSelectedParameters;
 }
 
 export class TavilyError extends Error {
@@ -110,6 +114,7 @@ export async function tavilySearch(
     max_results: maxResults,
     include_answer: input.includeAnswer ?? true,
     include_raw_content: input.includeRawContent ? 'markdown' : false,
+    ...(input.autoParameters ? { auto_parameters: true } : {}),
     ...(input.searchDepth === 'advanced' && chunksPerSource
       ? { chunks_per_source: chunksPerSource }
       : {}),
@@ -149,6 +154,9 @@ export async function tavilySearch(
   const rawResults = Array.isArray(json.results) ? json.results : [];
   const images = normalizeTavilyImages(json.images);
   const usage = normalizeTavilyUsage(json.usage);
+  const selectedParameters = input.autoParameters
+    ? normalizeTavilyAutoParameters(json.auto_parameters)
+    : undefined;
   const requestId =
     typeof json.request_id === 'string' && json.request_id.trim()
       ? json.request_id.trim()
@@ -195,7 +203,31 @@ export async function tavilySearch(
     ...(usage ? { usage } : {}),
     ...(requestId ? { requestId } : {}),
     ...(responseTime != null ? { responseTime } : {}),
+    ...(selectedParameters ? { selectedParameters } : {}),
   };
+}
+
+function normalizeTavilyAutoParameters(
+  value: unknown,
+): ResearchSelectedParameters | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const record = value as Record<string, unknown>;
+  const topic =
+    record.topic === 'general' ||
+    record.topic === 'news' ||
+    record.topic === 'finance'
+      ? record.topic
+      : undefined;
+  const searchDepth =
+    typeof record.search_depth === 'string' && record.search_depth.trim()
+      ? record.search_depth.trim().slice(0, 40)
+      : undefined;
+  return topic || searchDepth
+    ? {
+        ...(topic ? { topic } : {}),
+        ...(searchDepth ? { searchDepth } : {}),
+      }
+    : undefined;
 }
 
 function normalizeTavilyUsage(value: unknown): ResearchUsage | undefined {

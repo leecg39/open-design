@@ -394,6 +394,58 @@ describe('research search', () => {
     expect(rawBody).toMatchObject({ include_raw_content: 'markdown' });
   });
 
+  it('returns provider-selected parameters only when automatic tuning is requested', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Auto-tuned research summary.',
+          auto_parameters: { topic: 'news', search_depth: 'advanced' },
+          results: [
+            {
+              title: 'Auto tuned source',
+              url: 'https://example.com/auto',
+              content: 'A source selected by auto parameters.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const plain = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design market update',
+    });
+    const auto = await searchResearch({
+      projectRoot: projectRoot!,
+      query: 'Open Design market update',
+      autoParameters: true,
+    });
+
+    expect(plain.autoParameters).toBeUndefined();
+    expect(plain.selectedParameters).toBeUndefined();
+    expect(auto.autoParameters).toBe(true);
+    expect(auto.selectedParameters).toEqual({
+      topic: 'news',
+      searchDepth: 'advanced',
+    });
+    const plainBody = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    const autoBody = JSON.parse(
+      String((fetchMock.mock.calls[1] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(plainBody).not.toHaveProperty('auto_parameters');
+    expect(autoBody).toMatchObject({
+      auto_parameters: true,
+      include_answer: true,
+      include_raw_content: false,
+      max_results: 5,
+    });
+  });
+
   it('forwards valid exact date range filters to Tavily', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

@@ -83,6 +83,8 @@ const RESEARCH_SEARCH_BOOLEAN_FLAGS = new Set([
   'include-raw-content',
   'raw-content',
   'raw',
+  'auto-parameters',
+  'auto',
 ]);
 
 const SUBCOMMAND_MAP = {
@@ -213,7 +215,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--auto-parameters] [--max-sources <n>] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
@@ -308,6 +310,8 @@ async function runResearchSearch(rawArgs) {
     flags['include-raw-content'] === true ||
     flags['raw-content'] === true ||
     flags.raw === true;
+  const autoParameters =
+    flags['auto-parameters'] === true || flags.auto === true;
   const url = `${daemonUrl.replace(/\/$/, '')}/api/research/search`;
   let resp;
   try {
@@ -328,6 +332,7 @@ async function runResearchSearch(rawArgs) {
         ...(Number.isFinite(minScore) ? { minScore } : {}),
         ...(includeImages ? { includeImages } : {}),
         ...(includeRawContent ? { includeRawContent } : {}),
+        ...(autoParameters ? { autoParameters } : {}),
         ...(Number.isFinite(maxSources) ? { maxSources } : {}),
       }),
     });
@@ -345,7 +350,7 @@ async function runResearchSearch(rawArgs) {
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--auto-parameters] [--max-sources <n>] [--daemon-url <url>]
 
 Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
@@ -365,6 +370,7 @@ Flags:
   --min-score    Optional relevance threshold from 0 to 1.
   --include-images  Include visual reference images in the findings (aliases: --images, --visuals).
   --include-raw-content  Include bounded page content evidence (aliases: --raw-content, --raw).
+  --auto-parameters  Let the provider tune supported parameters (aliases: --auto).
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }

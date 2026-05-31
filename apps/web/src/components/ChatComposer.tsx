@@ -119,6 +119,7 @@ function parseSearchArgs(raw: string): {
   minScore?: number;
   includeImages?: boolean;
   includeRawContent?: boolean;
+  autoParameters?: boolean;
 } {
   const input = raw.trim();
   if (!input) return { query: '', depth: 'shallow' };
@@ -132,6 +133,7 @@ function parseSearchArgs(raw: string): {
   let minScore: number | undefined;
   let includeImages = false;
   let includeRawContent = false;
+  let autoParameters = false;
   const includeDomains: string[] = [];
   const excludeDomains: string[] = [];
   const tokens = input.split(/\s+/);
@@ -260,6 +262,9 @@ function parseSearchArgs(raw: string): {
     ) {
       includeRawContent = true;
       cursor += 1;
+    } else if (lower === '--auto-parameters' || lower === '--auto') {
+      autoParameters = true;
+      cursor += 1;
     } else if (lower.startsWith('--min-score=')) {
       const value = parseSearchScore(token.slice('--min-score='.length));
       if (value == null) break;
@@ -293,6 +298,7 @@ function parseSearchArgs(raw: string): {
     ...(minScore != null ? { minScore } : {}),
     ...(includeImages ? { includeImages } : {}),
     ...(includeRawContent ? { includeRawContent } : {}),
+    ...(autoParameters ? { autoParameters } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
 }
@@ -653,6 +659,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       minScore?: number;
       includeImages?: boolean;
       includeRawContent?: boolean;
+      autoParameters?: boolean;
     } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
@@ -671,6 +678,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         minScore,
         includeImages,
         includeRawContent,
+        autoParameters,
       } = parsed;
       if (!query) return null;
       const maxSources = researchMaxSourcesForDepth(depth);
@@ -691,6 +699,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(minScore != null ? [`--min-score ${minScore}`] : []),
         ...(includeImages ? ['--include-images'] : []),
         ...(includeRawContent ? ['--include-raw-content'] : []),
+        ...(autoParameters ? ['--auto-parameters'] : []),
         `--max-sources ${maxSources}`,
       ].join(' ');
       return {
@@ -707,6 +716,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(minScore != null ? { minScore } : {}),
         ...(includeImages ? { includeImages } : {}),
         ...(includeRawContent ? { includeRawContent } : {}),
+        ...(autoParameters ? { autoParameters } : {}),
         prompt: [
           `Search for: ${query}`,
           '',
@@ -731,6 +741,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           ...(minScore != null ? [`Research minimum score: ${minScore}.`] : []),
           ...(includeImages ? ['Research images: enabled.'] : []),
           ...(includeRawContent ? ['Research raw content: enabled.'] : []),
+          ...(autoParameters ? ['Research auto parameters: enabled.'] : []),
           '',
           'Canonical query:',
           '',
@@ -745,6 +756,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             : []),
           ...(includeRawContent
             ? ['If the research JSON includes rawContent fields, use them as evidence and keep quoted excerpts short.']
+            : []),
+          ...(autoParameters
+            ? ['If the research JSON includes selectedParameters, mention how the provider tuned the search.']
             : []),
           'Then summarize the findings with citations by source index and mention the Markdown report path.',
         ].join('\n'),
@@ -990,6 +1004,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
               : {}),
             ...(search.includeRawContent
               ? { includeRawContent: search.includeRawContent }
+              : {}),
+            ...(search.autoParameters
+              ? { autoParameters: search.autoParameters }
               : {}),
           },
         });

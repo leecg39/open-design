@@ -54,6 +54,7 @@ export interface SearchResearchInput {
   minScore?: number;
   includeImages?: boolean;
   includeRawContent?: boolean;
+  autoParameters?: boolean;
   maxSources?: number;
   providers?: string[];
   signal?: AbortSignal;
@@ -88,6 +89,7 @@ export async function searchResearch(
   const minScore = normalizeMinScore(input.minScore);
   const includeImages = input.includeImages === true;
   const includeRawContent = input.includeRawContent === true;
+  const autoParameters = input.autoParameters === true;
   const requested = Array.isArray(input.providers) ? input.providers : [];
   const providers = requested.filter(
     (p: unknown): p is string => typeof p === 'string' && p.length > 0,
@@ -120,6 +122,7 @@ export async function searchResearch(
   let usage: ResearchFindings['usage'];
   let requestId: string | undefined;
   let responseTime: number | undefined;
+  let selectedParameters: ResearchFindings['selectedParameters'];
   try {
     const out = await tavilySearch({
       apiKey: cfg.apiKey,
@@ -135,6 +138,7 @@ export async function searchResearch(
       ...(exactMatch ? { exactMatch } : {}),
       ...(includeImages ? { includeImages } : {}),
       ...(includeRawContent ? { includeRawContent } : {}),
+      ...(autoParameters ? { autoParameters } : {}),
       maxResults: maxSources,
       includeAnswer: depth === 'deep' ? 'advanced' : true,
       ...(depth === 'medium' ? { chunksPerSource: 2 } : {}),
@@ -151,6 +155,7 @@ export async function searchResearch(
     usage = out.usage;
     requestId = out.requestId;
     responseTime = out.responseTime;
+    selectedParameters = out.selectedParameters;
   } catch (err) {
     const message =
       err instanceof TavilyError
@@ -181,6 +186,8 @@ export async function searchResearch(
     ...(minScore != null ? { minScore } : {}),
     ...(includeImages ? { includeImages } : {}),
     ...(includeRawContent ? { includeRawContent } : {}),
+    ...(autoParameters ? { autoParameters } : {}),
+    ...(selectedParameters ? { selectedParameters } : {}),
     ...(usage ? { usage } : {}),
     ...(requestId ? { requestId } : {}),
     ...(responseTime != null ? { responseTime } : {}),

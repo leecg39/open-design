@@ -36,10 +36,17 @@ export interface ResearchOptions {
   includeImages?: boolean;
   /** Include bounded cleaned page content for evidence-heavy reports. */
   includeRawContent?: boolean;
+  /** Let the provider tune supported search parameters from the query intent. */
+  autoParameters?: boolean;
   /** Cap on returned sources. Defaults follow the depth. */
   maxSources?: number;
   /** Provider preference order. Phase 1 supports ['tavily']. */
   providers?: string[];
+}
+
+export interface ResearchSelectedParameters {
+  topic?: ResearchTopic;
+  searchDepth?: string;
 }
 
 export interface ResearchSource {
@@ -81,6 +88,8 @@ export interface ResearchFindings {
   minScore?: number;
   includeImages?: boolean;
   includeRawContent?: boolean;
+  autoParameters?: boolean;
+  selectedParameters?: ResearchSelectedParameters;
   usage?: ResearchUsage;
   requestId?: string;
   responseTime?: number;
