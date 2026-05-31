@@ -1076,6 +1076,47 @@ describe('research search', () => {
     expect(autoBody).not.toHaveProperty('search_depth');
   });
 
+  it('bounds and compacts provider diagnostics metadata', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const requestId = `req-line-one\n${'request diagnostics '.repeat(10)}`;
+    const searchDepth = `advanced\n${'selected depth '.repeat(10)}`;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Diagnostics metadata summary.',
+          request_id: requestId,
+          auto_parameters: { topic: 'news', search_depth: searchDepth },
+          results: [
+            {
+              title: 'Diagnostics source',
+              url: 'https://example.com/diagnostics',
+              content: 'Diagnostics metadata source.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design diagnostics metadata quality',
+      autoParameters: true,
+    });
+
+    expect(findings.requestId).not.toContain('\n');
+    expect(findings.requestId).toHaveLength(120);
+    expect(findings.requestId).toBe(
+      requestId.replace(/\s+/g, ' ').trim().slice(0, 120),
+    );
+    expect(findings.selectedParameters?.searchDepth).not.toContain('\n');
+    expect(findings.selectedParameters?.searchDepth).toHaveLength(40);
+    expect(findings.selectedParameters?.searchDepth).toBe(
+      searchDepth.replace(/\s+/g, ' ').trim().slice(0, 40),
+    );
+  });
+
   it('keeps explicit deep search depth when automatic tuning is also requested', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

@@ -13,6 +13,7 @@ const TAVILY_MAX_RESULTS_LIMIT = 20;
 const TAVILY_SOURCE_TITLE_LIMIT = 300;
 const TAVILY_SOURCE_SNIPPET_LIMIT = 800;
 const TAVILY_PUBLISHED_AT_LIMIT = 100;
+const TAVILY_REQUEST_ID_LIMIT = 120;
 const TAVILY_RAW_CONTENT_LIMIT = 4_000;
 const TRACKING_QUERY_PARAMETERS = new Set([
   'fbclid',
@@ -199,7 +200,10 @@ export async function tavilySearch(
     : undefined;
   const requestId =
     typeof json.request_id === 'string' && json.request_id.trim()
-      ? json.request_id.trim()
+      ? json.request_id
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, TAVILY_REQUEST_ID_LIMIT)
       : undefined;
   const responseTime = normalizeNonNegativeNumber(json.response_time);
   const sources: ResearchSource[] = [];
@@ -293,7 +297,7 @@ function normalizeTavilyAutoParameters(
       : undefined;
   const searchDepth =
     typeof record.search_depth === 'string' && record.search_depth.trim()
-      ? record.search_depth.trim().slice(0, 40)
+      ? record.search_depth.replace(/\s+/g, ' ').trim().slice(0, 40)
       : undefined;
   return topic || searchDepth
     ? {
