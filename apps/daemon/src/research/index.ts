@@ -10,6 +10,7 @@ import { resolveProviderConfig } from '../media-config.js';
 import { tavilySearch, TavilyError } from './tavily.js';
 
 const TAVILY_MAX_RESULTS_LIMIT = 20;
+const RESEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export class ResearchError extends Error {
   constructor(
@@ -28,6 +29,8 @@ export interface SearchResearchInput {
   depth?: ResearchDepth;
   topic?: ResearchTopic;
   timeRange?: ResearchTimeRange;
+  startDate?: string;
+  endDate?: string;
   maxSources?: number;
   providers?: string[];
   signal?: AbortSignal;
@@ -43,6 +46,8 @@ export async function searchResearch(
   const depth = normalizeResearchDepth(input.depth);
   const topic = normalizeResearchTopic(input.topic);
   const timeRange = normalizeResearchTimeRange(input.timeRange);
+  const startDate = normalizeResearchDate(input.startDate);
+  const endDate = normalizeResearchDate(input.endDate);
   const requested = Array.isArray(input.providers) ? input.providers : [];
   const providers = requested.filter(
     (p: unknown): p is string => typeof p === 'string' && p.length > 0,
@@ -78,6 +83,8 @@ export async function searchResearch(
       searchDepth: depth === 'shallow' ? 'basic' : 'advanced',
       ...(topic ? { topic } : {}),
       ...(timeRange ? { timeRange } : {}),
+      ...(startDate ? { startDate } : {}),
+      ...(endDate ? { endDate } : {}),
       maxResults: maxSources,
       includeAnswer: depth === 'deep' ? 'advanced' : true,
       ...(depth === 'medium' ? { chunksPerSource: 2 } : {}),
@@ -107,6 +114,8 @@ export async function searchResearch(
     depth,
     ...(topic ? { topic } : {}),
     ...(timeRange ? { timeRange } : {}),
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
     fetchedAt: Date.now(),
   };
 }
@@ -130,6 +139,25 @@ function normalizeResearchTimeRange(
     value === 'year'
     ? value
     : undefined;
+}
+
+function normalizeResearchDate(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  const match = RESEARCH_DATE_RE.exec(trimmed);
+  if (!match) return undefined;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+  return trimmed;
 }
 
 function synthesizeFallbackSummary(sources: ResearchSource[]): string {

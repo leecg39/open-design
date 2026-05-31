@@ -9,6 +9,8 @@ describe('renderResearchCommandContract', () => {
       depth: 'deep',
       topic: 'news',
       timeRange: 'week',
+      startDate: '2026-05-01',
+      endDate: '2026-05-31',
       maxSources: 15,
     });
 
@@ -28,13 +30,13 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('Mention the report path in the final answer');
     expect(prompt).toContain('EV market 2025 trends');
     expect(prompt).toContain(
-      '"$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --depth deep --topic news --time-range week --max-sources 15',
+      '"$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --max-sources 15',
     );
     expect(prompt).toContain(
-      '& $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --depth deep --topic news --time-range week --max-sources 15',
+      '& $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --max-sources 15',
     );
     expect(prompt).toContain(
-      '"%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --depth deep --topic news --time-range week --max-sources 15',
+      '"%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --max-sources 15',
     );
     expect(prompt).toContain('"depth": "deep"');
   });

@@ -18,6 +18,10 @@ export interface ResearchOptions {
   topic?: ResearchTopic;
   /** Optional recency filter for current/updated sources. */
   timeRange?: ResearchTimeRange;
+  /** Optional exact lower date bound in YYYY-MM-DD format. */
+  startDate?: string;
+  /** Optional exact upper date bound in YYYY-MM-DD format. */
+  endDate?: string;
   /** Cap on returned sources. Defaults follow the depth. */
   maxSources?: number;
   /** Provider preference order. Phase 1 supports ['tavily']. */
@@ -40,6 +44,8 @@ export interface ResearchFindings {
   depth: ResearchDepth;
   topic?: ResearchTopic;
   timeRange?: ResearchTimeRange;
+  startDate?: string;
+  endDate?: string;
   /** Unix ms when the search returned. */
   fetchedAt: number;
 }

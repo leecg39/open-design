@@ -3,6 +3,7 @@ const TAVILY_MAX_RESULTS_LIMIT = 20;
 const RESEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const RESEARCH_TOPICS = new Set(['general', 'news', 'finance']);
 const RESEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
+const RESEARCH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_MAX_SOURCES_BY_DEPTH = {
   shallow: 5,
   medium: 12,
@@ -15,6 +16,8 @@ export interface ResearchCommandContractOptions {
   depth?: string;
   topic?: string;
   timeRange?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export function renderResearchCommandContract(
@@ -23,11 +26,15 @@ export function renderResearchCommandContract(
   const depth = normalizeDepth(options.depth);
   const topic = normalizeTopic(options.topic);
   const timeRange = normalizeTimeRange(options.timeRange);
+  const startDate = normalizeDate(options.startDate);
+  const endDate = normalizeDate(options.endDate);
   const maxSources = normalizeMaxSources(options.maxSources, depth);
   const commandSuffix = [
     `--depth ${depth}`,
     ...(topic ? [`--topic ${topic}`] : []),
     ...(timeRange ? [`--time-range ${timeRange}`] : []),
+    ...(startDate ? [`--start-date ${startDate}`] : []),
+    ...(endDate ? [`--end-date ${endDate}`] : []),
     `--max-sources ${maxSources}`,
   ].join(' ');
   const lines = [
@@ -103,6 +110,12 @@ function normalizeTimeRange(
   return typeof value === 'string' && RESEARCH_TIME_RANGES.has(value)
     ? (value as 'day' | 'week' | 'month' | 'year')
     : undefined;
+}
+
+function normalizeDate(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return RESEARCH_DATE_RE.test(trimmed) ? trimmed : undefined;
 }
 
 function normalizeMaxSources(

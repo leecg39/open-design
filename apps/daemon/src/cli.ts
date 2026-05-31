@@ -64,6 +64,8 @@ const RESEARCH_SEARCH_STRING_FLAGS = new Set([
   'depth',
   'topic',
   'time-range',
+  'start-date',
+  'end-date',
   'max-sources',
   'daemon-url',
 ]);
@@ -200,7 +202,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--max-sources <n>] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
@@ -276,6 +278,10 @@ async function runResearchSearch(rawArgs) {
   const topic = typeof flags.topic === 'string' ? flags.topic.trim() : '';
   const timeRange =
     typeof flags['time-range'] === 'string' ? flags['time-range'].trim() : '';
+  const startDate =
+    typeof flags['start-date'] === 'string' ? flags['start-date'].trim() : '';
+  const endDate =
+    typeof flags['end-date'] === 'string' ? flags['end-date'].trim() : '';
   const url = `${daemonUrl.replace(/\/$/, '')}/api/research/search`;
   let resp;
   try {
@@ -287,6 +293,8 @@ async function runResearchSearch(rawArgs) {
         ...(depth ? { depth } : {}),
         ...(topic ? { topic } : {}),
         ...(timeRange ? { timeRange } : {}),
+        ...(startDate ? { startDate } : {}),
+        ...(endDate ? { endDate } : {}),
         ...(Number.isFinite(maxSources) ? { maxSources } : {}),
       }),
     });
@@ -304,7 +312,7 @@ async function runResearchSearch(rawArgs) {
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--max-sources <n>] [--daemon-url <url>]
 
 Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
@@ -315,6 +323,8 @@ Flags:
   --depth        Optional research depth. Defaults to shallow.
   --topic        Optional source category.
   --time-range   Optional recency filter.
+  --start-date   Optional exact lower date bound in YYYY-MM-DD format.
+  --end-date     Optional exact upper date bound in YYYY-MM-DD format.
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }

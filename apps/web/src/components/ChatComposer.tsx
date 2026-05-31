@@ -88,23 +88,29 @@ export interface ChatSendMeta {
 const SEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const SEARCH_TOPICS = new Set(['general', 'news', 'finance']);
 const SEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
+const SEARCH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function parseSearchArgs(raw: string): {
   query: string;
   depth: ResearchDepth;
   topic?: ResearchTopic;
   timeRange?: ResearchTimeRange;
+  startDate?: string;
+  endDate?: string;
 } {
   const input = raw.trim();
   if (!input) return { query: '', depth: 'shallow' };
   let depth: ResearchDepth = 'shallow';
   let topic: ResearchTopic | undefined;
   let timeRange: ResearchTimeRange | undefined;
+  let startDate: string | undefined;
+  let endDate: string | undefined;
   const tokens = input.split(/\s+/);
   let cursor = 0;
   while (cursor < tokens.length) {
     const token = tokens[cursor]!;
     const lower = token.toLowerCase();
+    const nextToken = tokens[cursor + 1];
     const next = tokens[cursor + 1]?.toLowerCase();
 
     if (lower.startsWith('--depth=')) {
@@ -141,6 +147,30 @@ function parseSearchArgs(raw: string): {
     ) {
       timeRange = next as ResearchTimeRange;
       cursor += 2;
+    } else if (lower.startsWith('--start-date=')) {
+      const value = token.slice('--start-date='.length);
+      if (!isSearchDate(value)) break;
+      startDate = value;
+      cursor += 1;
+    } else if (
+      lower === '--start-date' &&
+      nextToken &&
+      isSearchDate(nextToken)
+    ) {
+      startDate = nextToken;
+      cursor += 2;
+    } else if (lower.startsWith('--end-date=')) {
+      const value = token.slice('--end-date='.length);
+      if (!isSearchDate(value)) break;
+      endDate = value;
+      cursor += 1;
+    } else if (
+      lower === '--end-date' &&
+      nextToken &&
+      isSearchDate(nextToken)
+    ) {
+      endDate = nextToken;
+      cursor += 2;
     } else if (
       lower.startsWith('--') &&
       SEARCH_TIME_RANGES.has(lower.slice(2))
@@ -155,8 +185,14 @@ function parseSearchArgs(raw: string): {
     depth,
     ...(topic ? { topic } : {}),
     ...(timeRange ? { timeRange } : {}),
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
+}
+
+function isSearchDate(value: string): boolean {
+  return SEARCH_DATE_RE.test(value);
 }
 
 function researchMaxSourcesForDepth(depth: ResearchDepth): number {
@@ -464,17 +500,21 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       depth: ResearchDepth;
       topic?: ResearchTopic;
       timeRange?: ResearchTimeRange;
+      startDate?: string;
+      endDate?: string;
     } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
       const parsed = parseSearchArgs(m[1]?.trim() ?? '');
-      const { query, depth, topic, timeRange } = parsed;
+      const { query, depth, topic, timeRange, startDate, endDate } = parsed;
       if (!query) return null;
       const maxSources = researchMaxSourcesForDepth(depth);
       const commandSuffix = [
         `--depth ${depth}`,
         ...(topic ? [`--topic ${topic}`] : []),
         ...(timeRange ? [`--time-range ${timeRange}`] : []),
+        ...(startDate ? [`--start-date ${startDate}`] : []),
+        ...(endDate ? [`--end-date ${endDate}`] : []),
         `--max-sources ${maxSources}`,
       ].join(' ');
       return {
@@ -482,6 +522,8 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         depth,
         ...(topic ? { topic } : {}),
         ...(timeRange ? { timeRange } : {}),
+        ...(startDate ? { startDate } : {}),
+        ...(endDate ? { endDate } : {}),
         prompt: [
           `Search for: ${query}`,
           '',
@@ -493,6 +535,8 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           `Research depth: ${depth}.`,
           ...(topic ? [`Research topic: ${topic}.`] : []),
           ...(timeRange ? [`Research time range: ${timeRange}.`] : []),
+          ...(startDate ? [`Research start date: ${startDate}.`] : []),
+          ...(endDate ? [`Research end date: ${endDate}.`] : []),
           '',
           'Canonical query:',
           '',
@@ -730,6 +774,8 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             depth: search.depth,
             ...(search.topic ? { topic: search.topic } : {}),
             ...(search.timeRange ? { timeRange: search.timeRange } : {}),
+            ...(search.startDate ? { startDate: search.startDate } : {}),
+            ...(search.endDate ? { endDate: search.endDate } : {}),
           },
         });
         reset();

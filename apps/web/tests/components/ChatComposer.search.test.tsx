@@ -163,6 +163,48 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('expands /search exact date flags into research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: {
+        value:
+          '/search --news --start-date 2026-05-01 --end-date 2026-05-31 Open Design May coverage',
+      },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain(
+      '--depth shallow --topic news --start-date 2026-05-01 --end-date 2026-05-31 --max-sources 5',
+    );
+    expect(prompt).toContain('Research start date: 2026-05-01.');
+    expect(prompt).toContain('Research end date: 2026-05-31.');
+    expect(prompt).toContain('Open Design May coverage');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Open Design May coverage',
+        depth: 'shallow',
+        topic: 'news',
+        startDate: '2026-05-01',
+        endDate: '2026-05-31',
+      },
+    });
+  });
+
   it('does not send research metadata for normal prompts', () => {
     const onSend = vi.fn();
 

@@ -191,4 +191,80 @@ describe('research search', () => {
       max_results: 5,
     });
   });
+
+  it('forwards valid exact date range filters to Tavily', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'May product coverage summary.',
+          results: [
+            {
+              title: 'May update',
+              url: 'https://example.com/may-update',
+              content: 'Product coverage published during May.',
+              published_date: '2026-05-15',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design May updates',
+      startDate: '2026-05-01',
+      endDate: '2026-05-31',
+    });
+
+    expect(findings).toMatchObject({
+      startDate: '2026-05-01',
+      endDate: '2026-05-31',
+      sources: [{ publishedAt: '2026-05-15' }],
+    });
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({
+      start_date: '2026-05-01',
+      end_date: '2026-05-31',
+    });
+  });
+
+  it('does not forward invalid exact date filters to Tavily', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Fallback summary.',
+          results: [
+            {
+              title: 'Result',
+              url: 'https://example.com/result',
+              content: 'Search result.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design updates',
+      startDate: '2026-99-01',
+      endDate: 'not-a-date',
+    });
+
+    expect(findings.startDate).toBeUndefined();
+    expect(findings.endDate).toBeUndefined();
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).not.toHaveProperty('start_date');
+    expect(body).not.toHaveProperty('end_date');
+  });
 });
