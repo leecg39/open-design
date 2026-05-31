@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 // @ts-nocheck
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
 import { startServer } from './server.js';
 import { runLiveArtifactsMcpServer } from './mcp-live-artifacts-server.js';
 import { runConnectorsToolCli } from './tools-connectors-cli.js';
@@ -13,8 +11,8 @@ import {
 import {
   buildResearchMarkdownReport,
   defaultResearchReportPath,
-  resolveResearchReportPath,
   writeAvailableResearchReportFile,
+  writeResearchReportFile,
 } from './research/report.js';
 
 const argv = process.argv.slice(2);
@@ -375,7 +373,15 @@ async function runResearchSearch(rawArgs) {
           : defaultResearchReportPath(findings.query || query);
       const report =
         typeof flags.report === 'string' && flags.report.trim()
-          ? resolveResearchReportPath(process.cwd(), requestedReportPath)
+          ? await writeResearchReportFile(
+              process.cwd(),
+              requestedReportPath,
+              (candidate) =>
+                buildResearchMarkdownReport({
+                  ...findings,
+                  reportPath: candidate.relativePath,
+                }),
+            )
           : await writeAvailableResearchReportFile(
               process.cwd(),
               requestedReportPath,
@@ -385,14 +391,6 @@ async function runResearchSearch(rawArgs) {
                   reportPath: candidate.relativePath,
                 }),
             );
-      if (typeof flags.report === 'string' && flags.report.trim()) {
-        const reportContents = buildResearchMarkdownReport({
-          ...findings,
-          reportPath: report.relativePath,
-        });
-        await mkdir(path.dirname(report.absolutePath), { recursive: true });
-        await writeFile(report.absolutePath, reportContents, 'utf8');
-      }
       process.stdout.write(`${JSON.stringify({ ...findings, reportPath: report.relativePath })}\n`);
       return;
     } catch (err) {
@@ -429,7 +427,7 @@ Flags:
   --auto-parameters  Let the provider tune supported parameters (aliases: --auto).
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --save-report  Save a Markdown report under research/<safe-query-slug>.md, or the next available suffixed path.
-  --report       Save the Markdown report to an explicit project-relative path.
+  --report       Save the Markdown report to an explicit project-relative path; fails if the file already exists.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }
 

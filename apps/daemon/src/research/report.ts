@@ -83,6 +83,24 @@ export async function writeAvailableResearchReportFile(
   throw new Error('could not find an available research report path');
 }
 
+export async function writeResearchReportFile(
+  cwd: string,
+  requestedPath: string,
+  contents:
+    | string
+    | ((report: { absolutePath: string; relativePath: string }) => string),
+): Promise<{ absolutePath: string; relativePath: string }> {
+  const report = resolveResearchReportPath(cwd, requestedPath);
+  await mkdir(path.dirname(report.absolutePath), { recursive: true });
+  const reportContents =
+    typeof contents === 'function' ? contents(report) : contents;
+  await writeFile(report.absolutePath, reportContents, {
+    encoding: 'utf8',
+    flag: 'wx',
+  });
+  return report;
+}
+
 export function buildResearchMarkdownReport(findings: ResearchFindings): string {
   const fetchedAt = formatFetchedAt(findings.fetchedAt);
   const query = escapeMarkdownText(findings.query);

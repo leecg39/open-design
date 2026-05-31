@@ -10,6 +10,7 @@ import {
   resolveAvailableResearchReportPath,
   resolveResearchReportPath,
   writeAvailableResearchReportFile,
+  writeResearchReportFile,
 } from '../src/research/report.js';
 
 describe('research report helpers', () => {
@@ -101,6 +102,34 @@ describe('research report helpers', () => {
       expect(report.relativePath).toBe('research/open-design-2.md');
       await expect(readFile(report.absolutePath, 'utf8')).resolves.toBe(
         'report path: research/open-design-2.md',
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('writes explicit report paths without overwriting existing files', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'open-design-research-report-'));
+    try {
+      await mkdir(path.join(root, 'research'), { recursive: true });
+      await writeFile(path.join(root, 'research/report.md'), 'existing report', 'utf8');
+
+      await expect(
+        writeResearchReportFile(root, 'research/report.md', 'new report'),
+      ).rejects.toMatchObject({ code: 'EEXIST' });
+      await expect(readFile(path.join(root, 'research/report.md'), 'utf8')).resolves.toBe(
+        'existing report',
+      );
+
+      const report = await writeResearchReportFile(
+        root,
+        'research/new-report.md',
+        (candidate) => `report path: ${candidate.relativePath}`,
+      );
+
+      expect(report.relativePath).toBe('research/new-report.md');
+      await expect(readFile(report.absolutePath, 'utf8')).resolves.toBe(
+        'report path: research/new-report.md',
       );
     } finally {
       await rm(root, { recursive: true, force: true });
