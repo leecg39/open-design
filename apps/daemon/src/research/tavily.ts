@@ -81,7 +81,7 @@ export interface TavilySearchInput {
   excludeDomains?: string[];
   exactMatch?: boolean;
   includeImages?: boolean;
-  includeRawContent?: boolean;
+  includeRawContent?: boolean | 'markdown' | 'text';
   autoParameters?: boolean;
   maxResults?: number;
   includeAnswer?: boolean | 'basic' | 'advanced';
@@ -90,6 +90,7 @@ export interface TavilySearchInput {
 }
 
 type TavilySearchDepth = 'advanced' | 'basic' | 'fast' | 'ultra-fast';
+type TavilyRawContentMode = false | 'markdown' | 'text';
 
 interface TavilyRawResult {
   title?: unknown;
@@ -150,7 +151,7 @@ export async function tavilySearch(
   const searchDepth = normalizeTavilySearchDepth(input.searchDepth);
   const exactMatch = input.exactMatch === true;
   const includeImages = input.includeImages === true;
-  const includeRawContent = input.includeRawContent === true;
+  const includeRawContent = normalizeTavilyRawContent(input.includeRawContent);
   const autoParameters = input.autoParameters === true;
   const includeAnswer = normalizeTavilyIncludeAnswer(input.includeAnswer);
   const startDate = normalizeTavilyDate(input.startDate);
@@ -210,7 +211,7 @@ export async function tavilySearch(
     include_usage: true,
     max_results: maxResults,
     include_answer: includeAnswer,
-    include_raw_content: includeRawContent ? 'markdown' : false,
+    include_raw_content: includeRawContent,
     ...(autoParameters ? { auto_parameters: true } : {}),
     ...(searchDepth === 'advanced' && chunksPerSource
       ? { chunks_per_source: chunksPerSource }
@@ -324,7 +325,7 @@ export async function tavilySearch(
         : null;
     const favicon = normalizeImageUrl(r.favicon);
     const rawContentText =
-      includeRawContent && typeof r.raw_content === 'string'
+      includeRawContent !== false && typeof r.raw_content === 'string'
         ? r.raw_content.trim()
         : '';
     const rawContent = rawContentText.slice(0, TAVILY_RAW_CONTENT_LIMIT);
@@ -474,6 +475,13 @@ function normalizeTavilyIncludeAnswer(
     value === 'advanced'
     ? value
     : true;
+}
+
+function normalizeTavilyRawContent(
+  value: boolean | 'markdown' | 'text' | undefined,
+): TavilyRawContentMode {
+  if (value === true || value === 'markdown') return 'markdown';
+  return value === 'text' ? 'text' : false;
 }
 
 function normalizeTavilyDate(value: string | undefined): string {

@@ -1074,6 +1074,40 @@ describe('research search', () => {
     expect(output.sources[0]?.images).toBeUndefined();
   });
 
+  it('supports direct Tavily text raw-content mode', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Text raw-content summary.',
+          results: [
+            {
+              title: 'Text raw-content source',
+              url: 'https://example.com/text-raw-content',
+              content: 'Text raw-content mode should be forwarded.',
+              raw_content: 'Plain text evidence requested from Tavily.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const output = await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily text raw content',
+      includeRawContent: 'text',
+    } as any);
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body.include_raw_content).toBe('text');
+    expect(output.sources[0]?.rawContent).toBe(
+      'Plain text evidence requested from Tavily.',
+    );
+  });
+
   it('omits unsupported direct Tavily country boosts before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
