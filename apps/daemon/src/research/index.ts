@@ -95,7 +95,7 @@ export async function searchResearch(
       'Ignored country boost because topic news/finance does not support it.',
     );
   }
-  const timeRange = normalizeResearchTimeRange(input.timeRange);
+  let timeRange = normalizeResearchTimeRange(input.timeRange);
   if (hasNonEmptyString(input.timeRange) && !timeRange) {
     warnings.push(
       'Ignored invalid timeRange; expected day, week, month, or year.',
@@ -103,6 +103,12 @@ export async function searchResearch(
   }
   const startDate = normalizeResearchDate(input.startDate);
   const endDate = normalizeResearchDate(input.endDate);
+  if (timeRange && (startDate || endDate)) {
+    warnings.push(
+      'Ignored timeRange because exact date filters were provided.',
+    );
+    timeRange = undefined;
+  }
   if (hasNonEmptyString(input.startDate) && !startDate) {
     warnings.push('Ignored invalid startDate; expected YYYY-MM-DD.');
   }

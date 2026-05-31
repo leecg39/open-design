@@ -687,6 +687,52 @@ describe('research search', () => {
     });
   });
 
+  it('prefers exact date filters over relative time range filters', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Exact temporal summary.',
+          results: [
+            {
+              title: 'Exact temporal source',
+              url: 'https://example.com/exact-temporal',
+              content: 'Coverage from the exact requested range.',
+              published_date: '2026-05-20',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design May updates',
+      timeRange: 'week',
+      startDate: '2026-05-01',
+      endDate: '2026-05-31',
+    });
+
+    expect(findings).toMatchObject({
+      startDate: '2026-05-01',
+      endDate: '2026-05-31',
+      warnings: [
+        'Ignored timeRange because exact date filters were provided.',
+      ],
+    });
+    expect(findings.timeRange).toBeUndefined();
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({
+      start_date: '2026-05-01',
+      end_date: '2026-05-31',
+    });
+    expect(body).not.toHaveProperty('time_range');
+  });
+
   it('rejects reversed exact date ranges before Tavily is called', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn();
