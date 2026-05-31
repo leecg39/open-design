@@ -299,6 +299,10 @@ export function resolveResearchCommandContract(research, message) {
       typeof research.exactMatch === 'boolean' ? research.exactMatch : undefined,
     minScore:
       typeof research.minScore === 'number' ? research.minScore : undefined,
+    includeImages:
+      typeof research.includeImages === 'boolean'
+        ? research.includeImages
+        : undefined,
     maxSources:
       typeof research.maxSources === 'number' ? research.maxSources : undefined,
   });
@@ -4709,6 +4713,7 @@ export async function startServer({
         exactMatch: req.body?.exactMatch === true,
         minScore:
           typeof req.body?.minScore === 'number' ? req.body.minScore : undefined,
+        includeImages: req.body?.includeImages === true,
         maxSources:
           typeof req.body?.maxSources === 'number'
             ? req.body.maxSources

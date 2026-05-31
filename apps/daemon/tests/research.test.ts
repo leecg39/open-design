@@ -238,6 +238,71 @@ describe('research search', () => {
     expect(newsBody).not.toHaveProperty('country');
   });
 
+  it('returns visual image evidence only when requested', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Visual product summary.',
+          images: [
+            {
+              url: 'https://images.example.com/product.jpg',
+              description: 'A product interface reference.',
+            },
+            'https://images.example.com/moodboard.png',
+            'not-a-url',
+            'https://images.example.com/product.jpg',
+          ],
+          results: [
+            {
+              title: 'Visual source',
+              url: 'https://example.com/visual',
+              content: 'Visual design coverage.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const plain = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design product visuals',
+    });
+    const visual = await searchResearch({
+      projectRoot: projectRoot!,
+      query: 'Open Design product visuals',
+      includeImages: true,
+    });
+
+    expect(plain.includeImages).toBeUndefined();
+    expect(plain.images).toBeUndefined();
+    expect(visual.includeImages).toBe(true);
+    expect(visual.images).toEqual([
+      {
+        url: 'https://images.example.com/product.jpg',
+        description: 'A product interface reference.',
+        provider: 'tavily',
+      },
+      {
+        url: 'https://images.example.com/moodboard.png',
+        provider: 'tavily',
+      },
+    ]);
+    const plainBody = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    const visualBody = JSON.parse(
+      String((fetchMock.mock.calls[1] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(plainBody).not.toHaveProperty('include_images');
+    expect(visualBody).toMatchObject({
+      include_images: true,
+      include_image_descriptions: true,
+    });
+  });
+
   it('forwards valid exact date range filters to Tavily', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

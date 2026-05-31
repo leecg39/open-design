@@ -117,6 +117,7 @@ function parseSearchArgs(raw: string): {
   excludeDomains?: string[];
   exactMatch?: boolean;
   minScore?: number;
+  includeImages?: boolean;
 } {
   const input = raw.trim();
   if (!input) return { query: '', depth: 'shallow' };
@@ -128,6 +129,7 @@ function parseSearchArgs(raw: string): {
   let endDate: string | undefined;
   let exactMatch = false;
   let minScore: number | undefined;
+  let includeImages = false;
   const includeDomains: string[] = [];
   const excludeDomains: string[] = [];
   const tokens = input.split(/\s+/);
@@ -242,6 +244,13 @@ function parseSearchArgs(raw: string): {
     } else if (lower === '--exact-match') {
       exactMatch = true;
       cursor += 1;
+    } else if (
+      lower === '--include-images' ||
+      lower === '--images' ||
+      lower === '--visuals'
+    ) {
+      includeImages = true;
+      cursor += 1;
     } else if (lower.startsWith('--min-score=')) {
       const value = parseSearchScore(token.slice('--min-score='.length));
       if (value == null) break;
@@ -273,6 +282,7 @@ function parseSearchArgs(raw: string): {
     ...(excludeDomains.length ? { excludeDomains } : {}),
     ...(exactMatch ? { exactMatch } : {}),
     ...(minScore != null ? { minScore } : {}),
+    ...(includeImages ? { includeImages } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
 }
@@ -631,6 +641,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       excludeDomains?: string[];
       exactMatch?: boolean;
       minScore?: number;
+      includeImages?: boolean;
     } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
@@ -647,6 +658,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         excludeDomains,
         exactMatch,
         minScore,
+        includeImages,
       } = parsed;
       if (!query) return null;
       const maxSources = researchMaxSourcesForDepth(depth);
@@ -665,6 +677,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           : []),
         ...(exactMatch ? ['--exact-match'] : []),
         ...(minScore != null ? [`--min-score ${minScore}`] : []),
+        ...(includeImages ? ['--include-images'] : []),
         `--max-sources ${maxSources}`,
       ].join(' ');
       return {
@@ -679,6 +692,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(excludeDomains?.length ? { excludeDomains } : {}),
         ...(exactMatch ? { exactMatch } : {}),
         ...(minScore != null ? { minScore } : {}),
+        ...(includeImages ? { includeImages } : {}),
         prompt: [
           `Search for: ${query}`,
           '',
@@ -701,6 +715,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             : []),
           ...(exactMatch ? ['Research exact match: enabled.'] : []),
           ...(minScore != null ? [`Research minimum score: ${minScore}.`] : []),
+          ...(includeImages ? ['Research images: enabled.'] : []),
           '',
           'Canonical query:',
           '',
@@ -710,6 +725,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           'If the OD command fails because Tavily is not configured or unavailable, report that error, then use your own search capability as fallback and label the fallback clearly.',
           'After the command returns JSON or fallback search results, write a reusable Markdown report into Design Files at `research/<safe-query-slug>.md` or another fresh project-relative path.',
           'The report must include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
+          ...(includeImages
+            ? ['If the research JSON includes images, add a Visual references section with image URLs and descriptions.']
+            : []),
           'Then summarize the findings with citations by source index and mention the Markdown report path.',
         ].join('\n'),
       };
@@ -949,6 +967,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
               : {}),
             ...(search.exactMatch ? { exactMatch: search.exactMatch } : {}),
             ...(search.minScore != null ? { minScore: search.minScore } : {}),
+            ...(search.includeImages
+              ? { includeImages: search.includeImages }
+              : {}),
           },
         });
         reset();

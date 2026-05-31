@@ -1,4 +1,5 @@
 import type {
+  ResearchImage,
   ResearchSource,
   ResearchTimeRange,
   ResearchTopic,
@@ -21,6 +22,7 @@ export interface TavilySearchInput {
   includeDomains?: string[];
   excludeDomains?: string[];
   exactMatch?: boolean;
+  includeImages?: boolean;
   maxResults?: number;
   includeAnswer?: boolean | 'basic' | 'advanced';
   chunksPerSource?: number;
@@ -37,12 +39,14 @@ interface TavilyRawResult {
 
 interface TavilyRawResponse {
   answer?: unknown;
+  images?: unknown;
   results?: unknown;
 }
 
 export interface TavilySearchOutput {
   answer: string;
   sources: ResearchSource[];
+  images: ResearchImage[];
 }
 
 export class TavilyError extends Error {
@@ -87,6 +91,9 @@ export async function tavilySearch(
       ? { exclude_domains: input.excludeDomains }
       : {}),
     ...(input.exactMatch ? { exact_match: true } : {}),
+    ...(input.includeImages
+      ? { include_images: true, include_image_descriptions: true }
+      : {}),
     max_results: maxResults,
     include_answer: input.includeAnswer ?? true,
     include_raw_content: false,
@@ -127,6 +134,7 @@ export async function tavilySearch(
   const json = (await resp.json()) as TavilyRawResponse;
   const answer = typeof json.answer === 'string' ? json.answer : '';
   const rawResults = Array.isArray(json.results) ? json.results : [];
+  const images = normalizeTavilyImages(json.images);
   const sources: ResearchSource[] = [];
   for (const r of rawResults as TavilyRawResult[]) {
     const url = typeof r.url === 'string' ? r.url : '';
@@ -154,5 +162,53 @@ export async function tavilySearch(
       ...(score != null ? { score } : {}),
     });
   }
-  return { answer, sources };
+  return { answer, sources, images };
+}
+
+function normalizeTavilyImages(value: unknown): ResearchImage[] {
+  if (!Array.isArray(value)) return [];
+  const images: ResearchImage[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    const image = normalizeTavilyImage(item);
+    if (!image || seen.has(image.url)) continue;
+    seen.add(image.url);
+    images.push(image);
+    if (images.length >= 10) break;
+  }
+  return images;
+}
+
+function normalizeTavilyImage(value: unknown): ResearchImage | undefined {
+  if (typeof value === 'string') {
+    const url = normalizeImageUrl(value);
+    return url ? { url, provider: 'tavily' } : undefined;
+  }
+  if (!value || typeof value !== 'object') return undefined;
+  const record = value as Record<string, unknown>;
+  const url = normalizeImageUrl(record.url);
+  if (!url) return undefined;
+  const description =
+    typeof record.description === 'string' && record.description.trim()
+      ? record.description.trim().slice(0, 500)
+      : undefined;
+  return {
+    url,
+    ...(description ? { description } : {}),
+    provider: 'tavily',
+  };
+}
+
+function normalizeImageUrl(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const text = value.trim();
+  if (!text) return undefined;
+  try {
+    const url = new URL(text);
+    return url.protocol === 'http:' || url.protocol === 'https:'
+      ? url.toString()
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }

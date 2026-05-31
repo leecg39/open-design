@@ -57,6 +57,16 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('--depth shallow --country south-korea --max-sources 5');
   });
 
+  it('includes visual research flags when image evidence is requested', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'AI dashboard visual references',
+      includeImages: true,
+      maxSources: 5,
+    });
+
+    expect(prompt).toContain('--depth shallow --include-images --max-sources 5');
+  });
+
   it('defaults and clamps the requested source cap to the supported range', () => {
     expect(renderResearchCommandContract()).toContain('--depth shallow --max-sources 5');
     expect(renderResearchCommandContract({ depth: 'medium' })).toContain(

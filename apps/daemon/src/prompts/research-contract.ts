@@ -39,6 +39,7 @@ export interface ResearchCommandContractOptions {
   excludeDomains?: string[];
   exactMatch?: boolean;
   minScore?: number;
+  includeImages?: boolean;
 }
 
 export function renderResearchCommandContract(
@@ -56,6 +57,7 @@ export function renderResearchCommandContract(
   const includeDomains = normalizeDomains(options.includeDomains);
   const excludeDomains = normalizeDomains(options.excludeDomains);
   const minScore = normalizeMinScore(options.minScore);
+  const includeImages = options.includeImages === true;
   const maxSources = normalizeMaxSources(options.maxSources, depth);
   const commandSuffix = [
     `--depth ${depth}`,
@@ -72,6 +74,7 @@ export function renderResearchCommandContract(
       : []),
     ...(options.exactMatch === true ? ['--exact-match'] : []),
     ...(minScore != null ? [`--min-score ${minScore}`] : []),
+    ...(includeImages ? ['--include-images'] : []),
     `--max-sources ${maxSources}`,
   ].join(' ');
   const lines = [

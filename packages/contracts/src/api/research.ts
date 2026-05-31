@@ -32,6 +32,8 @@ export interface ResearchOptions {
   exactMatch?: boolean;
   /** Optional minimum provider relevance score from 0 to 1. */
   minScore?: number;
+  /** Include query-related image evidence for visual research. */
+  includeImages?: boolean;
   /** Cap on returned sources. Defaults follow the depth. */
   maxSources?: number;
   /** Provider preference order. Phase 1 supports ['tavily']. */
@@ -47,10 +49,17 @@ export interface ResearchSource {
   provider: string;
 }
 
+export interface ResearchImage {
+  url: string;
+  description?: string;
+  provider: string;
+}
+
 export interface ResearchFindings {
   query: string;
   summary: string;
   sources: ResearchSource[];
+  images?: ResearchImage[];
   provider: string;
   depth: ResearchDepth;
   topic?: ResearchTopic;
@@ -62,6 +71,7 @@ export interface ResearchFindings {
   excludeDomains?: string[];
   exactMatch?: boolean;
   minScore?: number;
+  includeImages?: boolean;
   /** Unix ms when the search returned. */
   fetchedAt: number;
 }

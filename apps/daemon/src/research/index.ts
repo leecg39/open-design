@@ -52,6 +52,7 @@ export interface SearchResearchInput {
   excludeDomains?: string[];
   exactMatch?: boolean;
   minScore?: number;
+  includeImages?: boolean;
   maxSources?: number;
   providers?: string[];
   signal?: AbortSignal;
@@ -77,6 +78,7 @@ export async function searchResearch(
   const excludeDomains = normalizeResearchDomains(input.excludeDomains);
   const exactMatch = input.exactMatch === true;
   const minScore = normalizeMinScore(input.minScore);
+  const includeImages = input.includeImages === true;
   const requested = Array.isArray(input.providers) ? input.providers : [];
   const providers = requested.filter(
     (p: unknown): p is string => typeof p === 'string' && p.length > 0,
@@ -105,6 +107,7 @@ export async function searchResearch(
 
   let answer = '';
   let sources: ResearchSource[] = [];
+  let images: ResearchFindings['images'] = [];
   try {
     const out = await tavilySearch({
       apiKey: cfg.apiKey,
@@ -118,6 +121,7 @@ export async function searchResearch(
       ...(includeDomains.length ? { includeDomains } : {}),
       ...(excludeDomains.length ? { excludeDomains } : {}),
       ...(exactMatch ? { exactMatch } : {}),
+      ...(includeImages ? { includeImages } : {}),
       maxResults: maxSources,
       includeAnswer: depth === 'deep' ? 'advanced' : true,
       ...(depth === 'medium' ? { chunksPerSource: 2 } : {}),
@@ -130,6 +134,7 @@ export async function searchResearch(
       minScore == null
         ? out.sources
         : out.sources.filter((source) => (source.score ?? 0) >= minScore);
+    images = includeImages ? out.images : [];
   } catch (err) {
     const message =
       err instanceof TavilyError
@@ -146,6 +151,7 @@ export async function searchResearch(
     query,
     summary: answer || synthesizeFallbackSummary(sources),
     sources,
+    ...(images?.length ? { images } : {}),
     provider,
     depth,
     ...(topic ? { topic } : {}),
@@ -157,6 +163,7 @@ export async function searchResearch(
     ...(excludeDomains.length ? { excludeDomains } : {}),
     ...(exactMatch ? { exactMatch } : {}),
     ...(minScore != null ? { minScore } : {}),
+    ...(includeImages ? { includeImages } : {}),
     fetchedAt: Date.now(),
   };
 }

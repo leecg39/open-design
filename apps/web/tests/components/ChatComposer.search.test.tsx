@@ -196,6 +196,40 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('expands /search image flags into visual research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --images AI dashboard visual references' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain('--depth shallow --include-images --max-sources 5');
+    expect(prompt).toContain('Research images: enabled.');
+    expect(prompt).toContain('Visual references section');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'AI dashboard visual references',
+        depth: 'shallow',
+        includeImages: true,
+      },
+    });
+  });
+
   it('expands /search exact date flags into research metadata', () => {
     const onSend = vi.fn();
 

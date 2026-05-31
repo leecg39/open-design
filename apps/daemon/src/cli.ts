@@ -77,6 +77,9 @@ const RESEARCH_SEARCH_BOOLEAN_FLAGS = new Set([
   'help',
   'h',
   'exact-match',
+  'include-images',
+  'images',
+  'visuals',
 ]);
 
 const SUBCOMMAND_MAP = {
@@ -207,7 +210,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--max-sources <n>] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
@@ -294,6 +297,10 @@ async function runResearchSearch(rawArgs) {
   const includeDomains = splitCommaListFlag(flags['include-domains']);
   const excludeDomains = splitCommaListFlag(flags['exclude-domains']);
   const exactMatch = flags['exact-match'] === true;
+  const includeImages =
+    flags['include-images'] === true ||
+    flags.images === true ||
+    flags.visuals === true;
   const url = `${daemonUrl.replace(/\/$/, '')}/api/research/search`;
   let resp;
   try {
@@ -312,6 +319,7 @@ async function runResearchSearch(rawArgs) {
         ...(excludeDomains.length ? { excludeDomains } : {}),
         ...(exactMatch ? { exactMatch } : {}),
         ...(Number.isFinite(minScore) ? { minScore } : {}),
+        ...(includeImages ? { includeImages } : {}),
         ...(Number.isFinite(maxSources) ? { maxSources } : {}),
       }),
     });
@@ -329,7 +337,7 @@ async function runResearchSearch(rawArgs) {
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--max-sources <n>] [--daemon-url <url>]
 
 Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
@@ -347,6 +355,7 @@ Flags:
   --exclude-domains  Optional comma-separated source domains to exclude.
   --exact-match      Require exact quoted phrases in returned results.
   --min-score    Optional relevance threshold from 0 to 1.
+  --include-images  Include visual reference images in the findings.
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }
