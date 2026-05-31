@@ -462,6 +462,30 @@ describe('research search', () => {
     await assertion;
   });
 
+  it('reports invalid Tavily JSON responses clearly', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+        new Response('not json', {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    );
+
+    await expect(
+      searchResearch({
+        projectRoot: await tempProjectRoot(),
+        query: 'Open Design invalid provider JSON',
+      }),
+    ).rejects.toMatchObject({
+      code: 'RESEARCH_PROVIDER_FAILED',
+      message: 'Tavily returned invalid JSON',
+      status: 502,
+    });
+  });
+
   it('normalizes direct Tavily maxResults to a positive integer', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(

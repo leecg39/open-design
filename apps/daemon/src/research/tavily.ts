@@ -190,7 +190,12 @@ export async function tavilySearch(
       resp.status,
     );
   }
-  const json = (await resp.json()) as TavilyRawResponse;
+  let json: TavilyRawResponse;
+  try {
+    json = (await resp.json()) as TavilyRawResponse;
+  } catch {
+    throw new TavilyError('Tavily returned invalid JSON');
+  }
   const answer = typeof json.answer === 'string' ? json.answer.trim() : '';
   const rawResults = Array.isArray(json.results) ? json.results : [];
   const images = normalizeTavilyImages(json.images);
