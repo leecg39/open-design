@@ -135,6 +135,49 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('expands quoted scalar /search flag values into research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: {
+        value:
+          '/search --depth="deep" --topic="news" --start-date="2026-05-01" --end-date="2026-05-31" --min-score="0.5" --max-sources="15" Open Design releases',
+      },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] =
+      onSend.mock.calls[0]!;
+    expect(prompt).toContain(
+      '--depth deep --topic news --start-date 2026-05-01 --end-date 2026-05-31 --min-score 0.5 --max-sources 15',
+    );
+    expect(prompt).toContain('Canonical query:\n\n```text\nOpen Design releases\n```');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Open Design releases',
+        depth: 'deep',
+        topic: 'news',
+        startDate: '2026-05-01',
+        endDate: '2026-05-31',
+        minScore: 0.5,
+        maxSources: 15,
+      },
+    });
+  });
+
   it('expands /search freshness flags into research metadata', () => {
     const onSend = vi.fn();
 

@@ -153,10 +153,13 @@ function parseSearchArgs(raw: string): {
     const token = tokens[cursor]!;
     const lower = token.toLowerCase();
     const nextToken = tokens[cursor + 1];
-    const next = tokens[cursor + 1]?.toLowerCase();
+    const nextValue = nextToken ? stripSearchWrappingQuotes(nextToken) : undefined;
+    const next = nextValue?.toLowerCase();
 
     if (lower.startsWith('--depth=')) {
-      const value = lower.slice('--depth='.length);
+      const value = stripSearchWrappingQuotes(
+        token.slice('--depth='.length),
+      ).toLowerCase();
       if (SEARCH_DEPTHS.has(value)) {
         depth = value as ResearchDepth;
       } else {
@@ -182,7 +185,9 @@ function parseSearchArgs(raw: string): {
       topic = 'finance';
       cursor += 1;
     } else if (lower.startsWith('--topic=')) {
-      const value = lower.slice('--topic='.length);
+      const value = stripSearchWrappingQuotes(
+        token.slice('--topic='.length),
+      ).toLowerCase();
       if (SEARCH_TOPICS.has(value)) {
         topic = value as ResearchTopic;
       } else {
@@ -228,7 +233,9 @@ function parseSearchArgs(raw: string): {
         cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
       }
     } else if (lower.startsWith('--time-range=')) {
-      const value = lower.slice('--time-range='.length);
+      const value = stripSearchWrappingQuotes(
+        token.slice('--time-range='.length),
+      ).toLowerCase();
       if (SEARCH_TIME_RANGES.has(value)) {
         timeRange = value as ResearchTimeRange;
       } else {
@@ -248,7 +255,7 @@ function parseSearchArgs(raw: string): {
         cursor += next && !next.startsWith('--') ? 2 : 1;
       }
     } else if (lower.startsWith('--start-date=')) {
-      const value = token.slice('--start-date='.length);
+      const value = stripSearchWrappingQuotes(token.slice('--start-date='.length));
       if (isSearchDate(value)) {
         startDate = value;
       } else {
@@ -256,15 +263,15 @@ function parseSearchArgs(raw: string): {
       }
       cursor += 1;
     } else if (lower === '--start-date') {
-      if (nextToken && isSearchDate(nextToken)) {
-        startDate = nextToken;
+      if (nextValue && isSearchDate(nextValue)) {
+        startDate = nextValue;
         cursor += 2;
       } else {
         warnings.push('Ignored invalid --start-date; expected YYYY-MM-DD.');
         cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
       }
     } else if (lower.startsWith('--end-date=')) {
-      const value = token.slice('--end-date='.length);
+      const value = stripSearchWrappingQuotes(token.slice('--end-date='.length));
       if (isSearchDate(value)) {
         endDate = value;
       } else {
@@ -272,8 +279,8 @@ function parseSearchArgs(raw: string): {
       }
       cursor += 1;
     } else if (lower === '--end-date') {
-      if (nextToken && isSearchDate(nextToken)) {
-        endDate = nextToken;
+      if (nextValue && isSearchDate(nextValue)) {
+        endDate = nextValue;
         cursor += 2;
       } else {
         warnings.push('Ignored invalid --end-date; expected YYYY-MM-DD.');
@@ -370,7 +377,9 @@ function parseSearchArgs(raw: string): {
       );
       cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
     } else if (lower.startsWith('--min-score=')) {
-      const value = parseSearchScore(token.slice('--min-score='.length));
+      const value = parseSearchScore(
+        stripSearchWrappingQuotes(token.slice('--min-score='.length)),
+      );
       if (value == null) {
         warnings.push(
           'Ignored invalid --min-score; expected a number from 0 to 1.',
@@ -387,7 +396,7 @@ function parseSearchArgs(raw: string): {
         cursor += 1;
         continue;
       }
-      const value = parseSearchScore(nextToken);
+      const value = parseSearchScore(nextValue ?? '');
       if (value == null) {
         warnings.push(
           'Ignored invalid --min-score; expected a number from 0 to 1.',
@@ -397,7 +406,9 @@ function parseSearchArgs(raw: string): {
       }
       cursor += 2;
     } else if (lower.startsWith('--max-sources=')) {
-      const parsed = parseSearchMaxSources(token.slice('--max-sources='.length));
+      const parsed = parseSearchMaxSources(
+        stripSearchWrappingQuotes(token.slice('--max-sources='.length)),
+      );
       if (parsed.value == null) {
         warnings.push(
           'Ignored invalid --max-sources; expected a positive number.',
@@ -419,7 +430,7 @@ function parseSearchArgs(raw: string): {
         cursor += 1;
         continue;
       }
-      const parsed = parseSearchMaxSources(nextToken);
+      const parsed = parseSearchMaxSources(nextValue ?? '');
       if (parsed.value == null) {
         warnings.push(
           'Ignored invalid --max-sources; expected a positive number.',
