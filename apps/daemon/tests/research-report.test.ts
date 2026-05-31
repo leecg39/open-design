@@ -256,6 +256,27 @@ describe('research report helpers', () => {
     expect(report).toContain('- Query: Market scan \\#\\# Injected Heading');
   });
 
+  it('keeps reports writable when fetchedAt is outside the Date range', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Timestamp safety',
+      summary: 'Invalid timestamps should not block report writing.',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: 1e100,
+      sources: [
+        {
+          title: 'Source',
+          url: 'https://example.com/source',
+          snippet: 'Evidence.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain('- Fetched: unknown');
+    expect(report).toContain('Invalid timestamps should not block report writing.');
+  });
+
   it('renders source-level visual evidence with source citations', () => {
     const report = buildResearchMarkdownReport({
       query: 'Visual evidence',

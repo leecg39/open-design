@@ -76,9 +76,7 @@ export async function writeAvailableResearchReportFile(
 }
 
 export function buildResearchMarkdownReport(findings: ResearchFindings): string {
-  const fetchedAt = Number.isFinite(findings.fetchedAt)
-    ? new Date(findings.fetchedAt).toISOString()
-    : 'unknown';
+  const fetchedAt = formatFetchedAt(findings.fetchedAt);
   const query = escapeMarkdownText(findings.query);
   const summary = findings.summary
     ? escapeMarkdownText(findings.summary)
@@ -307,6 +305,15 @@ function renderImage(image: NonNullable<ResearchFindings['images']>[number]): st
 
 function renderMetadataList(values: string[]): string {
   return values.map((value) => escapeMarkdownText(value)).join(', ');
+}
+
+function formatFetchedAt(value: number): string {
+  if (!Number.isFinite(value)) return 'unknown';
+  try {
+    return new Date(value).toISOString();
+  } catch {
+    return 'unknown';
+  }
 }
 
 function markdownLinkDestination(url: string): string {
