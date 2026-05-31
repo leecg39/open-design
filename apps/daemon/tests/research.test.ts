@@ -1375,6 +1375,7 @@ describe('research search', () => {
       includeDomains: [
         ' Example.com ',
         'https://Docs.Example.com/platform?utm=1',
+        '*.com',
         'example.com:443',
         ' ',
         '"OpenAI.com"',
@@ -1393,6 +1394,7 @@ describe('research search', () => {
     expect(body.include_domains).toEqual([
       'example.com',
       'docs.example.com',
+      '*.com',
       'openai.com',
     ]);
     expect(body.exclude_domains).toEqual(['news.example.com']);
@@ -2411,6 +2413,7 @@ describe('research search', () => {
       includeDomains: [
         '"OpenAI.com"',
         'https://docs.openai.com/platform',
+        '*.com',
         'not a domain',
         'openai.com',
       ],
@@ -2418,7 +2421,7 @@ describe('research search', () => {
     });
 
     expect(findings).toMatchObject({
-      includeDomains: ['openai.com', 'docs.openai.com'],
+      includeDomains: ['openai.com', 'docs.openai.com', '*.com'],
       excludeDomains: ['reddit.com'],
       warnings: [
         'Ignored invalid, duplicate, or excess includeDomains entries.',
@@ -2429,7 +2432,7 @@ describe('research search', () => {
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );
     expect(body).toMatchObject({
-      include_domains: ['openai.com', 'docs.openai.com'],
+      include_domains: ['openai.com', 'docs.openai.com', '*.com'],
       exclude_domains: ['reddit.com'],
     });
   });

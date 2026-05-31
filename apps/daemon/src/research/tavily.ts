@@ -27,7 +27,7 @@ const TAVILY_INCLUDE_DOMAIN_FILTER_LIMIT = 300;
 const TAVILY_EXCLUDE_DOMAIN_FILTER_LIMIT = 150;
 const TAVILY_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TAVILY_DOMAIN_RE =
-  /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+  /^(?:(?:\*\.(?:[a-z]{2,}|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}))|(?:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}))$/;
 const TAVILY_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
 const TAVILY_SEARCH_DEPTHS = new Set([
   'advanced',
