@@ -43,6 +43,9 @@ describe('research report helpers', () => {
     expect(() => resolveResearchReportPath(root, '/tmp/report.md')).toThrow(
       'report path must be project-relative',
     );
+    expect(() => resolveResearchReportPath(root, 'C:\\temp\\report.md')).toThrow(
+      'report path must be project-relative',
+    );
   });
 
   it('rejects explicit report paths that look like directories', () => {

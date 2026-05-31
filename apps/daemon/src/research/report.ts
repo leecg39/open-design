@@ -28,7 +28,7 @@ export function resolveResearchReportPath(
   if (normalized.endsWith('/')) {
     throw new Error('report path must include a file name');
   }
-  if (path.isAbsolute(normalized)) {
+  if (path.isAbsolute(normalized) || path.win32.isAbsolute(normalized)) {
     throw new Error('report path must be project-relative');
   }
   const rawParts = normalized.split('/').filter(Boolean);
