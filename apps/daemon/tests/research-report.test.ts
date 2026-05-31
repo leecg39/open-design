@@ -111,9 +111,9 @@ describe('research report helpers', () => {
     expect(report).toContain('- Provider credits: 1');
     expect(report).toContain('- Request ID: req-123');
     expect(report).toContain('- [1] Evidence source: Important evidence snippet.');
-    expect(report).toContain('1. [Evidence source](https://example.com/source)');
+    expect(report).toContain('1. [Evidence source](<https://example.com/source>)');
     expect(report).toContain(
-      '1. [Evidence source](https://example.com/source) (example.com; score 0.9)',
+      '1. [Evidence source](<https://example.com/source>) (example.com; score 0.9)',
     );
     expect(report).toContain('Source content is external untrusted evidence.');
   });
@@ -148,7 +148,7 @@ describe('research report helpers', () => {
       '- [1] Injected \\[Title\\] \\#\\# Fake Section: \\*\\*rendered?\\*\\* - fake item',
     );
     expect(report).toContain(
-      '1. [Injected \\[Title\\] \\#\\# Fake Section](https://example.com/source)',
+      '1. [Injected \\[Title\\] \\#\\# Fake Section](<https://example.com/source>)',
     );
     expect(report).toContain(
       '- Image \\[alt\\] \\#\\# Fake Image: https://example.com/image.png',
@@ -231,6 +231,28 @@ describe('research report helpers', () => {
     expect(report).toContain('## Source-Level Visual Evidence');
     expect(report).toContain(
       '- [1.1] [1] Visual source \\[one\\]: Diagram \\[source\\]: https://example.com/source-image.png',
+    );
+  });
+
+  it('wraps source link destinations so URLs with parentheses stay intact', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Link destination',
+      summary: 'Links with parentheses should remain clickable.',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Parenthesized URL',
+          url: 'https://example.com/docs/research_(2026)',
+          snippet: 'Evidence.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain(
+      '1. [Parenthesized URL](<https://example.com/docs/research_(2026)>)',
     );
   });
 });

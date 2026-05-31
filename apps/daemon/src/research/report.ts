@@ -191,7 +191,7 @@ function renderSources(sources: ResearchSource[]): string[] {
       source.rawContentTruncated ? 'raw excerpt truncated' : '',
     ].filter(Boolean);
     const suffix = details.length ? ` (${details.join('; ')})` : '';
-    return `${index + 1}. [${title}](${source.url})${suffix}`;
+    return `${index + 1}. [${title}](${markdownLinkDestination(source.url)})${suffix}`;
   });
 }
 
@@ -235,6 +235,10 @@ function renderImage(image: NonNullable<ResearchFindings['images']>[number]): st
     ? `${escapeMarkdownText(image.description)}: `
     : '';
   return `- ${description}${image.url}`;
+}
+
+function markdownLinkDestination(url: string): string {
+  return `<${url.replace(/>/g, '%3E')}>`;
 }
 
 function clip(value: string, maxLength: number): string {
