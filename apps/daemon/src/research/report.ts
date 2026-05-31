@@ -1,3 +1,4 @@
+import { access } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { ResearchFindings, ResearchSource } from '@open-design/contracts/api/research';
@@ -35,6 +36,28 @@ export function resolveResearchReportPath(
     throw new Error('report path must stay inside the project');
   }
   return { absolutePath, relativePath };
+}
+
+export async function resolveAvailableResearchReportPath(
+  cwd: string,
+  requestedPath: string,
+): Promise<{ absolutePath: string; relativePath: string }> {
+  const first = resolveResearchReportPath(cwd, requestedPath);
+  if (!(await pathExists(first.absolutePath))) {
+    return first;
+  }
+
+  const extension = path.extname(first.relativePath);
+  const stem = extension
+    ? first.relativePath.slice(0, -extension.length)
+    : first.relativePath;
+  for (let index = 2; index <= 1000; index += 1) {
+    const candidate = resolveResearchReportPath(cwd, `${stem}-${index}${extension}`);
+    if (!(await pathExists(candidate.absolutePath))) {
+      return candidate;
+    }
+  }
+  throw new Error('could not find an available research report path');
 }
 
 export function buildResearchMarkdownReport(findings: ResearchFindings): string {
@@ -113,6 +136,15 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     '',
   ];
   return `${lines.join('\n')}`;
+}
+
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function slugifyResearchQuery(query: string): string {

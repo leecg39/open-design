@@ -13,6 +13,7 @@ import {
 import {
   buildResearchMarkdownReport,
   defaultResearchReportPath,
+  resolveAvailableResearchReportPath,
   resolveResearchReportPath,
 } from './research/report.js';
 
@@ -372,7 +373,10 @@ async function runResearchSearch(rawArgs) {
         typeof flags.report === 'string' && flags.report.trim()
           ? flags.report.trim()
           : defaultResearchReportPath(findings.query || query);
-      const report = resolveResearchReportPath(process.cwd(), requestedReportPath);
+      const report =
+        typeof flags.report === 'string' && flags.report.trim()
+          ? resolveResearchReportPath(process.cwd(), requestedReportPath)
+          : await resolveAvailableResearchReportPath(process.cwd(), requestedReportPath);
       await mkdir(path.dirname(report.absolutePath), { recursive: true });
       await writeFile(report.absolutePath, buildResearchMarkdownReport(findings), 'utf8');
       process.stdout.write(`${JSON.stringify({ ...findings, reportPath: report.relativePath })}\n`);
@@ -410,7 +414,7 @@ Flags:
   --include-raw-content  Include bounded page content evidence (aliases: --raw-content, --raw).
   --auto-parameters  Let the provider tune supported parameters (aliases: --auto).
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
-  --save-report  Save a Markdown report under research/<safe-query-slug>.md.
+  --save-report  Save a Markdown report under research/<safe-query-slug>.md, or the next available suffixed path.
   --report       Save the Markdown report to an explicit project-relative path.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }

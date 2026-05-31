@@ -1,3 +1,5 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -5,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildResearchMarkdownReport,
   defaultResearchReportPath,
+  resolveAvailableResearchReportPath,
   resolveResearchReportPath,
 } from '../src/research/report.js';
 
@@ -32,6 +35,23 @@ describe('research report helpers', () => {
     expect(() => resolveResearchReportPath(root, '/tmp/report.md')).toThrow(
       'report path must be project-relative',
     );
+  });
+
+  it('keeps automatic report paths from overwriting existing reports', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'open-design-research-report-'));
+    try {
+      await mkdir(path.join(root, 'research'), { recursive: true });
+      await writeFile(path.join(root, 'research/open-design.md'), 'existing report', 'utf8');
+
+      await expect(
+        resolveAvailableResearchReportPath(root, 'research/open-design.md'),
+      ).resolves.toEqual({
+        absolutePath: path.join(root, 'research/open-design-2.md'),
+        relativePath: 'research/open-design-2.md',
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it('renders warnings and provider diagnostics before source evidence', () => {
