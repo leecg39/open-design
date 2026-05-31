@@ -91,6 +91,37 @@ describe('research search', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('bounds long direct Tavily queries before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Bounded direct query summary.',
+          results: [
+            {
+              title: 'Bounded direct query source',
+              url: 'https://example.com/bounded-direct-query',
+              content: 'Direct helper query text should be bounded.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const longQuery = ` ${'Open Design '.repeat(120)} `;
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: longQuery,
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body.query).toHaveLength(1000);
+    expect(body.query).toBe(longQuery.trim().slice(0, 1000));
+  });
+
   it('warns when long queries are truncated before provider search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

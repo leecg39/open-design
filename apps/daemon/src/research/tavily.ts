@@ -9,6 +9,7 @@ import type {
 
 const DEFAULT_BASE_URL = 'https://api.tavily.com';
 const DEFAULT_TIMEOUT_MS = 30_000;
+const TAVILY_QUERY_LIMIT = 1000;
 const TAVILY_MAX_RESULTS_LIMIT = 20;
 const TAVILY_SOURCE_TITLE_LIMIT = 300;
 const TAVILY_SOURCE_SNIPPET_LIMIT = 800;
@@ -97,7 +98,7 @@ export async function tavilySearch(
   if (!apiKey) {
     throw new TavilyError('Tavily API key is not configured');
   }
-  const query = input.query.trim();
+  const query = input.query.trim().slice(0, TAVILY_QUERY_LIMIT);
   if (!query) {
     throw new TavilyError('Tavily query is required');
   }
