@@ -64,13 +64,14 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
   const fetchedAt = Number.isFinite(findings.fetchedAt)
     ? new Date(findings.fetchedAt).toISOString()
     : 'unknown';
+  const query = escapeMarkdownText(findings.query);
   const rawEvidence = renderRawEvidence(findings.sources);
   const lines = [
-    `# Research: ${findings.query}`,
+    `# Research: ${query}`,
     '',
     '## Metadata',
     '',
-    `- Query: ${findings.query}`,
+    `- Query: ${query}`,
     `- Fetched: ${fetchedAt}`,
     `- Provider: ${findings.provider}`,
     `- Depth: ${findings.depth}`,

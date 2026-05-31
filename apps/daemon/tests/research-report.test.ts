@@ -176,4 +176,26 @@ describe('research report helpers', () => {
       '- [1] Primary source (truncated excerpt): Full page excerpt with \\*\\*markdown\\*\\* and \\#\\# headings.',
     );
   });
+
+  it('keeps the report query from changing markdown structure', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Market scan\n## Injected Heading',
+      summary: 'Query text should stay in title and metadata fields.',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Source',
+          url: 'https://example.com/source',
+          snippet: 'Evidence.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).not.toContain('\n## Injected Heading');
+    expect(report).toContain('# Research: Market scan \\#\\# Injected Heading');
+    expect(report).toContain('- Query: Market scan \\#\\# Injected Heading');
+  });
 });
