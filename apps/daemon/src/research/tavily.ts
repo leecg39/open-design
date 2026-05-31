@@ -164,9 +164,11 @@ export async function tavilySearch(
       : undefined;
   const responseTime = normalizeNonNegativeNumber(json.response_time);
   const sources: ResearchSource[] = [];
+  const seenSourceUrls = new Set<string>();
   for (const r of rawResults as TavilyRawResult[]) {
-    const url = typeof r.url === 'string' ? r.url : '';
-    if (!url) continue;
+    const url = normalizeSourceUrl(r.url);
+    if (!url || seenSourceUrls.has(url)) continue;
+    seenSourceUrls.add(url);
     const publishedAt =
       typeof r.published_date === 'string' && r.published_date.trim()
         ? r.published_date.trim()
@@ -240,6 +242,22 @@ function normalizeTavilyUsage(value: unknown): ResearchUsage | undefined {
   const record = value as Record<string, unknown>;
   const credits = normalizeNonNegativeNumber(record.credits);
   return credits == null ? undefined : { credits };
+}
+
+function normalizeSourceUrl(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const text = value.trim();
+  if (!text) return undefined;
+  try {
+    const url = new URL(text);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return undefined;
+    }
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return undefined;
+  }
 }
 
 function normalizeNonNegativeNumber(value: unknown): number | undefined {

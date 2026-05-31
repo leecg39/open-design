@@ -103,6 +103,61 @@ describe('research search', () => {
     });
   });
 
+  it('drops duplicate and non-web source URLs before citation output', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Deduped source summary.',
+          results: [
+            {
+              title: 'Primary source',
+              url: 'https://example.com/source#section-a',
+              content: 'Primary source content.',
+            },
+            {
+              title: 'Duplicate anchor',
+              url: 'https://example.com/source#section-b',
+              content: 'Duplicate source content.',
+            },
+            {
+              title: 'Unsafe source',
+              url: 'javascript:alert(1)',
+              content: 'Unsafe source content.',
+            },
+            {
+              title: 'Second source',
+              url: 'http://example.org/report',
+              content: 'Second source content.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design source quality',
+    });
+
+    expect(findings.sources).toEqual([
+      {
+        title: 'Primary source',
+        url: 'https://example.com/source',
+        snippet: 'Primary source content.',
+        provider: 'tavily',
+      },
+      {
+        title: 'Second source',
+        url: 'http://example.org/report',
+        snippet: 'Second source content.',
+        provider: 'tavily',
+      },
+    ]);
+  });
+
   it('maps medium and deep depth requests to advanced Tavily search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
