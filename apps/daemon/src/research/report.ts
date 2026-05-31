@@ -45,6 +45,9 @@ export function resolveResearchReportPath(
   if (hasWindowsTrailingReportPathSegment(parts)) {
     throw new Error('report path segments cannot end with a dot or space');
   }
+  if (hasWindowsReservedReportDirectoryName(parts.slice(0, -1))) {
+    throw new Error('report directory name is reserved on Windows');
+  }
   if (hasWindowsReservedReportFileName(parts[parts.length - 1] ?? '')) {
     throw new Error('report file name is reserved on Windows');
   }
@@ -285,7 +288,15 @@ function hasWindowsTrailingReportPathSegment(parts: string[]): boolean {
   return parts.some((part) => /[. ]$/u.test(part));
 }
 
+function hasWindowsReservedReportDirectoryName(parts: string[]): boolean {
+  return parts.some((part) => hasWindowsReservedReportBaseName(part));
+}
+
 function hasWindowsReservedReportFileName(fileName: string): boolean {
+  return hasWindowsReservedReportBaseName(fileName);
+}
+
+function hasWindowsReservedReportBaseName(fileName: string): boolean {
   const extension = path.posix.extname(fileName);
   const basename = (extension ? fileName.slice(0, -extension.length) : fileName)
     .replace(/[. ]+$/g, '')

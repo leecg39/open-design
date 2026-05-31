@@ -70,6 +70,17 @@ describe('research report helpers', () => {
     );
   });
 
+  it('rejects explicit report paths with Windows reserved directory names', () => {
+    const root = path.resolve('/tmp/open-design-project');
+
+    expect(() => resolveResearchReportPath(root, 'CON/report.md')).toThrow(
+      'report directory name is reserved on Windows',
+    );
+    expect(() => resolveResearchReportPath(root, 'research/LPT1/report.md')).toThrow(
+      'report directory name is reserved on Windows',
+    );
+  });
+
   it('rejects explicit report paths with Windows-invalid characters', () => {
     const root = path.resolve('/tmp/open-design-project');
 
