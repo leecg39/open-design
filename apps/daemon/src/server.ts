@@ -4719,15 +4719,11 @@ export async function startServer({
         includeDomains: req.body?.includeDomains,
         excludeDomains: req.body?.excludeDomains,
         exactMatch: req.body?.exactMatch === true,
-        minScore:
-          typeof req.body?.minScore === 'number' ? req.body.minScore : undefined,
+        minScore: req.body?.minScore,
         includeImages: req.body?.includeImages === true,
         includeRawContent: req.body?.includeRawContent === true,
         autoParameters: req.body?.autoParameters === true,
-        maxSources:
-          typeof req.body?.maxSources === 'number'
-            ? req.body.maxSources
-            : undefined,
+        maxSources: req.body?.maxSources,
         providers: Array.isArray(req.body?.providers)
           ? req.body.providers
           : undefined,

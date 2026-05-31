@@ -1,4 +1,5 @@
 import { mkdtemp, rm } from 'node:fs/promises';
+import type { Server as HttpServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -9,6 +10,7 @@ import { tavilySearch } from '../src/research/tavily.js';
 const TAVILY_ENV_KEYS = ['OD_TAVILY_API_KEY', 'TAVILY_API_KEY'];
 type FetchInput = Parameters<typeof fetch>[0];
 type FetchInit = Parameters<typeof fetch>[1];
+type StartedServer = { server: HttpServer; url: string };
 
 describe('research search', () => {
   const originalEnv = Object.fromEntries(
@@ -31,6 +33,12 @@ describe('research search', () => {
   async function tempProjectRoot() {
     projectRoot = await mkdtemp(path.join(tmpdir(), 'od-research-project-'));
     return projectRoot;
+  }
+
+  function closeServer(server: HttpServer): Promise<void> {
+    return new Promise((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+    });
   }
 
   it('requires a Tavily API key', async () => {
@@ -1169,6 +1177,67 @@ describe('research search', () => {
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );
     expect(body).toMatchObject({ max_results: 20 });
+  });
+
+  it('preserves invalid API numeric controls for daemon warnings', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const realFetch = globalThis.fetch;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'API warning summary.',
+          results: [
+            {
+              title: 'Deep result',
+              url: 'https://example.com/deep',
+              content: 'Depth default should survive invalid API controls.',
+              score: 0.73,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { startServer } = await import('../src/server.js');
+    const started = (await startServer({
+      port: 0,
+      returnServer: true,
+    })) as StartedServer;
+
+    try {
+      const response = await realFetch(`${started.url}/api/research/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: 'Open Design API validation',
+          depth: 'deep',
+          minScore: 'high',
+          maxSources: 'many',
+        }),
+      });
+      const findings = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(findings).toMatchObject({
+        depth: 'deep',
+        maxSources: 20,
+        warnings: [
+          'Ignored invalid minScore; expected a number from 0 to 1.',
+          'Ignored invalid maxSources; expected a positive number.',
+        ],
+      });
+      expect(findings).not.toHaveProperty('minScore');
+      const body = JSON.parse(
+        String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+      );
+      expect(body).toMatchObject({
+        search_depth: 'advanced',
+        max_results: 20,
+      });
+    } finally {
+      await closeServer(started.server);
+    }
   });
 
   it('explains when minScore filters all provider sources', async () => {

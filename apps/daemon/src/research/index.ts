@@ -52,11 +52,11 @@ export interface SearchResearchInput {
   includeDomains?: string[];
   excludeDomains?: string[];
   exactMatch?: boolean;
-  minScore?: number;
+  minScore?: unknown;
   includeImages?: boolean;
   includeRawContent?: boolean;
   autoParameters?: boolean;
-  maxSources?: number;
+  maxSources?: unknown;
   providers?: string[];
   signal?: AbortSignal;
 }
@@ -171,7 +171,8 @@ export async function searchResearch(
   );
   const provider = providers[0] ?? 'tavily';
   const maxSources = clampMaxSources(
-    input.maxSources ?? RESEARCH_DEFAULT_MAX_SOURCES[depth],
+    input.maxSources,
+    RESEARCH_DEFAULT_MAX_SOURCES[depth],
   );
   if (
     input.maxSources != null &&
@@ -432,9 +433,12 @@ function synthesizeFallbackSummary(sources: ResearchSource[]): string {
   return `(No provider summary; top snippets follow.)\n${lead}`;
 }
 
-function clampMaxSources(value: unknown): number {
+function clampMaxSources(
+  value: unknown,
+  fallback = RESEARCH_DEFAULT_MAX_SOURCES.shallow,
+): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-    return RESEARCH_DEFAULT_MAX_SOURCES.shallow;
+    return fallback;
   }
   return Math.max(1, Math.min(Math.floor(value), TAVILY_MAX_RESULTS_LIMIT));
 }
