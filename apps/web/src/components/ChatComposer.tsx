@@ -147,7 +147,7 @@ function parseSearchArgs(raw: string): {
   const warnings: string[] = [];
   const includeDomains: string[] = [];
   const excludeDomains: string[] = [];
-  const tokens = input.split(/\s+/);
+  const tokens = tokenizeSearchArgs(input);
   let cursor = 0;
   while (cursor < tokens.length) {
     const token = tokens[cursor]!;
@@ -504,6 +504,34 @@ function parseSearchArgs(raw: string): {
     ...(warnings.length ? { warnings } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
+}
+
+function tokenizeSearchArgs(input: string): string[] {
+  const tokens: string[] = [];
+  let current = '';
+  let quote: '"' | "'" | undefined;
+  for (const char of input.trim()) {
+    if (quote) {
+      current += char;
+      if (char === quote) quote = undefined;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      current += char;
+      continue;
+    }
+    if (/\s/.test(char)) {
+      if (current) {
+        tokens.push(current);
+        current = '';
+      }
+      continue;
+    }
+    current += char;
+  }
+  if (current) tokens.push(current);
+  return tokens;
 }
 
 function normalizeSearchCountry(value: string): string | undefined {
