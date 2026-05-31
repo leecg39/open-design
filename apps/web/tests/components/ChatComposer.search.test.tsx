@@ -536,6 +536,63 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('ignores invalid /search filter flags without leaking them into the query', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: {
+        value:
+          '/search --depth broad --topic blogs --time-range decade --start-date soon --include-domains localhost Open Design filter controls',
+      },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain(
+      'POSIX: "$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --depth shallow --max-sources 5',
+    );
+    expect(prompt).toContain(
+      'Research parser warning: Ignored invalid --depth; expected shallow, medium, or deep.',
+    );
+    expect(prompt).toContain(
+      'Research parser warning: Ignored invalid --topic; expected general, news, or finance.',
+    );
+    expect(prompt).toContain(
+      'Research parser warning: Ignored invalid --time-range; expected day, week, month, or year.',
+    );
+    expect(prompt).toContain(
+      'Research parser warning: Ignored invalid --start-date; expected YYYY-MM-DD.',
+    );
+    expect(prompt).toContain(
+      'Research parser warning: Ignored invalid --include-domains value.',
+    );
+    expect(prompt).toContain('Open Design filter controls');
+    expect(prompt).not.toContain('--depth broad');
+    expect(prompt).not.toContain('--topic blogs');
+    expect(prompt).not.toContain('--time-range decade');
+    expect(prompt).not.toContain('--start-date soon');
+    expect(prompt).not.toContain('--include-domains localhost');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Open Design filter controls',
+        depth: 'shallow',
+      },
+    });
+  });
+
   it('does not send research metadata for normal prompts', () => {
     const onSend = vi.fn();
 

@@ -150,12 +150,24 @@ function parseSearchArgs(raw: string): {
 
     if (lower.startsWith('--depth=')) {
       const value = lower.slice('--depth='.length);
-      if (!SEARCH_DEPTHS.has(value)) break;
-      depth = value as ResearchDepth;
+      if (SEARCH_DEPTHS.has(value)) {
+        depth = value as ResearchDepth;
+      } else {
+        warnings.push(
+          'Ignored invalid --depth; expected shallow, medium, or deep.',
+        );
+      }
       cursor += 1;
-    } else if (lower === '--depth' && next && SEARCH_DEPTHS.has(next)) {
-      depth = next as ResearchDepth;
-      cursor += 2;
+    } else if (lower === '--depth') {
+      if (next && SEARCH_DEPTHS.has(next)) {
+        depth = next as ResearchDepth;
+        cursor += 2;
+      } else {
+        warnings.push(
+          'Ignored invalid --depth; expected shallow, medium, or deep.',
+        );
+        cursor += next && !next.startsWith('--') ? 2 : 1;
+      }
     } else if (lower === '--news') {
       topic = 'news';
       cursor += 1;
@@ -164,12 +176,24 @@ function parseSearchArgs(raw: string): {
       cursor += 1;
     } else if (lower.startsWith('--topic=')) {
       const value = lower.slice('--topic='.length);
-      if (!SEARCH_TOPICS.has(value)) break;
-      topic = value as ResearchTopic;
+      if (SEARCH_TOPICS.has(value)) {
+        topic = value as ResearchTopic;
+      } else {
+        warnings.push(
+          'Ignored invalid --topic; expected general, news, or finance.',
+        );
+      }
       cursor += 1;
-    } else if (lower === '--topic' && next && SEARCH_TOPICS.has(next)) {
-      topic = next as ResearchTopic;
-      cursor += 2;
+    } else if (lower === '--topic') {
+      if (next && SEARCH_TOPICS.has(next)) {
+        topic = next as ResearchTopic;
+        cursor += 2;
+      } else {
+        warnings.push(
+          'Ignored invalid --topic; expected general, news, or finance.',
+        );
+        cursor += next && !next.startsWith('--') ? 2 : 1;
+      }
     } else if (lower === '--kr') {
       country = 'south korea';
       cursor += 1;
@@ -181,74 +205,116 @@ function parseSearchArgs(raw: string): {
       cursor += 1;
     } else if (lower.startsWith('--country=')) {
       const value = normalizeSearchCountry(token.slice('--country='.length));
-      if (!value) break;
-      country = value;
+      if (value) {
+        country = value;
+      } else {
+        warnings.push('Ignored invalid --country value.');
+      }
       cursor += 1;
-    } else if (lower === '--country' && nextToken) {
-      const value = normalizeSearchCountry(nextToken);
-      if (!value) break;
-      country = value;
-      cursor += 2;
+    } else if (lower === '--country') {
+      const value =
+        nextToken && !nextToken.startsWith('--')
+          ? normalizeSearchCountry(nextToken)
+          : undefined;
+      if (value) {
+        country = value;
+        cursor += 2;
+      } else {
+        warnings.push('Ignored invalid --country value.');
+        cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
+      }
     } else if (lower.startsWith('--time-range=')) {
       const value = lower.slice('--time-range='.length);
-      if (!SEARCH_TIME_RANGES.has(value)) break;
-      timeRange = value as ResearchTimeRange;
+      if (SEARCH_TIME_RANGES.has(value)) {
+        timeRange = value as ResearchTimeRange;
+      } else {
+        warnings.push(
+          'Ignored invalid --time-range; expected day, week, month, or year.',
+        );
+      }
       cursor += 1;
-    } else if (
-      lower === '--time-range' &&
-      next &&
-      SEARCH_TIME_RANGES.has(next)
-    ) {
-      timeRange = next as ResearchTimeRange;
-      cursor += 2;
+    } else if (lower === '--time-range') {
+      if (next && SEARCH_TIME_RANGES.has(next)) {
+        timeRange = next as ResearchTimeRange;
+        cursor += 2;
+      } else {
+        warnings.push(
+          'Ignored invalid --time-range; expected day, week, month, or year.',
+        );
+        cursor += next && !next.startsWith('--') ? 2 : 1;
+      }
     } else if (lower.startsWith('--start-date=')) {
       const value = token.slice('--start-date='.length);
-      if (!isSearchDate(value)) break;
-      startDate = value;
+      if (isSearchDate(value)) {
+        startDate = value;
+      } else {
+        warnings.push('Ignored invalid --start-date; expected YYYY-MM-DD.');
+      }
       cursor += 1;
-    } else if (
-      lower === '--start-date' &&
-      nextToken &&
-      isSearchDate(nextToken)
-    ) {
-      startDate = nextToken;
-      cursor += 2;
+    } else if (lower === '--start-date') {
+      if (nextToken && isSearchDate(nextToken)) {
+        startDate = nextToken;
+        cursor += 2;
+      } else {
+        warnings.push('Ignored invalid --start-date; expected YYYY-MM-DD.');
+        cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
+      }
     } else if (lower.startsWith('--end-date=')) {
       const value = token.slice('--end-date='.length);
-      if (!isSearchDate(value)) break;
-      endDate = value;
+      if (isSearchDate(value)) {
+        endDate = value;
+      } else {
+        warnings.push('Ignored invalid --end-date; expected YYYY-MM-DD.');
+      }
       cursor += 1;
-    } else if (
-      lower === '--end-date' &&
-      nextToken &&
-      isSearchDate(nextToken)
-    ) {
-      endDate = nextToken;
-      cursor += 2;
+    } else if (lower === '--end-date') {
+      if (nextToken && isSearchDate(nextToken)) {
+        endDate = nextToken;
+        cursor += 2;
+      } else {
+        warnings.push('Ignored invalid --end-date; expected YYYY-MM-DD.');
+        cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
+      }
     } else if (lower.startsWith('--include-domains=')) {
       const values = parseSearchDomains(token.slice('--include-domains='.length));
-      if (values.length === 0) break;
-      includeDomains.push(...values);
+      if (values.length) {
+        includeDomains.push(...values);
+      } else {
+        warnings.push('Ignored invalid --include-domains value.');
+      }
       cursor += 1;
-    } else if (
-      lower === '--include-domains' &&
-      nextToken &&
-      parseSearchDomains(nextToken).length > 0
-    ) {
-      includeDomains.push(...parseSearchDomains(nextToken));
-      cursor += 2;
+    } else if (lower === '--include-domains') {
+      const values =
+        nextToken && !nextToken.startsWith('--')
+          ? parseSearchDomains(nextToken)
+          : [];
+      if (values.length) {
+        includeDomains.push(...values);
+        cursor += 2;
+      } else {
+        warnings.push('Ignored invalid --include-domains value.');
+        cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
+      }
     } else if (lower.startsWith('--exclude-domains=')) {
       const values = parseSearchDomains(token.slice('--exclude-domains='.length));
-      if (values.length === 0) break;
-      excludeDomains.push(...values);
+      if (values.length) {
+        excludeDomains.push(...values);
+      } else {
+        warnings.push('Ignored invalid --exclude-domains value.');
+      }
       cursor += 1;
-    } else if (
-      lower === '--exclude-domains' &&
-      nextToken &&
-      parseSearchDomains(nextToken).length > 0
-    ) {
-      excludeDomains.push(...parseSearchDomains(nextToken));
-      cursor += 2;
+    } else if (lower === '--exclude-domains') {
+      const values =
+        nextToken && !nextToken.startsWith('--')
+          ? parseSearchDomains(nextToken)
+          : [];
+      if (values.length) {
+        excludeDomains.push(...values);
+        cursor += 2;
+      } else {
+        warnings.push('Ignored invalid --exclude-domains value.');
+        cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
+      }
     } else if (lower === '--exact-match') {
       exactMatch = true;
       cursor += 1;
