@@ -14,6 +14,7 @@ export interface TavilySearchInput {
   query: string;
   searchDepth?: 'basic' | 'advanced';
   topic?: ResearchTopic;
+  country?: string;
   timeRange?: ResearchTimeRange;
   startDate?: string;
   endDate?: string;
@@ -75,6 +76,7 @@ export async function tavilySearch(
     query: input.query,
     search_depth: input.searchDepth ?? 'basic',
     ...(input.topic ? { topic: input.topic } : {}),
+    ...(input.country ? { country: input.country } : {}),
     ...(input.timeRange ? { time_range: input.timeRange } : {}),
     ...(input.startDate ? { start_date: input.startDate } : {}),
     ...(input.endDate ? { end_date: input.endDate } : {}),

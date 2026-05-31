@@ -63,6 +63,7 @@ const RESEARCH_SEARCH_STRING_FLAGS = new Set([
   'query',
   'depth',
   'topic',
+  'country',
   'time-range',
   'start-date',
   'end-date',
@@ -206,7 +207,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--max-sources <n>] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
@@ -282,6 +283,8 @@ async function runResearchSearch(rawArgs) {
     flags['min-score'] == null ? undefined : Number(flags['min-score']);
   const depth = typeof flags.depth === 'string' ? flags.depth.trim() : '';
   const topic = typeof flags.topic === 'string' ? flags.topic.trim() : '';
+  const country =
+    typeof flags.country === 'string' ? flags.country.trim() : '';
   const timeRange =
     typeof flags['time-range'] === 'string' ? flags['time-range'].trim() : '';
   const startDate =
@@ -301,6 +304,7 @@ async function runResearchSearch(rawArgs) {
         query,
         ...(depth ? { depth } : {}),
         ...(topic ? { topic } : {}),
+        ...(country ? { country } : {}),
         ...(timeRange ? { timeRange } : {}),
         ...(startDate ? { startDate } : {}),
         ...(endDate ? { endDate } : {}),
@@ -325,7 +329,7 @@ async function runResearchSearch(rawArgs) {
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--max-sources <n>] [--daemon-url <url>]
 
 Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
@@ -335,6 +339,7 @@ Flags:
   --query        Required search query.
   --depth        Optional research depth. Defaults to shallow.
   --topic        Optional source category.
+  --country      Optional country boost for general-topic searches.
   --time-range   Optional recency filter.
   --start-date   Optional exact lower date bound in YYYY-MM-DD format.
   --end-date     Optional exact upper date bound in YYYY-MM-DD format.

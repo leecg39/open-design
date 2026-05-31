@@ -7,6 +7,19 @@ const RESEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
 const RESEARCH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const RESEARCH_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+const RESEARCH_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
+const RESEARCH_COUNTRY_ALIASES: Record<string, string> = {
+  korea: 'south korea',
+  kr: 'south korea',
+  'south-korea': 'south korea',
+  'south_korea': 'south korea',
+  us: 'united states',
+  usa: 'united states',
+  'u.s.': 'united states',
+  'u.s.a.': 'united states',
+  uk: 'united kingdom',
+  'u.k.': 'united kingdom',
+};
 const DEFAULT_MAX_SOURCES_BY_DEPTH = {
   shallow: 5,
   medium: 12,
@@ -18,6 +31,7 @@ export interface ResearchCommandContractOptions {
   maxSources?: number;
   depth?: string;
   topic?: string;
+  country?: string;
   timeRange?: string;
   startDate?: string;
   endDate?: string;
@@ -32,6 +46,10 @@ export function renderResearchCommandContract(
 ): string {
   const depth = normalizeDepth(options.depth);
   const topic = normalizeTopic(options.topic);
+  const country =
+    topic === 'news' || topic === 'finance'
+      ? undefined
+      : normalizeCountry(options.country);
   const timeRange = normalizeTimeRange(options.timeRange);
   const startDate = normalizeDate(options.startDate);
   const endDate = normalizeDate(options.endDate);
@@ -42,6 +60,7 @@ export function renderResearchCommandContract(
   const commandSuffix = [
     `--depth ${depth}`,
     ...(topic ? [`--topic ${topic}`] : []),
+    ...(country ? [`--country ${country.replace(/\s+/g, '-')}`] : []),
     ...(timeRange ? [`--time-range ${timeRange}`] : []),
     ...(startDate ? [`--start-date ${startDate}`] : []),
     ...(endDate ? [`--end-date ${endDate}`] : []),
@@ -120,6 +139,14 @@ function normalizeTopic(value: unknown): 'general' | 'news' | 'finance' | undefi
   return typeof value === 'string' && RESEARCH_TOPICS.has(value)
     ? (value as 'general' | 'news' | 'finance')
     : undefined;
+}
+
+function normalizeCountry(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const key = value.trim().toLowerCase();
+  const alias = RESEARCH_COUNTRY_ALIASES[key];
+  const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  return RESEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
 }
 
 function normalizeTimeRange(

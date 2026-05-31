@@ -89,13 +89,27 @@ const SEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const SEARCH_TOPICS = new Set(['general', 'news', 'finance']);
 const SEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
 const SEARCH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const SEARCH_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
 const SEARCH_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+const SEARCH_COUNTRY_ALIASES: Record<string, string> = {
+  korea: 'south korea',
+  kr: 'south korea',
+  'south-korea': 'south korea',
+  'south_korea': 'south korea',
+  us: 'united states',
+  usa: 'united states',
+  'u.s.': 'united states',
+  'u.s.a.': 'united states',
+  uk: 'united kingdom',
+  'u.k.': 'united kingdom',
+};
 
 function parseSearchArgs(raw: string): {
   query: string;
   depth: ResearchDepth;
   topic?: ResearchTopic;
+  country?: string;
   timeRange?: ResearchTimeRange;
   startDate?: string;
   endDate?: string;
@@ -108,6 +122,7 @@ function parseSearchArgs(raw: string): {
   if (!input) return { query: '', depth: 'shallow' };
   let depth: ResearchDepth = 'shallow';
   let topic: ResearchTopic | undefined;
+  let country: string | undefined;
   let timeRange: ResearchTimeRange | undefined;
   let startDate: string | undefined;
   let endDate: string | undefined;
@@ -144,6 +159,25 @@ function parseSearchArgs(raw: string): {
       cursor += 1;
     } else if (lower === '--topic' && next && SEARCH_TOPICS.has(next)) {
       topic = next as ResearchTopic;
+      cursor += 2;
+    } else if (lower === '--kr') {
+      country = 'south korea';
+      cursor += 1;
+    } else if (lower === '--us') {
+      country = 'united states';
+      cursor += 1;
+    } else if (lower === '--uk') {
+      country = 'united kingdom';
+      cursor += 1;
+    } else if (lower.startsWith('--country=')) {
+      const value = normalizeSearchCountry(token.slice('--country='.length));
+      if (!value) break;
+      country = value;
+      cursor += 1;
+    } else if (lower === '--country' && nextToken) {
+      const value = normalizeSearchCountry(nextToken);
+      if (!value) break;
+      country = value;
       cursor += 2;
     } else if (lower.startsWith('--time-range=')) {
       const value = lower.slice('--time-range='.length);
@@ -231,6 +265,7 @@ function parseSearchArgs(raw: string): {
   return {
     depth,
     ...(topic ? { topic } : {}),
+    ...(country && topic !== 'news' && topic !== 'finance' ? { country } : {}),
     ...(timeRange ? { timeRange } : {}),
     ...(startDate ? { startDate } : {}),
     ...(endDate ? { endDate } : {}),
@@ -240,6 +275,13 @@ function parseSearchArgs(raw: string): {
     ...(minScore != null ? { minScore } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
+}
+
+function normalizeSearchCountry(value: string): string | undefined {
+  const key = value.trim().toLowerCase();
+  const alias = SEARCH_COUNTRY_ALIASES[key];
+  const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  return SEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
 }
 
 function isSearchDate(value: string): boolean {
@@ -581,6 +623,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       query: string;
       depth: ResearchDepth;
       topic?: ResearchTopic;
+      country?: string;
       timeRange?: ResearchTimeRange;
       startDate?: string;
       endDate?: string;
@@ -596,6 +639,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         query,
         depth,
         topic,
+        country,
         timeRange,
         startDate,
         endDate,
@@ -609,6 +653,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       const commandSuffix = [
         `--depth ${depth}`,
         ...(topic ? [`--topic ${topic}`] : []),
+        ...(country ? [`--country ${country.replace(/\s+/g, '-')}`] : []),
         ...(timeRange ? [`--time-range ${timeRange}`] : []),
         ...(startDate ? [`--start-date ${startDate}`] : []),
         ...(endDate ? [`--end-date ${endDate}`] : []),
@@ -626,6 +671,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         query,
         depth,
         ...(topic ? { topic } : {}),
+        ...(country ? { country } : {}),
         ...(timeRange ? { timeRange } : {}),
         ...(startDate ? { startDate } : {}),
         ...(endDate ? { endDate } : {}),
@@ -643,6 +689,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           'Use the canonical query below as the exact search query, with safe quoting for your shell.',
           `Research depth: ${depth}.`,
           ...(topic ? [`Research topic: ${topic}.`] : []),
+          ...(country ? [`Research country: ${country}.`] : []),
           ...(timeRange ? [`Research time range: ${timeRange}.`] : []),
           ...(startDate ? [`Research start date: ${startDate}.`] : []),
           ...(endDate ? [`Research end date: ${endDate}.`] : []),
@@ -890,6 +937,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             query: search.query,
             depth: search.depth,
             ...(search.topic ? { topic: search.topic } : {}),
+            ...(search.country ? { country: search.country } : {}),
             ...(search.timeRange ? { timeRange: search.timeRange } : {}),
             ...(search.startDate ? { startDate: search.startDate } : {}),
             ...(search.endDate ? { endDate: search.endDate } : {}),

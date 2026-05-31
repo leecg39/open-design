@@ -282,6 +282,8 @@ export function resolveResearchCommandContract(research, message) {
     query: researchQuery,
     depth: typeof research.depth === 'string' ? research.depth : undefined,
     topic: typeof research.topic === 'string' ? research.topic : undefined,
+    country:
+      typeof research.country === 'string' ? research.country : undefined,
     timeRange:
       typeof research.timeRange === 'string' ? research.timeRange : undefined,
     startDate:
@@ -4698,6 +4700,7 @@ export async function startServer({
         query: req.body?.query,
         depth: req.body?.depth,
         topic: req.body?.topic,
+        country: req.body?.country,
         timeRange: req.body?.timeRange,
         startDate: req.body?.startDate,
         endDate: req.body?.endDate,

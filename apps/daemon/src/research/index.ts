@@ -14,6 +14,19 @@ const RESEARCH_DOMAIN_FILTER_LIMIT = 20;
 const RESEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const RESEARCH_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+const RESEARCH_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
+const RESEARCH_COUNTRY_ALIASES: Record<string, string> = {
+  korea: 'south korea',
+  kr: 'south korea',
+  'south-korea': 'south korea',
+  'south_korea': 'south korea',
+  us: 'united states',
+  usa: 'united states',
+  'u.s.': 'united states',
+  'u.s.a.': 'united states',
+  uk: 'united kingdom',
+  'u.k.': 'united kingdom',
+};
 
 export class ResearchError extends Error {
   constructor(
@@ -31,6 +44,7 @@ export interface SearchResearchInput {
   projectRoot: string;
   depth?: ResearchDepth;
   topic?: ResearchTopic;
+  country?: string;
   timeRange?: ResearchTimeRange;
   startDate?: string;
   endDate?: string;
@@ -52,6 +66,10 @@ export async function searchResearch(
   }
   const depth = normalizeResearchDepth(input.depth);
   const topic = normalizeResearchTopic(input.topic);
+  const country =
+    topic === 'news' || topic === 'finance'
+      ? undefined
+      : normalizeResearchCountry(input.country);
   const timeRange = normalizeResearchTimeRange(input.timeRange);
   const startDate = normalizeResearchDate(input.startDate);
   const endDate = normalizeResearchDate(input.endDate);
@@ -93,6 +111,7 @@ export async function searchResearch(
       query,
       searchDepth: depth === 'shallow' ? 'basic' : 'advanced',
       ...(topic ? { topic } : {}),
+      ...(country ? { country } : {}),
       ...(timeRange ? { timeRange } : {}),
       ...(startDate ? { startDate } : {}),
       ...(endDate ? { endDate } : {}),
@@ -130,6 +149,7 @@ export async function searchResearch(
     provider,
     depth,
     ...(topic ? { topic } : {}),
+    ...(country ? { country } : {}),
     ...(timeRange ? { timeRange } : {}),
     ...(startDate ? { startDate } : {}),
     ...(endDate ? { endDate } : {}),
@@ -149,6 +169,14 @@ function normalizeResearchTopic(value: unknown): ResearchTopic | undefined {
   return value === 'general' || value === 'news' || value === 'finance'
     ? value
     : undefined;
+}
+
+function normalizeResearchCountry(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const key = value.trim().toLowerCase();
+  const alias = RESEARCH_COUNTRY_ALIASES[key];
+  const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  return RESEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
 }
 
 function normalizeResearchTimeRange(

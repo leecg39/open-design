@@ -16,6 +16,8 @@ export interface ResearchOptions {
   depth?: ResearchDepth;
   /** Optional Tavily source category. */
   topic?: ResearchTopic;
+  /** Optional country boost for general-topic searches. */
+  country?: string;
   /** Optional recency filter for current/updated sources. */
   timeRange?: ResearchTimeRange;
   /** Optional exact lower date bound in YYYY-MM-DD format. */
@@ -52,6 +54,7 @@ export interface ResearchFindings {
   provider: string;
   depth: ResearchDepth;
   topic?: ResearchTopic;
+  country?: string;
   timeRange?: ResearchTimeRange;
   startDate?: string;
   endDate?: string;

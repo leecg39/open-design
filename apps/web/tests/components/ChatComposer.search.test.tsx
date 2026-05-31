@@ -163,6 +163,39 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('expands /search country shortcuts into research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --kr Korean AI design market' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain('--depth shallow --country south-korea --max-sources 5');
+    expect(prompt).toContain('Research country: south korea.');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Korean AI design market',
+        depth: 'shallow',
+        country: 'south korea',
+      },
+    });
+  });
+
   it('expands /search exact date flags into research metadata', () => {
     const onSend = vi.fn();
 

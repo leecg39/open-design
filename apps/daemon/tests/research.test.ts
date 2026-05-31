@@ -194,6 +194,50 @@ describe('research search', () => {
     });
   });
 
+  it('forwards country boosts only for general searches', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Regional product summary.',
+          results: [
+            {
+              title: 'Regional source',
+              url: 'https://example.kr/product',
+              content: 'Korean market product coverage.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const general = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design competitors',
+      country: 'kr',
+    });
+    const news = await searchResearch({
+      projectRoot: projectRoot!,
+      query: 'Open Design competitors',
+      topic: 'news',
+      country: 'kr',
+    });
+
+    expect(general.country).toBe('south korea');
+    expect(news.country).toBeUndefined();
+    const generalBody = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    const newsBody = JSON.parse(
+      String((fetchMock.mock.calls[1] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(generalBody).toMatchObject({ country: 'south korea' });
+    expect(newsBody).toMatchObject({ topic: 'news' });
+    expect(newsBody).not.toHaveProperty('country');
+  });
+
   it('forwards valid exact date range filters to Tavily', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
