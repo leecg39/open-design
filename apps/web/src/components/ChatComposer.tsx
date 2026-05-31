@@ -756,7 +756,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             ? ['If the research JSON includes images, add a Visual references section with image URLs and descriptions. Keep source-level images tied to their source citation when present.']
             : []),
           ...(includeRawContent
-            ? ['If the research JSON includes rawContent fields, use them as evidence and keep quoted excerpts short.']
+            ? ['If the research JSON includes rawContent fields, use them as evidence and keep quoted excerpts short. If rawContentTruncated is true, treat the raw content as an excerpt, not the full page.']
             : []),
           ...(autoParameters
             ? ['If the research JSON includes selectedParameters, mention how the provider tuned the search.']

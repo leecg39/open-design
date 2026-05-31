@@ -67,7 +67,7 @@ export function renderResearchCommandContract(
     ? ', "images": [{ "url": "...", "description": "...", "provider": "tavily" }]'
     : '';
   const sourceExample = includeRawContent
-    ? `{ "title": "...", "url": "...", "snippet": "...", "rawContent": "...", "score": 0.9${sourceImageExample}, "provider": "tavily" }`
+    ? `{ "title": "...", "url": "...", "snippet": "...", "rawContent": "...", "rawContentTruncated": true, "score": 0.9${sourceImageExample}, "provider": "tavily" }`
     : `{ "title": "...", "url": "...", "snippet": "...", "score": 0.9${sourceImageExample}, "provider": "tavily" }`;
   const autoParametersExample = autoParameters
     ? ', "autoParameters": true, "selectedParameters": { "topic": "general", "searchDepth": "basic" }'
@@ -133,7 +133,7 @@ export function renderResearchCommandContract(
       ? ['If the JSON includes images, add a Visual references section with image URLs and descriptions. Keep source-level images tied to their source citation when present.']
       : []),
     ...(includeRawContent
-      ? ['If the JSON includes rawContent fields, use them only as source evidence and keep quoted excerpts short.']
+      ? ['If the JSON includes rawContent fields, use them only as source evidence and keep quoted excerpts short. If rawContentTruncated is true, treat the raw content as an excerpt, not the full page.']
       : []),
     ...(autoParameters
       ? ['If the JSON includes selectedParameters, briefly note how the provider tuned the search.']

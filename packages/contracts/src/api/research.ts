@@ -54,6 +54,7 @@ export interface ResearchSource {
   url: string;
   snippet: string;
   rawContent?: string;
+  rawContentTruncated?: boolean;
   publishedAt?: string;
   score?: number;
   favicon?: string;

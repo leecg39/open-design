@@ -459,8 +459,10 @@ describe('research search', () => {
 
     expect(plain.includeRawContent).toBeUndefined();
     expect(plain.sources[0]).not.toHaveProperty('rawContent');
+    expect(plain.sources[0]).not.toHaveProperty('rawContentTruncated');
     expect(raw.includeRawContent).toBe(true);
     expect(raw.sources[0]?.rawContent).toBe(longRawContent.slice(0, 4000));
+    expect(raw.sources[0]?.rawContentTruncated).toBe(true);
     const plainBody = JSON.parse(
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );

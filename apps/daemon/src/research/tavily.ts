@@ -178,10 +178,13 @@ export async function tavilySearch(
         ? Math.max(0, Math.min(r.score, 1))
         : null;
     const favicon = normalizeImageUrl(r.favicon);
-    const rawContent =
+    const rawContentText =
       input.includeRawContent && typeof r.raw_content === 'string'
-        ? r.raw_content.trim().slice(0, TAVILY_RAW_CONTENT_LIMIT)
+        ? r.raw_content.trim()
         : '';
+    const rawContent = rawContentText.slice(0, TAVILY_RAW_CONTENT_LIMIT);
+    const rawContentTruncated =
+      rawContentText.length > TAVILY_RAW_CONTENT_LIMIT;
     const sourceImages = input.includeImages
       ? normalizeTavilyImages(r.images, 3)
       : [];
@@ -196,6 +199,9 @@ export async function tavilySearch(
           ? r.content.trim().slice(0, 800)
           : '',
       ...(rawContent ? { rawContent } : {}),
+      ...(rawContent && rawContentTruncated
+        ? { rawContentTruncated: true }
+        : {}),
       ...(sourceImages.length ? { images: sourceImages } : {}),
       provider: 'tavily',
       ...(publishedAt ? { publishedAt } : {}),
