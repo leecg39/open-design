@@ -88,6 +88,7 @@ export interface ResearchFindings {
   excludeDomains?: string[];
   exactMatch?: boolean;
   minScore?: number;
+  maxSources?: number;
   filteredSourceCount?: number;
   discardedSourceCount?: number;
   includeImages?: boolean;

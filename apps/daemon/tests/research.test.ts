@@ -79,6 +79,7 @@ describe('research search', () => {
       summary: 'EV sales are growing.',
       provider: 'tavily',
       depth: 'shallow',
+      maxSources: 20,
       usage: { credits: 1 },
       requestId: 'req-ev-123',
       responseTime: 1.67,

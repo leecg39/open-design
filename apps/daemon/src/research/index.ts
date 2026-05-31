@@ -295,6 +295,7 @@ export async function searchResearch(
     ...(excludeDomains.length ? { excludeDomains } : {}),
     ...(exactMatch ? { exactMatch } : {}),
     ...(minScore != null ? { minScore } : {}),
+    maxSources,
     ...(filteredSourceCount > 0 ? { filteredSourceCount } : {}),
     ...(discardedSourceCount > 0 ? { discardedSourceCount } : {}),
     ...(includeImages ? { includeImages } : {}),

@@ -50,6 +50,7 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).not.toContain('--country');
     expect(prompt).not.toContain('"images"');
     expect(prompt).toContain('"depth": "deep"');
+    expect(prompt).toContain('"maxSources": 15');
   });
 
   it('includes a normalized country boost for general research', () => {

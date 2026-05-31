@@ -73,8 +73,8 @@ export function renderResearchCommandContract(
     ? ', "autoParameters": true, "selectedParameters": { "topic": "general", "searchDepth": "basic" }'
     : '';
   const stdoutExample = includeImages
-    ? `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "includeImages": true${autoParametersExample}, "fetchedAt": 0 }`
-    : `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "provider": "tavily", "depth": "${depth}"${autoParametersExample}, "fetchedAt": 0 }`;
+    ? `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}, "includeImages": true${autoParametersExample}, "fetchedAt": 0 }`
+    : `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}${autoParametersExample}, "fetchedAt": 0 }`;
   const commandSuffix = [
     `--depth ${depth}`,
     ...(topic ? [`--topic ${topic}`] : []),
