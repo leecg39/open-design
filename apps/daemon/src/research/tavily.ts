@@ -22,6 +22,8 @@ const TAVILY_REQUEST_ID_LIMIT = 120;
 const TAVILY_ANSWER_LIMIT = 4_000;
 const TAVILY_RAW_CONTENT_LIMIT = 4_000;
 const TAVILY_ERROR_TEXT_LIMIT = 200;
+const TAVILY_DOMAIN_RE =
+  /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 const TRACKING_QUERY_PARAMETERS = new Set([
   'fbclid',
   'gclid',
@@ -346,12 +348,27 @@ function normalizeTavilyDomainFilters(domains: string[] | undefined): string[] {
   const normalized: string[] = [];
   const seen = new Set<string>();
   for (const value of domains ?? []) {
-    const domain = value.trim().toLowerCase();
+    const domain = normalizeTavilyDomainFilter(value);
     if (!domain || seen.has(domain)) continue;
     seen.add(domain);
     normalized.push(domain);
   }
   return normalized;
+}
+
+function normalizeTavilyDomainFilter(value: string): string | undefined {
+  let text = value.trim().toLowerCase();
+  if (!text) return undefined;
+  if (/^https?:\/\//.test(text)) {
+    try {
+      text = new URL(text).hostname;
+    } catch {
+      return undefined;
+    }
+  }
+  text = text.split(/[/?#]/)[0]?.replace(/:\d+$/, '') ?? '';
+  if (!text || !TAVILY_DOMAIN_RE.test(text)) return undefined;
+  return text;
 }
 
 function normalizeTavilyBaseUrl(value: string): string {

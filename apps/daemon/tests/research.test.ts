@@ -912,15 +912,30 @@ describe('research search', () => {
     await tavilySearch({
       apiKey: 'tvly-test',
       query: 'Open Design direct Tavily domains',
-      includeDomains: [' Example.com ', 'example.com', ' ', 'OpenAI.com'],
-      excludeDomains: [' Docs.Example.com ', 'docs.example.com', '\t'],
+      includeDomains: [
+        ' Example.com ',
+        'https://Docs.Example.com/platform?utm=1',
+        'example.com:443',
+        ' ',
+        'OpenAI.com',
+        'not a domain',
+      ],
+      excludeDomains: [
+        ' https://News.Example.com/story ',
+        'news.example.com',
+        '\t',
+      ],
     });
 
     const body = JSON.parse(
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );
-    expect(body.include_domains).toEqual(['example.com', 'openai.com']);
-    expect(body.exclude_domains).toEqual(['docs.example.com']);
+    expect(body.include_domains).toEqual([
+      'example.com',
+      'docs.example.com',
+      'openai.com',
+    ]);
+    expect(body.exclude_domains).toEqual(['news.example.com']);
   });
 
   it('removes overlapping direct Tavily exclude domains before provider fetch', async () => {
