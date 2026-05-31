@@ -367,7 +367,14 @@ function parseSearchArgs(raw: string): {
         minScore = value;
       }
       cursor += 1;
-    } else if (lower === '--min-score' && nextToken) {
+    } else if (lower === '--min-score') {
+      if (!nextToken || nextToken.startsWith('--')) {
+        warnings.push(
+          'Ignored invalid --min-score; expected a number from 0 to 1.',
+        );
+        cursor += 1;
+        continue;
+      }
       const value = parseSearchScore(nextToken);
       if (value == null) {
         warnings.push(
@@ -377,11 +384,6 @@ function parseSearchArgs(raw: string): {
         minScore = value;
       }
       cursor += 2;
-    } else if (lower === '--min-score') {
-      warnings.push(
-        'Ignored invalid --min-score; expected a number from 0 to 1.',
-      );
-      cursor += 1;
     } else if (lower.startsWith('--max-sources=')) {
       const parsed = parseSearchMaxSources(token.slice('--max-sources='.length));
       if (parsed.value == null) {
@@ -397,7 +399,14 @@ function parseSearchArgs(raw: string): {
         }
       }
       cursor += 1;
-    } else if (lower === '--max-sources' && nextToken) {
+    } else if (lower === '--max-sources') {
+      if (!nextToken || nextToken.startsWith('--')) {
+        warnings.push(
+          'Ignored invalid --max-sources; expected a positive number.',
+        );
+        cursor += 1;
+        continue;
+      }
       const parsed = parseSearchMaxSources(nextToken);
       if (parsed.value == null) {
         warnings.push(
@@ -412,11 +421,6 @@ function parseSearchArgs(raw: string): {
         }
       }
       cursor += 2;
-    } else if (lower === '--max-sources') {
-      warnings.push(
-        'Ignored invalid --max-sources; expected a positive number.',
-      );
-      cursor += 1;
     } else if (
       lower.startsWith('--') &&
       SEARCH_TIME_RANGES.has(lower.slice(2))

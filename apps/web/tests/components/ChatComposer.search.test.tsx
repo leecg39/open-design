@@ -855,6 +855,51 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('keeps parsing /search flags after missing numeric values', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: {
+        value:
+          '/search --min-score --images --max-sources --raw Open Design evidence quality',
+      },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] =
+      onSend.mock.calls[0]!;
+    expect(prompt).toContain(
+      '--depth shallow --include-images --include-raw-content --max-sources 5',
+    );
+    expect(prompt).toContain(
+      'Research parser warning: Ignored invalid --min-score; expected a number from 0 to 1.',
+    );
+    expect(prompt).toContain(
+      'Research parser warning: Ignored invalid --max-sources; expected a positive number.',
+    );
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Open Design evidence quality',
+        depth: 'shallow',
+        includeImages: true,
+        includeRawContent: true,
+      },
+    });
+  });
+
   it('ignores invalid /search filter flags without leaking them into the query', () => {
     const onSend = vi.fn();
 
