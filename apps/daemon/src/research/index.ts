@@ -49,8 +49,8 @@ export interface SearchResearchInput {
   timeRange?: ResearchTimeRange;
   startDate?: string;
   endDate?: string;
-  includeDomains?: string[];
-  excludeDomains?: string[];
+  includeDomains?: unknown;
+  excludeDomains?: unknown;
   exactMatch?: boolean;
   minScore?: unknown;
   includeImages?: boolean;
@@ -129,12 +129,24 @@ export async function searchResearch(
   }
   const includeDomains = normalizeResearchDomains(input.includeDomains);
   let excludeDomains = normalizeResearchDomains(input.excludeDomains);
-  if (countResearchDomainInputs(input.includeDomains) > includeDomains.length) {
+  if (!isResearchDomainInputShape(input.includeDomains)) {
+    warnings.push(
+      'Ignored invalid includeDomains; expected an array or comma-separated string.',
+    );
+  } else if (
+    countResearchDomainInputs(input.includeDomains) > includeDomains.length
+  ) {
     warnings.push(
       'Ignored invalid, duplicate, or excess includeDomains entries.',
     );
   }
-  if (countResearchDomainInputs(input.excludeDomains) > excludeDomains.length) {
+  if (!isResearchDomainInputShape(input.excludeDomains)) {
+    warnings.push(
+      'Ignored invalid excludeDomains; expected an array or comma-separated string.',
+    );
+  } else if (
+    countResearchDomainInputs(input.excludeDomains) > excludeDomains.length
+  ) {
     warnings.push(
       'Ignored invalid, duplicate, or excess excludeDomains entries.',
     );
@@ -400,6 +412,10 @@ function countResearchDomainInputs(value: unknown): number {
       .filter(Boolean).length;
   }
   return 0;
+}
+
+function isResearchDomainInputShape(value: unknown): boolean {
+  return value == null || Array.isArray(value) || typeof value === 'string';
 }
 
 function normalizeResearchProviders(value: unknown): string[] {
