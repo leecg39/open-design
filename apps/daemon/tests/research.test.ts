@@ -953,6 +953,45 @@ describe('research search', () => {
     expect(body.time_range).toBe('week');
   });
 
+  it('normalizes direct Tavily search depth before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Search depth summary.',
+          results: [
+            {
+              title: 'Search depth source',
+              url: 'https://example.com/search-depth',
+              content: 'Search depth should match Tavily options.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design fast direct Tavily search',
+      searchDepth: 'fast',
+    } as any);
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design invalid direct Tavily search',
+      searchDepth: 'slow',
+    } as any);
+
+    const fastBody = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    const invalidBody = JSON.parse(
+      String((fetchMock.mock.calls[1] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(fastBody.search_depth).toBe('fast');
+    expect(invalidBody.search_depth).toBe('basic');
+  });
+
   it('normalizes direct Tavily boolean and answer controls before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(

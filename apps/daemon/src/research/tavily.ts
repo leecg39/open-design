@@ -29,6 +29,12 @@ const TAVILY_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TAVILY_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 const TAVILY_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
+const TAVILY_SEARCH_DEPTHS = new Set([
+  'advanced',
+  'basic',
+  'fast',
+  'ultra-fast',
+]);
 const TAVILY_TOPICS = new Set(['general', 'news', 'finance']);
 const TAVILY_COUNTRY_ALIASES: Record<string, string> = {
   korea: 'south korea',
@@ -65,7 +71,7 @@ export interface TavilySearchInput {
   apiKey: string;
   baseUrl?: string;
   query: string;
-  searchDepth?: 'basic' | 'advanced';
+  searchDepth?: TavilySearchDepth;
   topic?: ResearchTopic;
   country?: string;
   timeRange?: ResearchTimeRange;
@@ -82,6 +88,8 @@ export interface TavilySearchInput {
   chunksPerSource?: number;
   signal?: AbortSignal;
 }
+
+type TavilySearchDepth = 'advanced' | 'basic' | 'fast' | 'ultra-fast';
 
 interface TavilyRawResult {
   title?: unknown;
@@ -139,6 +147,7 @@ export async function tavilySearch(
   const country = normalizeTavilyCountry(input.country);
   const topic = normalizeTavilyTopic(input.topic);
   const timeRange = normalizeTavilyTimeRange(input.timeRange);
+  const searchDepth = normalizeTavilySearchDepth(input.searchDepth);
   const exactMatch = input.exactMatch === true;
   const includeImages = input.includeImages === true;
   const includeRawContent = input.includeRawContent === true;
@@ -177,8 +186,8 @@ export async function tavilySearch(
       : undefined;
   const body = {
     query,
-    ...(input.searchDepth
-      ? { search_depth: input.searchDepth }
+    ...(searchDepth
+      ? { search_depth: searchDepth }
       : autoParameters
         ? {}
         : { search_depth: 'basic' }),
@@ -203,7 +212,7 @@ export async function tavilySearch(
     include_answer: includeAnswer,
     include_raw_content: includeRawContent ? 'markdown' : false,
     ...(autoParameters ? { auto_parameters: true } : {}),
-    ...(input.searchDepth === 'advanced' && chunksPerSource
+    ...(searchDepth === 'advanced' && chunksPerSource
       ? { chunks_per_source: chunksPerSource }
       : {}),
   };
@@ -434,6 +443,15 @@ function normalizeTavilyTopic(
   value: ResearchTopic | undefined,
 ): ResearchTopic | undefined {
   return typeof value === 'string' && TAVILY_TOPICS.has(value)
+    ? value
+    : undefined;
+}
+
+function normalizeTavilySearchDepth(
+  value: TavilySearchDepth | undefined,
+): TavilySearchDepth | undefined {
+  return typeof value === 'string' &&
+    TAVILY_SEARCH_DEPTHS.has(value)
     ? value
     : undefined;
 }
