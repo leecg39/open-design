@@ -63,6 +63,7 @@ export interface TavilySearchOutput {
   requestId?: string;
   responseTime?: number;
   selectedParameters?: ResearchSelectedParameters;
+  discardedSourceCount?: number;
 }
 
 export class TavilyError extends Error {
@@ -169,9 +170,13 @@ export async function tavilySearch(
   const responseTime = normalizeNonNegativeNumber(json.response_time);
   const sources: ResearchSource[] = [];
   const seenSourceUrls = new Set<string>();
+  let discardedSourceCount = 0;
   for (const r of rawResults as TavilyRawResult[]) {
     const url = normalizeSourceUrl(r.url);
-    if (!url || seenSourceUrls.has(url)) continue;
+    if (!url || seenSourceUrls.has(url)) {
+      discardedSourceCount += 1;
+      continue;
+    }
     seenSourceUrls.add(url);
     const publishedAt =
       typeof r.published_date === 'string' && r.published_date.trim()
@@ -221,6 +226,7 @@ export async function tavilySearch(
     ...(requestId ? { requestId } : {}),
     ...(responseTime != null ? { responseTime } : {}),
     ...(selectedParameters ? { selectedParameters } : {}),
+    ...(discardedSourceCount > 0 ? { discardedSourceCount } : {}),
   };
 }
 

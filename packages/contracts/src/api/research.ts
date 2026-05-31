@@ -89,6 +89,7 @@ export interface ResearchFindings {
   exactMatch?: boolean;
   minScore?: number;
   filteredSourceCount?: number;
+  discardedSourceCount?: number;
   includeImages?: boolean;
   includeRawContent?: boolean;
   autoParameters?: boolean;

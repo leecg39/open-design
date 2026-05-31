@@ -211,6 +211,7 @@ export async function searchResearch(
   let selectedParameters: ResearchFindings['selectedParameters'];
   let providerSourceCount = 0;
   let filteredSourceCount = 0;
+  let discardedSourceCount = 0;
   try {
     const out = await tavilySearch({
       apiKey: cfg.apiKey,
@@ -249,6 +250,7 @@ export async function searchResearch(
     requestId = out.requestId;
     responseTime = out.responseTime;
     selectedParameters = out.selectedParameters;
+    discardedSourceCount = out.discardedSourceCount ?? 0;
   } catch (err) {
     const message =
       err instanceof TavilyError
@@ -262,6 +264,14 @@ export async function searchResearch(
       const label = providerSourceCount === 1 ? 'source' : 'sources';
       throw new ResearchError(
         `no sources met minScore ${minScore}; provider returned ${providerSourceCount} ${label}`,
+        404,
+        'NO_RESEARCH_SOURCES',
+      );
+    }
+    if (discardedSourceCount > 0) {
+      const label = discardedSourceCount === 1 ? 'result' : 'results';
+      throw new ResearchError(
+        `no usable source URLs found; provider returned ${discardedSourceCount} discarded ${label}`,
         404,
         'NO_RESEARCH_SOURCES',
       );
@@ -286,6 +296,7 @@ export async function searchResearch(
     ...(exactMatch ? { exactMatch } : {}),
     ...(minScore != null ? { minScore } : {}),
     ...(filteredSourceCount > 0 ? { filteredSourceCount } : {}),
+    ...(discardedSourceCount > 0 ? { discardedSourceCount } : {}),
     ...(includeImages ? { includeImages } : {}),
     ...(includeRawContent ? { includeRawContent } : {}),
     ...(autoParameters ? { autoParameters } : {}),

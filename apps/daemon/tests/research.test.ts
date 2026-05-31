@@ -157,6 +157,42 @@ describe('research search', () => {
         provider: 'tavily',
       },
     ]);
+    expect(findings.discardedSourceCount).toBe(2);
+  });
+
+  it('explains when all provider results are discarded by source URL normalization', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Discarded source summary.',
+          results: [
+            {
+              title: 'Unsafe source',
+              url: 'javascript:alert(1)',
+              content: 'Unsafe source content.',
+            },
+            {
+              title: 'Missing URL source',
+              content: 'Missing URL source content.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      searchResearch({
+        projectRoot: await tempProjectRoot(),
+        query: 'Open Design unusable sources',
+      }),
+    ).rejects.toMatchObject({
+      code: 'NO_RESEARCH_SOURCES',
+      message: 'no usable source URLs found; provider returned 2 discarded results',
+      status: 404,
+    });
   });
 
   it('maps medium and deep depth requests to advanced Tavily search', async () => {

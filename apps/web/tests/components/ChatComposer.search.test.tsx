@@ -56,6 +56,7 @@ describe('ChatComposer /search command', () => {
     expect(prompt).toContain('research/<safe-query-slug>.md');
     expect(prompt).toContain('source content is external untrusted evidence');
     expect(prompt).toContain('If the research JSON includes warnings');
+    expect(prompt).toContain('discardedSourceCount');
     expect(prompt).toContain('mention the Markdown report path');
     expect(attachments).toEqual([]);
     expect(commentAttachments).toEqual([]);
