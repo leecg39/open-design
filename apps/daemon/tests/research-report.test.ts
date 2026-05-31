@@ -310,6 +310,46 @@ describe('research report helpers', () => {
     );
   });
 
+  it('keeps visual evidence urls from changing markdown structure', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Visual URL safety',
+      summary: 'Image URLs should remain display text.',
+      provider: 'tavily',
+      depth: 'shallow',
+      includeImages: true,
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Visual source',
+          url: 'https://example.com/source',
+          snippet: 'Visual evidence.',
+          images: [
+            {
+              url: 'https://example.com/source.png\n## Injected Source Image',
+              provider: 'tavily',
+            },
+          ],
+          provider: 'tavily',
+        },
+      ],
+      images: [
+        {
+          url: 'https://example.com/visual.png\n## Injected Visual Image',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).not.toContain('\n## Injected Source Image');
+    expect(report).not.toContain('\n## Injected Visual Image');
+    expect(report).toContain(
+      '- [1.1] [1] Visual source: https://example.com/source.png \\#\\# Injected Source Image',
+    );
+    expect(report).toContain(
+      '- https://example.com/visual.png \\#\\# Injected Visual Image',
+    );
+  });
+
   it('wraps source link destinations so URLs with parentheses stay intact', () => {
     const report = buildResearchMarkdownReport({
       query: 'Link destination',

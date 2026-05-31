@@ -300,7 +300,9 @@ function renderSourceImages(sources: ResearchSource[]): string[] {
       const description = image.description
         ? `${escapeMarkdownText(image.description)}: `
         : '';
-      return `- ${imageCitation} ${sourceCitation} ${title}: ${description}${image.url}`;
+      return `- ${imageCitation} ${sourceCitation} ${title}: ${description}${escapeMarkdownText(
+        image.url,
+      )}`;
     });
   });
 }
@@ -309,7 +311,7 @@ function renderImage(image: NonNullable<ResearchFindings['images']>[number]): st
   const description = image.description
     ? `${escapeMarkdownText(image.description)}: `
     : '';
-  return `- ${description}${image.url}`;
+  return `- ${description}${escapeMarkdownText(image.url)}`;
 }
 
 function renderMetadataList(values: string[]): string {
