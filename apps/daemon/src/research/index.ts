@@ -53,6 +53,7 @@ export interface SearchResearchInput {
   exactMatch?: boolean;
   minScore?: number;
   includeImages?: boolean;
+  includeRawContent?: boolean;
   maxSources?: number;
   providers?: string[];
   signal?: AbortSignal;
@@ -86,6 +87,7 @@ export async function searchResearch(
   const exactMatch = input.exactMatch === true;
   const minScore = normalizeMinScore(input.minScore);
   const includeImages = input.includeImages === true;
+  const includeRawContent = input.includeRawContent === true;
   const requested = Array.isArray(input.providers) ? input.providers : [];
   const providers = requested.filter(
     (p: unknown): p is string => typeof p === 'string' && p.length > 0,
@@ -132,6 +134,7 @@ export async function searchResearch(
       ...(excludeDomains.length ? { excludeDomains } : {}),
       ...(exactMatch ? { exactMatch } : {}),
       ...(includeImages ? { includeImages } : {}),
+      ...(includeRawContent ? { includeRawContent } : {}),
       maxResults: maxSources,
       includeAnswer: depth === 'deep' ? 'advanced' : true,
       ...(depth === 'medium' ? { chunksPerSource: 2 } : {}),
@@ -177,6 +180,7 @@ export async function searchResearch(
     ...(exactMatch ? { exactMatch } : {}),
     ...(minScore != null ? { minScore } : {}),
     ...(includeImages ? { includeImages } : {}),
+    ...(includeRawContent ? { includeRawContent } : {}),
     ...(usage ? { usage } : {}),
     ...(requestId ? { requestId } : {}),
     ...(responseTime != null ? { responseTime } : {}),

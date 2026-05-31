@@ -70,6 +70,18 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('Visual references section');
   });
 
+  it('includes raw content research flags when full evidence is requested', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'AI dashboard implementation evidence',
+      includeRawContent: true,
+      maxSources: 5,
+    });
+
+    expect(prompt).toContain('--depth shallow --include-raw-content --max-sources 5');
+    expect(prompt).toContain('"rawContent": "..."');
+    expect(prompt).toContain('keep quoted excerpts short');
+  });
+
   it('defaults and clamps the requested source cap to the supported range', () => {
     expect(renderResearchCommandContract()).toContain('--depth shallow --max-sources 5');
     expect(renderResearchCommandContract({ depth: 'medium' })).toContain(

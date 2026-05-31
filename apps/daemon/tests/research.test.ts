@@ -349,6 +349,51 @@ describe('research search', () => {
     expect(body).toMatchObject({ include_favicon: true });
   });
 
+  it('returns bounded raw source content only when requested', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const longRawContent = `${'Detailed evidence. '.repeat(400)}tail`;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Raw evidence summary.',
+          results: [
+            {
+              title: 'Raw source',
+              url: 'https://example.com/raw',
+              content: 'Short snippet.',
+              raw_content: longRawContent,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const plain = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design evidence',
+    });
+    const raw = await searchResearch({
+      projectRoot: projectRoot!,
+      query: 'Open Design evidence',
+      includeRawContent: true,
+    });
+
+    expect(plain.includeRawContent).toBeUndefined();
+    expect(plain.sources[0]).not.toHaveProperty('rawContent');
+    expect(raw.includeRawContent).toBe(true);
+    expect(raw.sources[0]?.rawContent).toBe(longRawContent.slice(0, 4000));
+    const plainBody = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    const rawBody = JSON.parse(
+      String((fetchMock.mock.calls[1] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(plainBody).toMatchObject({ include_raw_content: false });
+    expect(rawBody).toMatchObject({ include_raw_content: 'markdown' });
+  });
+
   it('forwards valid exact date range filters to Tavily', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

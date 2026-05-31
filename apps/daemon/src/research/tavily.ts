@@ -9,6 +9,7 @@ import type {
 const DEFAULT_BASE_URL = 'https://api.tavily.com';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const TAVILY_MAX_RESULTS_LIMIT = 20;
+const TAVILY_RAW_CONTENT_LIMIT = 4_000;
 
 export interface TavilySearchInput {
   apiKey: string;
@@ -24,6 +25,7 @@ export interface TavilySearchInput {
   excludeDomains?: string[];
   exactMatch?: boolean;
   includeImages?: boolean;
+  includeRawContent?: boolean;
   maxResults?: number;
   includeAnswer?: boolean | 'basic' | 'advanced';
   chunksPerSource?: number;
@@ -34,6 +36,7 @@ interface TavilyRawResult {
   title?: unknown;
   url?: unknown;
   content?: unknown;
+  raw_content?: unknown;
   score?: unknown;
   published_date?: unknown;
   favicon?: unknown;
@@ -106,7 +109,7 @@ export async function tavilySearch(
     include_usage: true,
     max_results: maxResults,
     include_answer: input.includeAnswer ?? true,
-    include_raw_content: false,
+    include_raw_content: input.includeRawContent ? 'markdown' : false,
     ...(input.searchDepth === 'advanced' && chunksPerSource
       ? { chunks_per_source: chunksPerSource }
       : {}),
@@ -164,6 +167,10 @@ export async function tavilySearch(
         ? Math.max(0, Math.min(r.score, 1))
         : null;
     const favicon = normalizeImageUrl(r.favicon);
+    const rawContent =
+      input.includeRawContent && typeof r.raw_content === 'string'
+        ? r.raw_content.trim().slice(0, TAVILY_RAW_CONTENT_LIMIT)
+        : '';
     sources.push({
       title:
         typeof r.title === 'string' && r.title.trim()
@@ -174,6 +181,7 @@ export async function tavilySearch(
         typeof r.content === 'string'
           ? r.content.trim().slice(0, 800)
           : '',
+      ...(rawContent ? { rawContent } : {}),
       provider: 'tavily',
       ...(publishedAt ? { publishedAt } : {}),
       ...(score != null ? { score } : {}),

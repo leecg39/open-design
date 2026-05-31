@@ -40,6 +40,7 @@ export interface ResearchCommandContractOptions {
   exactMatch?: boolean;
   minScore?: number;
   includeImages?: boolean;
+  includeRawContent?: boolean;
 }
 
 export function renderResearchCommandContract(
@@ -58,10 +59,14 @@ export function renderResearchCommandContract(
   const excludeDomains = normalizeDomains(options.excludeDomains);
   const minScore = normalizeMinScore(options.minScore);
   const includeImages = options.includeImages === true;
+  const includeRawContent = options.includeRawContent === true;
   const maxSources = normalizeMaxSources(options.maxSources, depth);
+  const sourceExample = includeRawContent
+    ? '{ "title": "...", "url": "...", "snippet": "...", "rawContent": "...", "score": 0.9, "provider": "tavily" }'
+    : '{ "title": "...", "url": "...", "snippet": "...", "score": 0.9, "provider": "tavily" }';
   const stdoutExample = includeImages
-    ? `{ "query": "...", "summary": "...", "sources": [{ "title": "...", "url": "...", "snippet": "...", "score": 0.9, "provider": "tavily" }], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "includeImages": true, "fetchedAt": 0 }`
-    : `{ "query": "...", "summary": "...", "sources": [{ "title": "...", "url": "...", "snippet": "...", "score": 0.9, "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "fetchedAt": 0 }`;
+    ? `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "includeImages": true, "fetchedAt": 0 }`
+    : `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "provider": "tavily", "depth": "${depth}", "fetchedAt": 0 }`;
   const commandSuffix = [
     `--depth ${depth}`,
     ...(topic ? [`--topic ${topic}`] : []),
@@ -78,6 +83,7 @@ export function renderResearchCommandContract(
     ...(options.exactMatch === true ? ['--exact-match'] : []),
     ...(minScore != null ? [`--min-score ${minScore}`] : []),
     ...(includeImages ? ['--include-images'] : []),
+    ...(includeRawContent ? ['--include-raw-content'] : []),
     `--max-sources ${maxSources}`,
   ].join(' ');
   const lines = [
@@ -115,6 +121,9 @@ export function renderResearchCommandContract(
     'Use `research/<safe-query-slug>.md` by default. Include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
     ...(includeImages
       ? ['If the JSON includes images, add a Visual references section with image URLs and descriptions.']
+      : []),
+    ...(includeRawContent
+      ? ['If the JSON includes rawContent fields, use them only as source evidence and keep quoted excerpts short.']
       : []),
     'Mention the report path in the final answer so the user can reopen or reference it later.',
   ];

@@ -34,6 +34,8 @@ export interface ResearchOptions {
   minScore?: number;
   /** Include query-related image evidence for visual research. */
   includeImages?: boolean;
+  /** Include bounded cleaned page content for evidence-heavy reports. */
+  includeRawContent?: boolean;
   /** Cap on returned sources. Defaults follow the depth. */
   maxSources?: number;
   /** Provider preference order. Phase 1 supports ['tavily']. */
@@ -44,6 +46,7 @@ export interface ResearchSource {
   title: string;
   url: string;
   snippet: string;
+  rawContent?: string;
   publishedAt?: string;
   score?: number;
   favicon?: string;
@@ -77,6 +80,7 @@ export interface ResearchFindings {
   exactMatch?: boolean;
   minScore?: number;
   includeImages?: boolean;
+  includeRawContent?: boolean;
   usage?: ResearchUsage;
   requestId?: string;
   responseTime?: number;

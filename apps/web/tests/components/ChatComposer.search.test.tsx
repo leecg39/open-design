@@ -230,6 +230,40 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('expands /search raw content flags into evidence-heavy research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --raw AI dashboard implementation evidence' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain('--depth shallow --include-raw-content --max-sources 5');
+    expect(prompt).toContain('Research raw content: enabled.');
+    expect(prompt).toContain('rawContent fields');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'AI dashboard implementation evidence',
+        depth: 'shallow',
+        includeRawContent: true,
+      },
+    });
+  });
+
   it('expands /search exact date flags into research metadata', () => {
     const onSend = vi.fn();
 

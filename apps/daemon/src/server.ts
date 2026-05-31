@@ -303,6 +303,10 @@ export function resolveResearchCommandContract(research, message) {
       typeof research.includeImages === 'boolean'
         ? research.includeImages
         : undefined,
+    includeRawContent:
+      typeof research.includeRawContent === 'boolean'
+        ? research.includeRawContent
+        : undefined,
     maxSources:
       typeof research.maxSources === 'number' ? research.maxSources : undefined,
   });
@@ -4714,6 +4718,7 @@ export async function startServer({
         minScore:
           typeof req.body?.minScore === 'number' ? req.body.minScore : undefined,
         includeImages: req.body?.includeImages === true,
+        includeRawContent: req.body?.includeRawContent === true,
         maxSources:
           typeof req.body?.maxSources === 'number'
             ? req.body.maxSources

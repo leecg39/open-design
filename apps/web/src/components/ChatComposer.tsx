@@ -118,6 +118,7 @@ function parseSearchArgs(raw: string): {
   exactMatch?: boolean;
   minScore?: number;
   includeImages?: boolean;
+  includeRawContent?: boolean;
 } {
   const input = raw.trim();
   if (!input) return { query: '', depth: 'shallow' };
@@ -130,6 +131,7 @@ function parseSearchArgs(raw: string): {
   let exactMatch = false;
   let minScore: number | undefined;
   let includeImages = false;
+  let includeRawContent = false;
   const includeDomains: string[] = [];
   const excludeDomains: string[] = [];
   const tokens = input.split(/\s+/);
@@ -251,6 +253,13 @@ function parseSearchArgs(raw: string): {
     ) {
       includeImages = true;
       cursor += 1;
+    } else if (
+      lower === '--include-raw-content' ||
+      lower === '--raw-content' ||
+      lower === '--raw'
+    ) {
+      includeRawContent = true;
+      cursor += 1;
     } else if (lower.startsWith('--min-score=')) {
       const value = parseSearchScore(token.slice('--min-score='.length));
       if (value == null) break;
@@ -283,6 +292,7 @@ function parseSearchArgs(raw: string): {
     ...(exactMatch ? { exactMatch } : {}),
     ...(minScore != null ? { minScore } : {}),
     ...(includeImages ? { includeImages } : {}),
+    ...(includeRawContent ? { includeRawContent } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
 }
@@ -642,6 +652,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       exactMatch?: boolean;
       minScore?: number;
       includeImages?: boolean;
+      includeRawContent?: boolean;
     } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
@@ -659,6 +670,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         exactMatch,
         minScore,
         includeImages,
+        includeRawContent,
       } = parsed;
       if (!query) return null;
       const maxSources = researchMaxSourcesForDepth(depth);
@@ -678,6 +690,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(exactMatch ? ['--exact-match'] : []),
         ...(minScore != null ? [`--min-score ${minScore}`] : []),
         ...(includeImages ? ['--include-images'] : []),
+        ...(includeRawContent ? ['--include-raw-content'] : []),
         `--max-sources ${maxSources}`,
       ].join(' ');
       return {
@@ -693,6 +706,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(exactMatch ? { exactMatch } : {}),
         ...(minScore != null ? { minScore } : {}),
         ...(includeImages ? { includeImages } : {}),
+        ...(includeRawContent ? { includeRawContent } : {}),
         prompt: [
           `Search for: ${query}`,
           '',
@@ -716,6 +730,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           ...(exactMatch ? ['Research exact match: enabled.'] : []),
           ...(minScore != null ? [`Research minimum score: ${minScore}.`] : []),
           ...(includeImages ? ['Research images: enabled.'] : []),
+          ...(includeRawContent ? ['Research raw content: enabled.'] : []),
           '',
           'Canonical query:',
           '',
@@ -727,6 +742,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           'The report must include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
           ...(includeImages
             ? ['If the research JSON includes images, add a Visual references section with image URLs and descriptions.']
+            : []),
+          ...(includeRawContent
+            ? ['If the research JSON includes rawContent fields, use them as evidence and keep quoted excerpts short.']
             : []),
           'Then summarize the findings with citations by source index and mention the Markdown report path.',
         ].join('\n'),
@@ -969,6 +987,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             ...(search.minScore != null ? { minScore: search.minScore } : {}),
             ...(search.includeImages
               ? { includeImages: search.includeImages }
+              : {}),
+            ...(search.includeRawContent
+              ? { includeRawContent: search.includeRawContent }
               : {}),
           },
         });
