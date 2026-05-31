@@ -384,7 +384,7 @@ function normalizeTavilyImage(value: unknown): ResearchImage | undefined {
   if (!url) return undefined;
   const description =
     typeof record.description === 'string' && record.description.trim()
-      ? record.description.trim().slice(0, 500)
+      ? record.description.replace(/\s+/g, ' ').trim().slice(0, 500)
       : undefined;
   return {
     url,

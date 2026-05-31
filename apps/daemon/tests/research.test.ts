@@ -774,6 +774,51 @@ describe('research search', () => {
     });
   });
 
+  it('bounds and compacts provider image descriptions', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const longDescription = `Image evidence line\n${'visual description '.repeat(40)}`;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Bounded image description summary.',
+          images: [
+            {
+              url: 'https://images.example.com/visual.png',
+              description: longDescription,
+            },
+          ],
+          results: [
+            {
+              title: 'Visual source',
+              url: 'https://example.com/visual-description',
+              content: 'Visual description source.',
+              images: [
+                {
+                  url: 'https://images.example.com/source-visual.png',
+                  description: longDescription,
+                },
+              ],
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design image description quality',
+      includeImages: true,
+    });
+
+    const expected = longDescription.replace(/\s+/g, ' ').trim().slice(0, 500);
+    expect(findings.images?.[0]?.description).not.toContain('\n');
+    expect(findings.images?.[0]?.description).toHaveLength(500);
+    expect(findings.images?.[0]?.description).toBe(expected);
+    expect(findings.sources[0]?.images?.[0]?.description).toBe(expected);
+  });
+
   it('requests and returns source favicons when available', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
