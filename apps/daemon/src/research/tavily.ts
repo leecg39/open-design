@@ -29,6 +29,7 @@ const TAVILY_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TAVILY_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 const TAVILY_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
+const TAVILY_TOPICS = new Set(['general', 'news', 'finance']);
 const TAVILY_COUNTRY_ALIASES: Record<string, string> = {
   korea: 'south korea',
   kr: 'south korea',
@@ -40,6 +41,16 @@ const TAVILY_COUNTRY_ALIASES: Record<string, string> = {
   'u.s.a.': 'united states',
   uk: 'united kingdom',
   'u.k.': 'united kingdom',
+};
+const TAVILY_TIME_RANGE_ALIASES: Record<string, ResearchTimeRange> = {
+  d: 'day',
+  day: 'day',
+  m: 'month',
+  month: 'month',
+  w: 'week',
+  week: 'week',
+  y: 'year',
+  year: 'year',
 };
 const TRACKING_QUERY_PARAMETERS = new Set([
   'fbclid',
@@ -126,6 +137,8 @@ export async function tavilySearch(
     throw new TavilyError('Tavily query is required');
   }
   const country = normalizeTavilyCountry(input.country);
+  const topic = normalizeTavilyTopic(input.topic);
+  const timeRange = normalizeTavilyTimeRange(input.timeRange);
   const startDate = normalizeTavilyDate(input.startDate);
   const endDate = normalizeTavilyDate(input.endDate);
   if (startDate && endDate && startDate > endDate) {
@@ -164,9 +177,9 @@ export async function tavilySearch(
       : input.autoParameters
         ? {}
         : { search_depth: 'basic' }),
-    ...(input.topic ? { topic: input.topic } : {}),
+    ...(topic ? { topic } : {}),
     ...(country ? { country } : {}),
-    ...(input.timeRange ? { time_range: input.timeRange } : {}),
+    ...(timeRange ? { time_range: timeRange } : {}),
     ...(startDate ? { start_date: startDate } : {}),
     ...(endDate ? { end_date: endDate } : {}),
     ...(includeDomains.length
@@ -410,6 +423,23 @@ function normalizeTavilyCountry(value: string | undefined): string {
     RESEARCH_SUPPORTED_COUNTRY_SET.has(normalized)
     ? normalized
     : '';
+}
+
+function normalizeTavilyTopic(
+  value: ResearchTopic | undefined,
+): ResearchTopic | undefined {
+  return typeof value === 'string' && TAVILY_TOPICS.has(value)
+    ? value
+    : undefined;
+}
+
+function normalizeTavilyTimeRange(
+  value: ResearchTimeRange | undefined,
+): ResearchTimeRange | undefined {
+  if (typeof value !== 'string') return undefined;
+  return TAVILY_TIME_RANGE_ALIASES[
+    stripTavilyWrappingQuotes(value).toLowerCase()
+  ];
 }
 
 function normalizeTavilyDate(value: string | undefined): string {

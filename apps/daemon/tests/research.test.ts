@@ -921,6 +921,38 @@ describe('research search', () => {
     expect(body.country).toBe('south korea');
   });
 
+  it('normalizes direct Tavily enum filters before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Enum filter summary.',
+          results: [
+            {
+              title: 'Enum filter source',
+              url: 'https://example.com/enum-filter',
+              content: 'Enum filters should be normalized before Tavily.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily enum filters',
+      topic: 'blogs',
+      timeRange: 'w',
+    } as any);
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).not.toHaveProperty('topic');
+    expect(body.time_range).toBe('week');
+  });
+
   it('omits unsupported direct Tavily country boosts before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
