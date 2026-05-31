@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  collectRepeatedStringFlagValues,
   parseOptionalNumberFlag,
+  splitRepeatedCommaFlagValues,
   splitResearchSubcommand,
 } from '../src/research/cli-args.js';
 
@@ -126,5 +128,29 @@ describe('research CLI', () => {
     expect(() => parseOptionalNumberFlag('high', 'min-score')).toThrow(
       'flag --min-score requires a finite number',
     );
+  });
+
+  it('collects repeated domain filter flags before request serialization', () => {
+    const args = [
+      '--include-domains',
+      'openai.com',
+      '--include-domains=docs.openai.com,platform.openai.com',
+      '--exclude-domains',
+      'reddit.com',
+      '--include-domains',
+      'developers.openai.com',
+    ];
+
+    expect(collectRepeatedStringFlagValues(args, 'include-domains')).toEqual([
+      'openai.com',
+      'docs.openai.com,platform.openai.com',
+      'developers.openai.com',
+    ]);
+    expect(splitRepeatedCommaFlagValues(args, 'include-domains')).toEqual([
+      'openai.com',
+      'docs.openai.com',
+      'platform.openai.com',
+      'developers.openai.com',
+    ]);
   });
 });

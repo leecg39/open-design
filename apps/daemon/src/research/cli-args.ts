@@ -60,3 +60,37 @@ export function parseOptionalNumberFlag(
   }
   return parsed;
 }
+
+export function collectRepeatedStringFlagValues(
+  args: string[],
+  flagName: string,
+): string[] {
+  const flag = `--${flagName}`;
+  const equalsPrefix = `${flag}=`;
+  const values: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === flag) {
+      const next = args[index + 1];
+      if (next != null && !next.startsWith('--')) {
+        values.push(next);
+        index += 1;
+      }
+      continue;
+    }
+    if (arg?.startsWith(equalsPrefix)) {
+      values.push(arg.slice(equalsPrefix.length));
+    }
+  }
+  return values;
+}
+
+export function splitRepeatedCommaFlagValues(
+  args: string[],
+  flagName: string,
+): string[] {
+  return collectRepeatedStringFlagValues(args, flagName)
+    .flatMap((value) => value.split(','))
+    .map((item) => item.trim())
+    .filter(Boolean);
+}

@@ -7,6 +7,7 @@ import { runLiveArtifactsToolCli } from './tools-live-artifacts-cli.js';
 import { parseFlags } from './cli-flags.js';
 import {
   parseOptionalNumberFlag,
+  splitRepeatedCommaFlagValues,
   splitResearchSubcommand,
 } from './research/cli-args.js';
 import {
@@ -317,8 +318,14 @@ async function runResearchSearch(rawArgs) {
     typeof flags['start-date'] === 'string' ? flags['start-date'].trim() : '';
   const endDate =
     typeof flags['end-date'] === 'string' ? flags['end-date'].trim() : '';
-  const includeDomains = splitCommaListFlag(flags['include-domains']);
-  const excludeDomains = splitCommaListFlag(flags['exclude-domains']);
+  const includeDomains = splitRepeatedCommaFlagValues(
+    rawArgs,
+    'include-domains',
+  );
+  const excludeDomains = splitRepeatedCommaFlagValues(
+    rawArgs,
+    'exclude-domains',
+  );
   const exactMatch = flags['exact-match'] === true;
   const includeImages =
     flags['include-images'] === true ||
@@ -430,14 +437,6 @@ Flags:
   --save-report  Save a Markdown report under research/<safe-query-slug>.md, or the next available suffixed path.
   --report       Save the Markdown report to an explicit project-relative path; fails if the file already exists.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
-}
-
-function splitCommaListFlag(value) {
-  if (typeof value !== 'string') return [];
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
 
 // ---------------------------------------------------------------------------
