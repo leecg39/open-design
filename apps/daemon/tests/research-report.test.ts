@@ -40,6 +40,16 @@ describe('research report helpers', () => {
       summary: 'Open Design research quality improved.',
       provider: 'tavily',
       depth: 'deep',
+      topic: 'news',
+      timeRange: 'week',
+      includeDomains: ['openai.com', 'docs.openai.com'],
+      excludeDomains: ['reddit.com'],
+      exactMatch: true,
+      minScore: 0.5,
+      includeImages: true,
+      includeRawContent: true,
+      autoParameters: true,
+      selectedParameters: { topic: 'news', searchDepth: 'advanced' },
       maxSources: 20,
       warnings: ['Ignored invalid maxSources; expected a positive number.'],
       filteredSourceCount: 1,
@@ -62,6 +72,17 @@ describe('research report helpers', () => {
     expect(report).toContain('# Research: Open Design research quality');
     expect(report).toContain('## Warnings');
     expect(report.indexOf('## Warnings')).toBeLessThan(report.indexOf('## Summary'));
+    expect(report).toContain('- Topic: news');
+    expect(report).toContain('- Time range: week');
+    expect(report).toContain('- Include domains: openai.com, docs.openai.com');
+    expect(report).toContain('- Exclude domains: reddit.com');
+    expect(report).toContain('- Exact match: enabled');
+    expect(report).toContain('- Minimum score: 0.5');
+    expect(report).toContain('- Image evidence: enabled');
+    expect(report).toContain('- Raw content evidence: enabled');
+    expect(report).toContain('- Auto parameters: enabled');
+    expect(report).toContain('- Selected topic: news');
+    expect(report).toContain('- Selected search depth: advanced');
     expect(report).toContain('- Effective source cap: 20');
     expect(report).toContain('- Provider credits: 1');
     expect(report).toContain('- Request ID: req-123');

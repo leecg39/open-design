@@ -55,6 +55,23 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     ...(findings.timeRange ? [`- Time range: ${findings.timeRange}`] : []),
     ...(findings.startDate ? [`- Start date: ${findings.startDate}`] : []),
     ...(findings.endDate ? [`- End date: ${findings.endDate}`] : []),
+    ...(findings.includeDomains?.length
+      ? [`- Include domains: ${findings.includeDomains.join(', ')}`]
+      : []),
+    ...(findings.excludeDomains?.length
+      ? [`- Exclude domains: ${findings.excludeDomains.join(', ')}`]
+      : []),
+    ...(findings.exactMatch ? ['- Exact match: enabled'] : []),
+    ...(findings.minScore != null ? [`- Minimum score: ${findings.minScore}`] : []),
+    ...(findings.includeImages ? ['- Image evidence: enabled'] : []),
+    ...(findings.includeRawContent ? ['- Raw content evidence: enabled'] : []),
+    ...(findings.autoParameters ? ['- Auto parameters: enabled'] : []),
+    ...(findings.selectedParameters?.topic
+      ? [`- Selected topic: ${findings.selectedParameters.topic}`]
+      : []),
+    ...(findings.selectedParameters?.searchDepth
+      ? [`- Selected search depth: ${findings.selectedParameters.searchDepth}`]
+      : []),
     ...(findings.maxSources != null
       ? [`- Effective source cap: ${findings.maxSources}`]
       : []),
