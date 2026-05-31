@@ -28,6 +28,7 @@ const RESEARCH_COUNTRY_ALIASES: Record<string, string> = {
   uk: 'united kingdom',
   'u.k.': 'united kingdom',
 };
+const SUPPORTED_RESEARCH_PROVIDERS = new Set(['tavily']);
 
 export class ResearchError extends Error {
   constructor(
@@ -214,7 +215,21 @@ export async function searchResearch(
   ) {
     warnings.push('Ignored invalid, duplicate, or empty provider entries.');
   }
-  const provider = providers[0] ?? 'tavily';
+  const provider =
+    providers.find((candidate) => SUPPORTED_RESEARCH_PROVIDERS.has(candidate)) ??
+    providers[0] ??
+    'tavily';
+  const unsupportedProviders = providers.filter(
+    (candidate) => !SUPPORTED_RESEARCH_PROVIDERS.has(candidate),
+  );
+  if (
+    unsupportedProviders.length > 0 &&
+    SUPPORTED_RESEARCH_PROVIDERS.has(provider)
+  ) {
+    warnings.push(
+      `Ignored unsupported research providers: ${unsupportedProviders.join(', ')}.`,
+    );
+  }
   const maxSources = clampMaxSources(
     input.maxSources,
     RESEARCH_DEFAULT_MAX_SOURCES[depth],

@@ -1341,6 +1341,38 @@ describe('research search', () => {
     }
   });
 
+  it('falls back to supported research provider preference entries', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Provider fallback summary.',
+          results: [
+            {
+              title: 'Fallback provider result',
+              url: 'https://example.com/provider-fallback',
+              content: 'Tavily should be used when it appears later.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design provider fallback',
+      providers: ['bing', 'tavily'],
+    });
+
+    expect(findings).toMatchObject({
+      provider: 'tavily',
+      warnings: ['Ignored unsupported research providers: bing.'],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('preserves invalid API domain filter shapes for daemon warnings', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const realFetch = globalThis.fetch;
