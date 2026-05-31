@@ -374,9 +374,12 @@ function normalizeImageUrl(value: unknown): string | undefined {
   if (!text) return undefined;
   try {
     const url = new URL(text);
-    return url.protocol === 'http:' || url.protocol === 'https:'
-      ? url.toString()
-      : undefined;
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return undefined;
+    }
+    url.hash = '';
+    stripTrackingQueryParameters(url);
+    return url.toString();
   } catch {
     return undefined;
   }

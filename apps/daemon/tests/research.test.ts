@@ -553,9 +553,10 @@ describe('research search', () => {
           answer: 'Visual product summary.',
           images: [
             {
-              url: 'https://images.example.com/product.jpg',
+              url: 'https://images.example.com/product.jpg#hero',
               description: 'A product interface reference.',
             },
+            'https://images.example.com/product.jpg?utm_source=newsletter&fbclid=abc',
             'https://images.example.com/moodboard.png',
             'not-a-url',
             'https://images.example.com/product.jpg',
@@ -567,9 +568,10 @@ describe('research search', () => {
               content: 'Visual design coverage.',
               images: [
                 {
-                  url: 'https://images.example.com/source-interface.png',
+                  url: 'https://images.example.com/source-interface.png#screen',
                   description: 'A source-level interface reference.',
                 },
+                'https://images.example.com/source-interface.png?utm_medium=email',
                 'https://images.example.com/source-mood.png',
                 'ftp://images.example.com/invalid.png',
                 'https://images.example.com/source-interface.png',
