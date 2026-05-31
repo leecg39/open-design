@@ -344,6 +344,25 @@ describe('research search', () => {
     });
   });
 
+  it('rejects reversed exact date ranges before Tavily is called', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      searchResearch({
+        projectRoot: await tempProjectRoot(),
+        query: 'Open Design May updates',
+        startDate: '2026-05-31',
+        endDate: '2026-05-01',
+      }),
+    ).rejects.toMatchObject({
+      code: 'INVALID_DATE_RANGE',
+      status: 400,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('does not forward invalid exact date filters to Tavily', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

@@ -74,6 +74,13 @@ export async function searchResearch(
   const timeRange = normalizeResearchTimeRange(input.timeRange);
   const startDate = normalizeResearchDate(input.startDate);
   const endDate = normalizeResearchDate(input.endDate);
+  if (startDate && endDate && startDate > endDate) {
+    throw new ResearchError(
+      'startDate must be earlier than or equal to endDate',
+      400,
+      'INVALID_DATE_RANGE',
+    );
+  }
   const includeDomains = normalizeResearchDomains(input.includeDomains);
   const excludeDomains = normalizeResearchDomains(input.excludeDomains);
   const exactMatch = input.exactMatch === true;
