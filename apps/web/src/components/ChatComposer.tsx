@@ -395,6 +395,13 @@ function parseSearchArgs(raw: string): {
       break;
     }
   }
+  if (startDate && endDate && startDate > endDate) {
+    warnings.push(
+      'Ignored invalid date range; --start-date must be earlier than or equal to --end-date.',
+    );
+    startDate = undefined;
+    endDate = undefined;
+  }
   return {
     depth,
     ...(topic ? { topic } : {}),
