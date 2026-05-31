@@ -346,6 +346,45 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('ignores impossible /search calendar dates before building the command', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: {
+        value:
+          '/search --start-date 2026-02-31 Open Design impossible date',
+      },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain('--depth shallow --max-sources 5');
+    expect(prompt).toContain(
+      'Research parser warning: Ignored invalid --start-date; expected YYYY-MM-DD.',
+    );
+    expect(prompt).toContain('Open Design impossible date');
+    expect(prompt).not.toContain('--start-date 2026-02-31');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Open Design impossible date',
+        depth: 'shallow',
+      },
+    });
+  });
+
   it('expands /search domain flags into research metadata', () => {
     const onSend = vi.fn();
 
