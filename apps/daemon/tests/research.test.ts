@@ -303,6 +303,45 @@ describe('research search', () => {
     });
   });
 
+  it('requests and returns source favicons when available', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Source identity summary.',
+          results: [
+            {
+              title: 'Source with favicon',
+              url: 'https://example.com/source',
+              content: 'Research result.',
+              favicon: 'https://example.com/favicon.ico',
+            },
+            {
+              title: 'Source with invalid favicon',
+              url: 'https://example.org/source',
+              content: 'Research result.',
+              favicon: 'data:image/png;base64,abc',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design source identity',
+    });
+
+    expect(findings.sources[0]?.favicon).toBe('https://example.com/favicon.ico');
+    expect(findings.sources[1]?.favicon).toBeUndefined();
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({ include_favicon: true });
+  });
+
   it('forwards valid exact date range filters to Tavily', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

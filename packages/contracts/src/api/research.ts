@@ -46,6 +46,7 @@ export interface ResearchSource {
   snippet: string;
   publishedAt?: string;
   score?: number;
+  favicon?: string;
   provider: string;
 }
 

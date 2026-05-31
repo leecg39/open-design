@@ -35,6 +35,7 @@ interface TavilyRawResult {
   content?: unknown;
   score?: unknown;
   published_date?: unknown;
+  favicon?: unknown;
 }
 
 interface TavilyRawResponse {
@@ -94,6 +95,7 @@ export async function tavilySearch(
     ...(input.includeImages
       ? { include_images: true, include_image_descriptions: true }
       : {}),
+    include_favicon: true,
     max_results: maxResults,
     include_answer: input.includeAnswer ?? true,
     include_raw_content: false,
@@ -147,6 +149,7 @@ export async function tavilySearch(
       typeof r.score === 'number' && Number.isFinite(r.score)
         ? Math.max(0, Math.min(r.score, 1))
         : null;
+    const favicon = normalizeImageUrl(r.favicon);
     sources.push({
       title:
         typeof r.title === 'string' && r.title.trim()
@@ -160,6 +163,7 @@ export async function tavilySearch(
       provider: 'tavily',
       ...(publishedAt ? { publishedAt } : {}),
       ...(score != null ? { score } : {}),
+      ...(favicon ? { favicon } : {}),
     });
   }
   return { answer, sources, images };
