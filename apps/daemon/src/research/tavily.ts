@@ -1,4 +1,8 @@
-import type { ResearchSource } from '@open-design/contracts/api/research';
+import type {
+  ResearchSource,
+  ResearchTimeRange,
+  ResearchTopic,
+} from '@open-design/contracts/api/research';
 
 const DEFAULT_BASE_URL = 'https://api.tavily.com';
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -9,6 +13,8 @@ export interface TavilySearchInput {
   baseUrl?: string;
   query: string;
   searchDepth?: 'basic' | 'advanced';
+  topic?: ResearchTopic;
+  timeRange?: ResearchTimeRange;
   maxResults?: number;
   includeAnswer?: boolean | 'basic' | 'advanced';
   chunksPerSource?: number;
@@ -63,6 +69,8 @@ export async function tavilySearch(
   const body = {
     query: input.query,
     search_depth: input.searchDepth ?? 'basic',
+    ...(input.topic ? { topic: input.topic } : {}),
+    ...(input.timeRange ? { time_range: input.timeRange } : {}),
     max_results: maxResults,
     include_answer: input.includeAnswer ?? true,
     include_raw_content: false,

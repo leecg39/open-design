@@ -125,6 +125,44 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('expands /search freshness flags into research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --news --week Open Design product updates' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain(
+      '--depth shallow --topic news --time-range week --max-sources 5',
+    );
+    expect(prompt).toContain('Research topic: news.');
+    expect(prompt).toContain('Research time range: week.');
+    expect(prompt).toContain('Open Design product updates');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Open Design product updates',
+        depth: 'shallow',
+        topic: 'news',
+        timeRange: 'week',
+      },
+    });
+  });
+
   it('does not send research metadata for normal prompts', () => {
     const onSend = vi.fn();
 

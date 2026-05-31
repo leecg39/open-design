@@ -281,6 +281,9 @@ export function resolveResearchCommandContract(research, message) {
   return renderResearchCommandContract({
     query: researchQuery,
     depth: typeof research.depth === 'string' ? research.depth : undefined,
+    topic: typeof research.topic === 'string' ? research.topic : undefined,
+    timeRange:
+      typeof research.timeRange === 'string' ? research.timeRange : undefined,
     maxSources:
       typeof research.maxSources === 'number' ? research.maxSources : undefined,
   });
@@ -4681,6 +4684,8 @@ export async function startServer({
         projectRoot: PROJECT_ROOT,
         query: req.body?.query,
         depth: req.body?.depth,
+        topic: req.body?.topic,
+        timeRange: req.body?.timeRange,
         maxSources:
           typeof req.body?.maxSources === 'number'
             ? req.body.maxSources

@@ -62,6 +62,8 @@ const MCP_BOOLEAN_FLAGS = new Set([
 const RESEARCH_SEARCH_STRING_FLAGS = new Set([
   'query',
   'depth',
+  'topic',
+  'time-range',
   'max-sources',
   'daemon-url',
 ]);
@@ -198,7 +200,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--depth shallow|medium|deep] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--max-sources <n>] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
@@ -271,6 +273,9 @@ async function runResearchSearch(rawArgs) {
   const maxSources =
     flags['max-sources'] == null ? undefined : Number(flags['max-sources']);
   const depth = typeof flags.depth === 'string' ? flags.depth.trim() : '';
+  const topic = typeof flags.topic === 'string' ? flags.topic.trim() : '';
+  const timeRange =
+    typeof flags['time-range'] === 'string' ? flags['time-range'].trim() : '';
   const url = `${daemonUrl.replace(/\/$/, '')}/api/research/search`;
   let resp;
   try {
@@ -280,6 +285,8 @@ async function runResearchSearch(rawArgs) {
       body: JSON.stringify({
         query,
         ...(depth ? { depth } : {}),
+        ...(topic ? { topic } : {}),
+        ...(timeRange ? { timeRange } : {}),
         ...(Number.isFinite(maxSources) ? { maxSources } : {}),
       }),
     });
@@ -297,7 +304,7 @@ async function runResearchSearch(rawArgs) {
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--depth shallow|medium|deep] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--max-sources <n>] [--daemon-url <url>]
 
 Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
@@ -306,6 +313,8 @@ Output is JSON only on stdout:
 Flags:
   --query        Required search query.
   --depth        Optional research depth. Defaults to shallow.
+  --topic        Optional source category.
+  --time-range   Optional recency filter.
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }

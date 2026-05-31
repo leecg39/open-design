@@ -2,6 +2,8 @@ import type {
   ResearchDepth,
   ResearchFindings,
   ResearchSource,
+  ResearchTimeRange,
+  ResearchTopic,
 } from '@open-design/contracts/api/research';
 import { RESEARCH_DEFAULT_MAX_SOURCES } from '@open-design/contracts/api/research';
 import { resolveProviderConfig } from '../media-config.js';
@@ -24,6 +26,8 @@ export interface SearchResearchInput {
   query: string;
   projectRoot: string;
   depth?: ResearchDepth;
+  topic?: ResearchTopic;
+  timeRange?: ResearchTimeRange;
   maxSources?: number;
   providers?: string[];
   signal?: AbortSignal;
@@ -37,6 +41,8 @@ export async function searchResearch(
     throw new ResearchError('query required', 400, 'QUERY_REQUIRED');
   }
   const depth = normalizeResearchDepth(input.depth);
+  const topic = normalizeResearchTopic(input.topic);
+  const timeRange = normalizeResearchTimeRange(input.timeRange);
   const requested = Array.isArray(input.providers) ? input.providers : [];
   const providers = requested.filter(
     (p: unknown): p is string => typeof p === 'string' && p.length > 0,
@@ -70,6 +76,8 @@ export async function searchResearch(
       apiKey: cfg.apiKey,
       query,
       searchDepth: depth === 'shallow' ? 'basic' : 'advanced',
+      ...(topic ? { topic } : {}),
+      ...(timeRange ? { timeRange } : {}),
       maxResults: maxSources,
       includeAnswer: depth === 'deep' ? 'advanced' : true,
       ...(depth === 'medium' ? { chunksPerSource: 2 } : {}),
@@ -97,12 +105,31 @@ export async function searchResearch(
     sources,
     provider,
     depth,
+    ...(topic ? { topic } : {}),
+    ...(timeRange ? { timeRange } : {}),
     fetchedAt: Date.now(),
   };
 }
 
 function normalizeResearchDepth(value: unknown): ResearchDepth {
   return value === 'medium' || value === 'deep' ? value : 'shallow';
+}
+
+function normalizeResearchTopic(value: unknown): ResearchTopic | undefined {
+  return value === 'general' || value === 'news' || value === 'finance'
+    ? value
+    : undefined;
+}
+
+function normalizeResearchTimeRange(
+  value: unknown,
+): ResearchTimeRange | undefined {
+  return value === 'day' ||
+    value === 'week' ||
+    value === 'month' ||
+    value === 'year'
+    ? value
+    : undefined;
 }
 
 function synthesizeFallbackSummary(sources: ResearchSource[]): string {

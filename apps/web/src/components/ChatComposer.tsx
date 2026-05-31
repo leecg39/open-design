@@ -13,7 +13,12 @@ import { patchProject } from "../state/projects";
 import { fetchMcpServers } from "../state/mcp";
 import type { McpServerConfig } from "../state/mcp";
 import type { AppConfig, ChatAttachment, ChatCommentAttachment, ProjectFile, ProjectMetadata } from "../types";
-import type { ResearchDepth, ResearchOptions } from '@open-design/contracts';
+import type {
+  ResearchDepth,
+  ResearchOptions,
+  ResearchTimeRange,
+  ResearchTopic,
+} from '@open-design/contracts';
 import { Icon } from "./Icon";
 import { BUILT_IN_PETS, CUSTOM_PET_ID, resolveActivePet } from "./pet/pets";
 
@@ -80,17 +85,77 @@ export interface ChatSendMeta {
   research?: ResearchOptions;
 }
 
-function parseSearchArgs(raw: string): { query: string; depth: ResearchDepth } {
+const SEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
+const SEARCH_TOPICS = new Set(['general', 'news', 'finance']);
+const SEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
+
+function parseSearchArgs(raw: string): {
+  query: string;
+  depth: ResearchDepth;
+  topic?: ResearchTopic;
+  timeRange?: ResearchTimeRange;
+} {
   const input = raw.trim();
-  const match =
-    /^(?:(?:--depth(?:=|\s+)(shallow|medium|deep))|--(shallow|medium|deep))(?:\s+|$)/i.exec(
-      input,
-    );
-  if (!match) return { query: input, depth: 'shallow' };
-  const depth = (match[1] ?? match[2])!.toLowerCase() as ResearchDepth;
+  if (!input) return { query: '', depth: 'shallow' };
+  let depth: ResearchDepth = 'shallow';
+  let topic: ResearchTopic | undefined;
+  let timeRange: ResearchTimeRange | undefined;
+  const tokens = input.split(/\s+/);
+  let cursor = 0;
+  while (cursor < tokens.length) {
+    const token = tokens[cursor]!;
+    const lower = token.toLowerCase();
+    const next = tokens[cursor + 1]?.toLowerCase();
+
+    if (lower.startsWith('--depth=')) {
+      const value = lower.slice('--depth='.length);
+      if (!SEARCH_DEPTHS.has(value)) break;
+      depth = value as ResearchDepth;
+      cursor += 1;
+    } else if (lower === '--depth' && next && SEARCH_DEPTHS.has(next)) {
+      depth = next as ResearchDepth;
+      cursor += 2;
+    } else if (lower === '--news') {
+      topic = 'news';
+      cursor += 1;
+    } else if (lower === '--finance') {
+      topic = 'finance';
+      cursor += 1;
+    } else if (lower.startsWith('--topic=')) {
+      const value = lower.slice('--topic='.length);
+      if (!SEARCH_TOPICS.has(value)) break;
+      topic = value as ResearchTopic;
+      cursor += 1;
+    } else if (lower === '--topic' && next && SEARCH_TOPICS.has(next)) {
+      topic = next as ResearchTopic;
+      cursor += 2;
+    } else if (lower.startsWith('--time-range=')) {
+      const value = lower.slice('--time-range='.length);
+      if (!SEARCH_TIME_RANGES.has(value)) break;
+      timeRange = value as ResearchTimeRange;
+      cursor += 1;
+    } else if (
+      lower === '--time-range' &&
+      next &&
+      SEARCH_TIME_RANGES.has(next)
+    ) {
+      timeRange = next as ResearchTimeRange;
+      cursor += 2;
+    } else if (
+      lower.startsWith('--') &&
+      SEARCH_TIME_RANGES.has(lower.slice(2))
+    ) {
+      timeRange = lower.slice(2) as ResearchTimeRange;
+      cursor += 1;
+    } else {
+      break;
+    }
+  }
   return {
     depth,
-    query: input.slice(match[0].length).trim(),
+    ...(topic ? { topic } : {}),
+    ...(timeRange ? { timeRange } : {}),
+    query: tokens.slice(cursor).join(' ').trim(),
   };
 }
 
@@ -393,17 +458,30 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
 
     function expandSearchCommand(
       input: string,
-    ): { prompt: string; query: string; depth: ResearchDepth } | null {
+    ): {
+      prompt: string;
+      query: string;
+      depth: ResearchDepth;
+      topic?: ResearchTopic;
+      timeRange?: ResearchTimeRange;
+    } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
       const parsed = parseSearchArgs(m[1]?.trim() ?? '');
-      const { query, depth } = parsed;
+      const { query, depth, topic, timeRange } = parsed;
       if (!query) return null;
       const maxSources = researchMaxSourcesForDepth(depth);
-      const commandSuffix = `--depth ${depth} --max-sources ${maxSources}`;
+      const commandSuffix = [
+        `--depth ${depth}`,
+        ...(topic ? [`--topic ${topic}`] : []),
+        ...(timeRange ? [`--time-range ${timeRange}`] : []),
+        `--max-sources ${maxSources}`,
+      ].join(' ');
       return {
         query,
         depth,
+        ...(topic ? { topic } : {}),
+        ...(timeRange ? { timeRange } : {}),
         prompt: [
           `Search for: ${query}`,
           '',
@@ -413,6 +491,8 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           `cmd.exe: "%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" ${commandSuffix}`,
           'Use the canonical query below as the exact search query, with safe quoting for your shell.',
           `Research depth: ${depth}.`,
+          ...(topic ? [`Research topic: ${topic}.`] : []),
+          ...(timeRange ? [`Research time range: ${timeRange}.`] : []),
           '',
           'Canonical query:',
           '',
@@ -644,7 +724,13 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       if (search) {
         if (streaming) return;
         onSend(search.prompt, staged, commentAttachments, {
-          research: { enabled: true, query: search.query, depth: search.depth },
+          research: {
+            enabled: true,
+            query: search.query,
+            depth: search.depth,
+            ...(search.topic ? { topic: search.topic } : {}),
+            ...(search.timeRange ? { timeRange: search.timeRange } : {}),
+          },
         });
         reset();
         return;

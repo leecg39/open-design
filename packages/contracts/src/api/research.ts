@@ -5,6 +5,8 @@
  */
 
 export type ResearchDepth = 'shallow' | 'medium' | 'deep';
+export type ResearchTopic = 'general' | 'news' | 'finance';
+export type ResearchTimeRange = 'day' | 'week' | 'month' | 'year';
 
 export interface ResearchOptions {
   enabled: boolean;
@@ -12,6 +14,10 @@ export interface ResearchOptions {
   query?: string;
   /** Controls the provider relevance/cost tradeoff. */
   depth?: ResearchDepth;
+  /** Optional Tavily source category. */
+  topic?: ResearchTopic;
+  /** Optional recency filter for current/updated sources. */
+  timeRange?: ResearchTimeRange;
   /** Cap on returned sources. Defaults follow the depth. */
   maxSources?: number;
   /** Provider preference order. Phase 1 supports ['tavily']. */
@@ -32,6 +38,8 @@ export interface ResearchFindings {
   sources: ResearchSource[];
   provider: string;
   depth: ResearchDepth;
+  topic?: ResearchTopic;
+  timeRange?: ResearchTimeRange;
   /** Unix ms when the search returned. */
   fetchedAt: number;
 }

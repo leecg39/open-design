@@ -147,4 +147,48 @@ describe('research search', () => {
       chunks_per_source: 3,
     });
   });
+
+  it('forwards topic and time range freshness filters to Tavily', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Recent product news summary.',
+          results: [
+            {
+              title: 'Product update',
+              url: 'https://example.com/news',
+              content: 'A recent product announcement.',
+              published_date: '2026-05-30',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design product news',
+      topic: 'news',
+      timeRange: 'week',
+    });
+
+    expect(findings).toMatchObject({
+      depth: 'shallow',
+      topic: 'news',
+      timeRange: 'week',
+      sources: [{ publishedAt: '2026-05-30' }],
+    });
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({
+      search_depth: 'basic',
+      topic: 'news',
+      time_range: 'week',
+      max_results: 5,
+    });
+  });
 });
