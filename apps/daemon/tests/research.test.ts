@@ -587,6 +587,29 @@ describe('research search', () => {
     });
   });
 
+  it('compacts Tavily error response bodies before surfacing them', async () => {
+    const noisyBody = `  Too many requests\n${'retry later '.repeat(40)}`;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+        new Response(noisyBody, {
+          status: 429,
+          headers: { 'content-type': 'text/plain' },
+        }),
+      ),
+    );
+
+    await expect(
+      tavilySearch({
+        apiKey: 'tvly-test',
+        query: 'Open Design provider error surface',
+      }),
+    ).rejects.toMatchObject({
+      message: `Tavily 429: ${noisyBody.replace(/\s+/g, ' ').trim().slice(0, 200)}`,
+      status: 429,
+    });
+  });
+
   it('normalizes direct Tavily maxResults to a positive integer', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
