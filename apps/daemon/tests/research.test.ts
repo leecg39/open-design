@@ -809,6 +809,22 @@ describe('research search', () => {
     );
   });
 
+  it('rejects non-http direct Tavily base URLs before provider fetch', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      tavilySearch({
+        apiKey: 'tvly-test',
+        baseUrl: 'ftp://example.com',
+        query: 'Open Design direct Tavily base URL',
+      }),
+    ).rejects.toMatchObject({
+      message: 'Tavily base URL must use http or https',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('omits blank direct Tavily string filters before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(

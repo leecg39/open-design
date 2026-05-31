@@ -111,7 +111,7 @@ export async function tavilySearch(
     (domain) => !includeDomainSet.has(domain),
   );
   const configuredBaseUrl = input.baseUrl?.trim() ?? '';
-  const base = (configuredBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
+  const base = normalizeTavilyBaseUrl(configuredBaseUrl || DEFAULT_BASE_URL);
   const requestedMax =
     typeof input.maxResults === 'number' && Number.isFinite(input.maxResults)
       ? Math.floor(input.maxResults)
@@ -348,6 +348,21 @@ function normalizeTavilyDomainFilters(domains: string[] | undefined): string[] {
     normalized.push(domain);
   }
   return normalized;
+}
+
+function normalizeTavilyBaseUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new TavilyError('Tavily base URL is invalid');
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new TavilyError('Tavily base URL must use http or https');
+  }
+  url.hash = '';
+  url.search = '';
+  return url.toString().replace(/\/+$/, '');
 }
 
 function normalizeTavilyUsage(value: unknown): ResearchUsage | undefined {
