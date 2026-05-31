@@ -921,6 +921,38 @@ describe('research search', () => {
     expect(body.country).toBe('south korea');
   });
 
+  it('omits direct Tavily country boosts for non-general topics', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'News country boost summary.',
+          results: [
+            {
+              title: 'News country boost source',
+              url: 'https://example.com/news-country-boost',
+              content: 'Country boosts only apply to general Tavily searches.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily news country boost',
+      topic: 'news',
+      country: 'kr',
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({ topic: 'news' });
+    expect(body).not.toHaveProperty('country');
+  });
+
   it('normalizes direct Tavily enum filters before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(

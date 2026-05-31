@@ -145,8 +145,11 @@ export async function tavilySearch(
   if (!query) {
     throw new TavilyError('Tavily query is required');
   }
-  const country = normalizeTavilyCountry(input.country);
   const topic = normalizeTavilyTopic(input.topic);
+  const country =
+    topic === 'news' || topic === 'finance'
+      ? ''
+      : normalizeTavilyCountry(input.country);
   const timeRange = normalizeTavilyTimeRange(input.timeRange);
   const searchDepth = normalizeTavilySearchDepth(input.searchDepth);
   const exactMatch = input.exactMatch === true;
