@@ -4,7 +4,10 @@ import { startServer } from './server.js';
 import { runLiveArtifactsMcpServer } from './mcp-live-artifacts-server.js';
 import { runConnectorsToolCli } from './tools-connectors-cli.js';
 import { runLiveArtifactsToolCli } from './tools-live-artifacts-cli.js';
-import { splitResearchSubcommand } from './research/cli-args.js';
+import {
+  parseOptionalNumberFlag,
+  splitResearchSubcommand,
+} from './research/cli-args.js';
 
 const argv = process.argv.slice(2);
 
@@ -285,10 +288,16 @@ async function runResearchSearch(rawArgs) {
   }
   const daemonUrl =
     flags['daemon-url'] || process.env.OD_DAEMON_URL || 'http://127.0.0.1:7456';
-  const maxSources =
-    flags['max-sources'] == null ? undefined : Number(flags['max-sources']);
-  const minScore =
-    flags['min-score'] == null ? undefined : Number(flags['min-score']);
+  let maxSources;
+  let minScore;
+  try {
+    maxSources = parseOptionalNumberFlag(flags['max-sources'], 'max-sources');
+    minScore = parseOptionalNumberFlag(flags['min-score'], 'min-score');
+  } catch (err) {
+    console.error(err.message);
+    printResearchHelp();
+    process.exit(2);
+  }
   const depth = typeof flags.depth === 'string' ? flags.depth.trim() : '';
   const topic = typeof flags.topic === 'string' ? flags.topic.trim() : '';
   const country =

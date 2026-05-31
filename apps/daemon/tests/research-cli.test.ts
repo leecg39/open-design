@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { splitResearchSubcommand } from '../src/research/cli-args.js';
+import {
+  parseOptionalNumberFlag,
+  splitResearchSubcommand,
+} from '../src/research/cli-args.js';
 
 describe('research CLI', () => {
   it('preserves query values equal to the search subcommand', () => {
@@ -80,5 +83,14 @@ describe('research CLI', () => {
         '20',
       ],
     });
+  });
+
+  it('parses optional numeric flags before CLI request serialization', () => {
+    expect(parseOptionalNumberFlag(undefined, 'min-score')).toBeUndefined();
+    expect(parseOptionalNumberFlag('0.5', 'min-score')).toBe(0.5);
+    expect(parseOptionalNumberFlag('50', 'max-sources')).toBe(50);
+    expect(() => parseOptionalNumberFlag('high', 'min-score')).toThrow(
+      'flag --min-score requires a finite number',
+    );
   });
 });
