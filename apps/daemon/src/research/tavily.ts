@@ -187,7 +187,7 @@ export async function tavilySearch(
     );
   }
   const json = (await resp.json()) as TavilyRawResponse;
-  const answer = typeof json.answer === 'string' ? json.answer : '';
+  const answer = typeof json.answer === 'string' ? json.answer.trim() : '';
   const rawResults = Array.isArray(json.results) ? json.results : [];
   const images = normalizeTavilyImages(json.images);
   const usage = normalizeTavilyUsage(json.usage);

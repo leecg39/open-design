@@ -778,6 +778,36 @@ describe('research search', () => {
     );
   });
 
+  it('uses fallback summaries when provider answers are blank', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: '  \n  ',
+          results: [
+            {
+              title: 'Blank answer source',
+              url: 'https://example.com/blank-answer',
+              content: 'Source snippet should backfill a blank provider answer.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design blank provider answer',
+    });
+
+    expect(findings.summary).toContain('(No provider summary; top snippets follow.)');
+    expect(findings.summary).toContain(
+      '[1] Blank answer source: Source snippet should backfill',
+    );
+  });
+
   it('returns provider-selected parameters only when automatic tuning is requested', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
