@@ -44,6 +44,41 @@ describe('research search', () => {
     } satisfies Partial<ResearchError>);
   });
 
+  it('warns when long queries are truncated before provider search', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Truncated query summary.',
+          results: [
+            {
+              title: 'Truncated query source',
+              url: 'https://example.com/truncated-query',
+              content: 'Result for the effective query.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const longQuery = ` ${'Open Design '.repeat(120)} `;
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: longQuery,
+    });
+
+    expect(findings.query).toHaveLength(1000);
+    expect(findings.warnings).toEqual([
+      'Truncated query to 1000 characters.',
+    ]);
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body.query).toBe(findings.query);
+  });
+
   it('uses shallow Tavily search and normalizes JSON findings', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

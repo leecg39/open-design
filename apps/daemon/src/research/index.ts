@@ -10,6 +10,7 @@ import { resolveProviderConfig } from '../media-config.js';
 import { tavilySearch, TavilyError } from './tavily.js';
 
 const TAVILY_MAX_RESULTS_LIMIT = 20;
+const RESEARCH_QUERY_LIMIT = 1000;
 const RESEARCH_DOMAIN_FILTER_LIMIT = 20;
 const RESEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const RESEARCH_DOMAIN_RE =
@@ -63,11 +64,15 @@ export interface SearchResearchInput {
 export async function searchResearch(
   input: SearchResearchInput,
 ): Promise<ResearchFindings> {
-  const query = (input.query?.trim() || '').slice(0, 1000);
+  const rawQuery = input.query?.trim() || '';
+  const query = rawQuery.slice(0, RESEARCH_QUERY_LIMIT);
   if (!query) {
     throw new ResearchError('query required', 400, 'QUERY_REQUIRED');
   }
   const warnings: string[] = [];
+  if (rawQuery.length > RESEARCH_QUERY_LIMIT) {
+    warnings.push(`Truncated query to ${RESEARCH_QUERY_LIMIT} characters.`);
+  }
   const depth = normalizeResearchDepth(input.depth);
   if (
     hasNonEmptyString(input.depth) &&
