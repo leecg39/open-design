@@ -549,6 +549,47 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('removes /search exclude domains that are already included', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: {
+        value:
+          '/search --include-domains openai.com --exclude-domains openai.com,reddit.com OpenAI platform releases',
+      },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain(
+      '--depth shallow --include-domains openai.com --exclude-domains reddit.com --max-sources 5',
+    );
+    expect(prompt).toContain(
+      'Research parser warning: Removed excludeDomains entries that also appear in includeDomains.',
+    );
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'OpenAI platform releases',
+        depth: 'shallow',
+        includeDomains: ['openai.com'],
+        excludeDomains: ['reddit.com'],
+      },
+    });
+  });
+
   it('expands /search exact-match flag into research metadata', () => {
     const onSend = vi.fn();
 

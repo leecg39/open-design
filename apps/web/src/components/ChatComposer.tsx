@@ -413,6 +413,19 @@ function parseSearchArgs(raw: string): {
       'Ignored country boost because topic news/finance does not support it.',
     );
   }
+  if (includeDomains.length && excludeDomains.length) {
+    const included = new Set(includeDomains);
+    const resolvedExcludes = excludeDomains.filter(
+      (domain) => !included.has(domain),
+    );
+    if (resolvedExcludes.length < excludeDomains.length) {
+      warnings.push(
+        'Removed excludeDomains entries that also appear in includeDomains.',
+      );
+      excludeDomains.length = 0;
+      excludeDomains.push(...resolvedExcludes);
+    }
+  }
   return {
     depth,
     ...(topic ? { topic } : {}),
