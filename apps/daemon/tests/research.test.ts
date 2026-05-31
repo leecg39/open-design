@@ -473,6 +473,36 @@ describe('research search', () => {
     expect(rawBody).toMatchObject({ include_raw_content: 'markdown' });
   });
 
+  it('uses raw content excerpts in fallback summaries when snippets are empty', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          results: [
+            {
+              title: 'Raw-only source',
+              url: 'https://example.com/raw-only',
+              content: '',
+              raw_content: 'Detailed source evidence for a raw-only page.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design raw fallback',
+      includeRawContent: true,
+    });
+
+    expect(findings.summary).toContain(
+      '[1] Raw-only source [raw excerpt]: Detailed source evidence',
+    );
+  });
+
   it('returns provider-selected parameters only when automatic tuning is requested', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

@@ -353,7 +353,13 @@ function normalizeMinScore(value: unknown): number | undefined {
 function synthesizeFallbackSummary(sources: ResearchSource[]): string {
   const lead = sources
     .slice(0, 5)
-    .map((s, i) => `- [${i + 1}] ${s.title}: ${s.snippet.slice(0, 200)}`)
+    .map((s, i) => {
+      const snippet = s.snippet.trim();
+      const rawExcerpt = snippet ? '' : s.rawContent?.trim() ?? '';
+      const text = (snippet || rawExcerpt).slice(0, 200);
+      const label = rawExcerpt ? ' [raw excerpt]' : '';
+      return `- [${i + 1}] ${s.title}${label}: ${text}`;
+    })
     .join('\n');
   return `(No provider summary; top snippets follow.)\n${lead}`;
 }
