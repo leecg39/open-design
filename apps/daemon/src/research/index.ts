@@ -41,7 +41,7 @@ export class ResearchError extends Error {
 }
 
 export interface SearchResearchInput {
-  query: string;
+  query: unknown;
   projectRoot: string;
   depth?: ResearchDepth;
   topic?: ResearchTopic;
@@ -64,7 +64,7 @@ export interface SearchResearchInput {
 export async function searchResearch(
   input: SearchResearchInput,
 ): Promise<ResearchFindings> {
-  const rawQuery = input.query?.trim() || '';
+  const rawQuery = typeof input.query === 'string' ? input.query.trim() : '';
   const query = rawQuery.slice(0, RESEARCH_QUERY_LIMIT);
   if (!query) {
     throw new ResearchError('query required', 400, 'QUERY_REQUIRED');

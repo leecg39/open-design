@@ -1403,6 +1403,34 @@ describe('research search', () => {
     }
   });
 
+  it('returns a 400 research error for invalid API query shapes', async () => {
+    const realFetch = globalThis.fetch;
+    const { startServer } = await import('../src/server.js');
+    const started = (await startServer({
+      port: 0,
+      returnServer: true,
+    })) as StartedServer;
+
+    try {
+      const response = await realFetch(`${started.url}/api/research/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: 42 }),
+      });
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body).toEqual({
+        error: {
+          code: 'QUERY_REQUIRED',
+          message: 'query required',
+        },
+      });
+    } finally {
+      await closeServer(started.server);
+    }
+  });
+
   it('explains when minScore filters all provider sources', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
