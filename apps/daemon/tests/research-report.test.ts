@@ -591,6 +591,33 @@ describe('research report helpers', () => {
     expect(report).not.toContain('user:secret@');
   });
 
+  it('uses source URLs as report titles when provider titles are blank', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Blank source title',
+      summary: 'Blank titles should still produce readable report citations.',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 5, 1),
+      sources: [
+        {
+          title: '  ',
+          url: 'https://example.com/source',
+          snippet: 'Evidence with a blank provider title.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain(
+      '- [1] https://example.com/source: Evidence with a blank provider title.',
+    );
+    expect(report).toContain(
+      '1. [https://example.com/source](<https://example.com/source>)',
+    );
+    expect(report).not.toContain('- [1] : Evidence');
+    expect(report).not.toContain('1. [](<https://example.com/source>)');
+  });
+
   it('keeps provider summaries from changing markdown structure', () => {
     const report = buildResearchMarkdownReport({
       query: 'Summary safety',

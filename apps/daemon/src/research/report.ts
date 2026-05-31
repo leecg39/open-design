@@ -319,7 +319,7 @@ function slugifyResearchQuery(query: string): string {
 function renderKeyFindings(sources: ResearchSource[]): string[] {
   if (!sources.length) return ['- No sources returned.'];
   return sources.map((source, index) => {
-    const title = escapeMarkdownText(source.title);
+    const title = escapeMarkdownText(displaySourceTitle(source));
     const fallback = source.snippet || source.rawContent || displayUrlText(source.url);
     const snippet = escapeMarkdownText(
       clip(fallback, 240),
@@ -331,7 +331,7 @@ function renderKeyFindings(sources: ResearchSource[]): string[] {
 function renderSources(sources: ResearchSource[]): string[] {
   if (!sources.length) return ['No sources returned.'];
   return sources.map((source, index) => {
-    const title = escapeMarkdownText(source.title);
+    const title = escapeMarkdownText(displaySourceTitle(source));
     const domain = sourceDomain(source.url);
     const details = [
       domain,
@@ -358,7 +358,7 @@ function renderRawEvidence(sources: ResearchSource[]): string[] {
   return sources.flatMap((source, index) => {
     const rawContent = source.rawContent?.trim();
     if (!rawContent) return [];
-    const title = escapeMarkdownText(source.title);
+    const title = escapeMarkdownText(displaySourceTitle(source));
     const excerpt = escapeMarkdownText(clip(rawContent, 700));
     const marker = source.rawContentTruncated ? ' (truncated excerpt)' : '';
     return [`- [${index + 1}] ${title}${marker}: ${excerpt}`];
@@ -369,7 +369,7 @@ function renderSourceImages(sources: ResearchSource[]): string[] {
   return sources.flatMap((source, sourceIndex) => {
     const images = source.images ?? [];
     if (!images.length) return [];
-    const title = escapeMarkdownText(source.title);
+    const title = escapeMarkdownText(displaySourceTitle(source));
     return images.map((image, imageIndex) => {
       const imageCitation = `[${sourceIndex + 1}.${imageIndex + 1}]`;
       const sourceCitation = `[${sourceIndex + 1}]`;
@@ -381,6 +381,10 @@ function renderSourceImages(sources: ResearchSource[]): string[] {
       )}`;
     });
   });
+}
+
+function displaySourceTitle(source: ResearchSource): string {
+  return source.title.trim() || displayUrlText(source.url);
 }
 
 function renderImage(image: NonNullable<ResearchFindings['images']>[number]): string {
