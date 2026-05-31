@@ -62,7 +62,7 @@ describe('renderResearchCommandContract', () => {
   it('includes a normalized country boost for general research', () => {
     const prompt = renderResearchCommandContract({
       query: 'Korean AI design market',
-      country: 'kr',
+      country: '"South Korea"',
       maxSources: 5,
     });
 

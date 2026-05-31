@@ -200,10 +200,21 @@ function normalizeTopic(value: unknown): 'general' | 'news' | 'finance' | undefi
 
 function normalizeCountry(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
-  const key = value.trim().toLowerCase();
+  const key = stripWrappingQuotes(value).toLowerCase();
   const alias = RESEARCH_COUNTRY_ALIASES[key];
   const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   return RESEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
+}
+
+function stripWrappingQuotes(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length < 2) return trimmed;
+  const first = trimmed[0];
+  const last = trimmed[trimmed.length - 1];
+  if ((first === '"' || first === "'") && last === first) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
 }
 
 function normalizeTimeRange(
