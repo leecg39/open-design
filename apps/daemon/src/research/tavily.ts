@@ -106,7 +106,10 @@ export async function tavilySearch(
   const startDate = input.startDate?.trim() ?? '';
   const endDate = input.endDate?.trim() ?? '';
   const includeDomains = normalizeTavilyDomainFilters(input.includeDomains);
-  const excludeDomains = normalizeTavilyDomainFilters(input.excludeDomains);
+  const includeDomainSet = new Set(includeDomains);
+  const excludeDomains = normalizeTavilyDomainFilters(input.excludeDomains).filter(
+    (domain) => !includeDomainSet.has(domain),
+  );
   const configuredBaseUrl = input.baseUrl?.trim() ?? '';
   const base = (configuredBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
   const requestedMax =

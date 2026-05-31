@@ -875,6 +875,38 @@ describe('research search', () => {
     expect(body.exclude_domains).toEqual(['docs.example.com']);
   });
 
+  it('removes overlapping direct Tavily exclude domains before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Domain overlap summary.',
+          results: [
+            {
+              title: 'Domain overlap source',
+              url: 'https://example.com/domain-overlap',
+              content: 'Overlapping domain filters should be deterministic.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily domain overlap',
+      includeDomains: ['Example.com', 'openai.com'],
+      excludeDomains: ['example.com', 'news.example.com'],
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body.include_domains).toEqual(['example.com', 'openai.com']);
+    expect(body.exclude_domains).toEqual(['news.example.com']);
+  });
+
   it('maps medium and deep depth requests to advanced Tavily search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
