@@ -1063,6 +1063,38 @@ describe('research search', () => {
     expect(body.include_raw_content).toBe(false);
   });
 
+  it('uses normalized direct Tavily auto-parameter controls when reading responses', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Auto-parameter control summary.',
+          auto_parameters: { topic: 'news', search_depth: 'advanced' },
+          results: [
+            {
+              title: 'Auto-parameter control source',
+              url: 'https://example.com/auto-parameter-control',
+              content: 'Invalid auto-parameter controls should not expose metadata.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const output = await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily auto-parameter controls',
+      autoParameters: 'true',
+    } as any);
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).not.toHaveProperty('auto_parameters');
+    expect(output.selectedParameters).toBeUndefined();
+  });
+
   it('uses normalized direct Tavily evidence controls when reading responses', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(

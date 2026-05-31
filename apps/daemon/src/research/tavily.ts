@@ -289,7 +289,7 @@ export async function tavilySearch(
   const rawResults = json.results ?? [];
   const images = includeImages ? normalizeTavilyImages(json.images) : [];
   const usage = normalizeTavilyUsage(json.usage);
-  const selectedParameters = input.autoParameters
+  const selectedParameters = autoParameters
     ? normalizeTavilyAutoParameters(json.auto_parameters)
     : undefined;
   const requestId =
