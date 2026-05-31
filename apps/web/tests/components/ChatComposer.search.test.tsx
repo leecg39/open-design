@@ -52,6 +52,9 @@ describe('ChatComposer /search command', () => {
     expect(prompt).toContain(
       'use your own search capability as fallback and label the fallback clearly',
     );
+    expect(prompt).toContain(
+      'If fallback search is used, create a Markdown report in Design Files before summarizing findings with citations.',
+    );
     expect(prompt).toContain('command saves a reusable Markdown report into Design Files');
     expect(prompt).toContain('research/<safe-query-slug>.md');
     expect(prompt).toContain('--save-report');
