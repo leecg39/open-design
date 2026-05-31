@@ -564,9 +564,14 @@ async function runMediaWait(rawArgs) {
   }
   const daemonUrl =
     flags['daemon-url'] || process.env.OD_DAEMON_URL || 'http://127.0.0.1:7456';
-  const since = Number.isFinite(Number(flags.since))
-    ? Number(flags.since)
-    : 0;
+  let since = 0;
+  if (flags.since != null) {
+    since = Number(flags.since);
+    if (!Number.isFinite(since) || since < 0) {
+      console.error('flag --since requires a non-negative number');
+      process.exit(2);
+    }
+  }
   await pollUntilDoneOrBudget(daemonUrl, taskId, since);
 }
 
