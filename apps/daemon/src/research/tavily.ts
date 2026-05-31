@@ -25,6 +25,19 @@ const TAVILY_ERROR_TEXT_LIMIT = 200;
 const TAVILY_DOMAIN_FILTER_LIMIT = 20;
 const TAVILY_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+const TAVILY_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
+const TAVILY_COUNTRY_ALIASES: Record<string, string> = {
+  korea: 'south korea',
+  kr: 'south korea',
+  'south-korea': 'south korea',
+  'south_korea': 'south korea',
+  us: 'united states',
+  usa: 'united states',
+  'u.s.': 'united states',
+  'u.s.a.': 'united states',
+  uk: 'united kingdom',
+  'u.k.': 'united kingdom',
+};
 const TRACKING_QUERY_PARAMETERS = new Set([
   'fbclid',
   'gclid',
@@ -109,7 +122,7 @@ export async function tavilySearch(
   if (!query) {
     throw new TavilyError('Tavily query is required');
   }
-  const country = input.country?.trim() ?? '';
+  const country = normalizeTavilyCountry(input.country);
   const startDate = input.startDate?.trim() ?? '';
   const endDate = input.endDate?.trim() ?? '';
   const includeDomains = normalizeTavilyDomainFilters(input.includeDomains);
@@ -371,6 +384,14 @@ function normalizeTavilyDomainFilter(value: string): string | undefined {
   text = text.split(/[/?#]/)[0]?.replace(/:\d+$/, '') ?? '';
   if (!text || !TAVILY_DOMAIN_RE.test(text)) return undefined;
   return text;
+}
+
+function normalizeTavilyCountry(value: string | undefined): string {
+  if (value == null) return '';
+  const key = stripTavilyWrappingQuotes(value).toLowerCase();
+  const alias = TAVILY_COUNTRY_ALIASES[key];
+  const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  return TAVILY_COUNTRY_RE.test(normalized) ? normalized : '';
 }
 
 function stripTavilyWrappingQuotes(value: string): string {
