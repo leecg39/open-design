@@ -81,6 +81,17 @@ describe('research report helpers', () => {
     );
   });
 
+  it('rejects explicit report paths with Windows-invalid trailing dots or spaces', () => {
+    const root = path.resolve('/tmp/open-design-project');
+
+    expect(() => resolveResearchReportPath(root, 'research./report.md')).toThrow(
+      'report path segments cannot end with a dot or space',
+    );
+    expect(() => resolveResearchReportPath(root, 'research/report.')).toThrow(
+      'report path segments cannot end with a dot or space',
+    );
+  });
+
   it('keeps automatic report paths from overwriting existing reports', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'open-design-research-report-'));
     try {

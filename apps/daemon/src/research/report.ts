@@ -42,6 +42,9 @@ export function resolveResearchReportPath(
   if (hasWindowsReservedReportPathCharacters(parts)) {
     throw new Error('report path contains characters reserved on Windows');
   }
+  if (hasWindowsTrailingReportPathSegment(parts)) {
+    throw new Error('report path segments cannot end with a dot or space');
+  }
   if (hasWindowsReservedReportFileName(parts[parts.length - 1] ?? '')) {
     throw new Error('report file name is reserved on Windows');
   }
@@ -276,6 +279,10 @@ function reportPathExistsError(relativePath: string): Error & { code: string } {
 
 function hasWindowsReservedReportPathCharacters(parts: string[]): boolean {
   return parts.some((part) => /[<>:"|?*\u0000-\u001F]/u.test(part));
+}
+
+function hasWindowsTrailingReportPathSegment(parts: string[]): boolean {
+  return parts.some((part) => /[. ]$/u.test(part));
 }
 
 function hasWindowsReservedReportFileName(fileName: string): boolean {
