@@ -445,6 +445,12 @@ function parseSearchArgs(raw: string): {
       'Ignored country boost because topic news/finance does not support it.',
     );
   }
+  if (dedupeSearchDomains(includeDomains)) {
+    warnings.push('Removed duplicate --include-domains entries.');
+  }
+  if (dedupeSearchDomains(excludeDomains)) {
+    warnings.push('Removed duplicate --exclude-domains entries.');
+  }
   if (includeDomains.length && excludeDomains.length) {
     const included = new Set(includeDomains);
     const resolvedExcludes = excludeDomains.filter(
@@ -520,6 +526,14 @@ function parseSearchDomains(value: string): {
     out.push(domain);
   }
   return { domains: out, ignoredCount };
+}
+
+function dedupeSearchDomains(values: string[]): boolean {
+  const unique = Array.from(new Set(values));
+  if (unique.length === values.length) return false;
+  values.length = 0;
+  values.push(...unique);
+  return true;
 }
 
 function normalizeSearchDomain(value: string): string | null {
