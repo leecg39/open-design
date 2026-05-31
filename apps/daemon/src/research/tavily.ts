@@ -12,6 +12,7 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 const TAVILY_MAX_RESULTS_LIMIT = 20;
 const TAVILY_SOURCE_TITLE_LIMIT = 300;
 const TAVILY_SOURCE_SNIPPET_LIMIT = 800;
+const TAVILY_PUBLISHED_AT_LIMIT = 100;
 const TAVILY_RAW_CONTENT_LIMIT = 4_000;
 const TRACKING_QUERY_PARAMETERS = new Set([
   'fbclid',
@@ -218,8 +219,11 @@ export async function tavilySearch(
     seenSourceUrls.add(url);
     const publishedAt =
       typeof r.published_date === 'string' && r.published_date.trim()
-        ? r.published_date.trim()
-        : null;
+        ? r.published_date
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, TAVILY_PUBLISHED_AT_LIMIT)
+        : '';
     const score =
       typeof r.score === 'number' && Number.isFinite(r.score)
         ? Math.max(0, Math.min(r.score, 1))

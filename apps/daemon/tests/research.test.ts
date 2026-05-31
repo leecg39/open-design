@@ -332,6 +332,39 @@ describe('research search', () => {
     );
   });
 
+  it('bounds and compacts provider published dates', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const longDate = `2026-06-01\n${'provider date metadata '.repeat(10)}`;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Bounded date metadata summary.',
+          results: [
+            {
+              title: 'Date source',
+              url: 'https://example.com/bounded-date',
+              content: 'Source date should be compact and bounded.',
+              published_date: longDate,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design source date quality',
+    });
+
+    expect(findings.sources[0]?.publishedAt).not.toContain('\n');
+    expect(findings.sources[0]?.publishedAt).toHaveLength(100);
+    expect(findings.sources[0]?.publishedAt).toBe(
+      longDate.replace(/\s+/g, ' ').trim().slice(0, 100),
+    );
+  });
+
   it('explains when all provider results are discarded by source URL normalization', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
