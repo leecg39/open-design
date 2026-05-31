@@ -17,6 +17,8 @@ export interface TavilySearchInput {
   timeRange?: ResearchTimeRange;
   startDate?: string;
   endDate?: string;
+  includeDomains?: string[];
+  excludeDomains?: string[];
   maxResults?: number;
   includeAnswer?: boolean | 'basic' | 'advanced';
   chunksPerSource?: number;
@@ -75,6 +77,12 @@ export async function tavilySearch(
     ...(input.timeRange ? { time_range: input.timeRange } : {}),
     ...(input.startDate ? { start_date: input.startDate } : {}),
     ...(input.endDate ? { end_date: input.endDate } : {}),
+    ...(input.includeDomains?.length
+      ? { include_domains: input.includeDomains }
+      : {}),
+    ...(input.excludeDomains?.length
+      ? { exclude_domains: input.excludeDomains }
+      : {}),
     max_results: maxResults,
     include_answer: input.includeAnswer ?? true,
     include_raw_content: false,

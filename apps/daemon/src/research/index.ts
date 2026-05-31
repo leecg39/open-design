@@ -10,7 +10,10 @@ import { resolveProviderConfig } from '../media-config.js';
 import { tavilySearch, TavilyError } from './tavily.js';
 
 const TAVILY_MAX_RESULTS_LIMIT = 20;
+const RESEARCH_DOMAIN_FILTER_LIMIT = 20;
 const RESEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const RESEARCH_DOMAIN_RE =
+  /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 
 export class ResearchError extends Error {
   constructor(
@@ -31,6 +34,8 @@ export interface SearchResearchInput {
   timeRange?: ResearchTimeRange;
   startDate?: string;
   endDate?: string;
+  includeDomains?: string[];
+  excludeDomains?: string[];
   maxSources?: number;
   providers?: string[];
   signal?: AbortSignal;
@@ -48,6 +53,8 @@ export async function searchResearch(
   const timeRange = normalizeResearchTimeRange(input.timeRange);
   const startDate = normalizeResearchDate(input.startDate);
   const endDate = normalizeResearchDate(input.endDate);
+  const includeDomains = normalizeResearchDomains(input.includeDomains);
+  const excludeDomains = normalizeResearchDomains(input.excludeDomains);
   const requested = Array.isArray(input.providers) ? input.providers : [];
   const providers = requested.filter(
     (p: unknown): p is string => typeof p === 'string' && p.length > 0,
@@ -85,6 +92,8 @@ export async function searchResearch(
       ...(timeRange ? { timeRange } : {}),
       ...(startDate ? { startDate } : {}),
       ...(endDate ? { endDate } : {}),
+      ...(includeDomains.length ? { includeDomains } : {}),
+      ...(excludeDomains.length ? { excludeDomains } : {}),
       maxResults: maxSources,
       includeAnswer: depth === 'deep' ? 'advanced' : true,
       ...(depth === 'medium' ? { chunksPerSource: 2 } : {}),
@@ -116,6 +125,8 @@ export async function searchResearch(
     ...(timeRange ? { timeRange } : {}),
     ...(startDate ? { startDate } : {}),
     ...(endDate ? { endDate } : {}),
+    ...(includeDomains.length ? { includeDomains } : {}),
+    ...(excludeDomains.length ? { excludeDomains } : {}),
     fetchedAt: Date.now(),
   };
 }
@@ -158,6 +169,40 @@ function normalizeResearchDate(value: unknown): string | undefined {
     return undefined;
   }
   return trimmed;
+}
+
+function normalizeResearchDomains(value: unknown): string[] {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split(',')
+      : [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    const domain = normalizeResearchDomain(item);
+    if (!domain || seen.has(domain)) continue;
+    seen.add(domain);
+    out.push(domain);
+    if (out.length >= RESEARCH_DOMAIN_FILTER_LIMIT) break;
+  }
+  return out;
+}
+
+function normalizeResearchDomain(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  let text = value.trim().toLowerCase();
+  if (!text) return undefined;
+  if (/^https?:\/\//.test(text)) {
+    try {
+      text = new URL(text).hostname;
+    } catch {
+      return undefined;
+    }
+  }
+  text = text.split(/[/?#]/)[0]?.replace(/:\d+$/, '') ?? '';
+  if (!text || !RESEARCH_DOMAIN_RE.test(text)) return undefined;
+  return text;
 }
 
 function synthesizeFallbackSummary(sources: ResearchSource[]): string {

@@ -267,4 +267,48 @@ describe('research search', () => {
     expect(body).not.toHaveProperty('start_date');
     expect(body).not.toHaveProperty('end_date');
   });
+
+  it('forwards normalized domain filters to Tavily', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Official-source summary.',
+          results: [
+            {
+              title: 'Official docs',
+              url: 'https://docs.openai.com/example',
+              content: 'Official documentation result.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'OpenAI platform release notes',
+      includeDomains: [
+        'OpenAI.com',
+        'https://docs.openai.com/platform',
+        'not a domain',
+        'openai.com',
+      ],
+      excludeDomains: ['Reddit.com', 'localhost'],
+    });
+
+    expect(findings).toMatchObject({
+      includeDomains: ['openai.com', 'docs.openai.com'],
+      excludeDomains: ['reddit.com'],
+    });
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({
+      include_domains: ['openai.com', 'docs.openai.com'],
+      exclude_domains: ['reddit.com'],
+    });
+  });
 });

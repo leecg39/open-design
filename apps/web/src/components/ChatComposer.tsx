@@ -89,6 +89,8 @@ const SEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const SEARCH_TOPICS = new Set(['general', 'news', 'finance']);
 const SEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
 const SEARCH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const SEARCH_DOMAIN_RE =
+  /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 
 function parseSearchArgs(raw: string): {
   query: string;
@@ -97,6 +99,8 @@ function parseSearchArgs(raw: string): {
   timeRange?: ResearchTimeRange;
   startDate?: string;
   endDate?: string;
+  includeDomains?: string[];
+  excludeDomains?: string[];
 } {
   const input = raw.trim();
   if (!input) return { query: '', depth: 'shallow' };
@@ -105,6 +109,8 @@ function parseSearchArgs(raw: string): {
   let timeRange: ResearchTimeRange | undefined;
   let startDate: string | undefined;
   let endDate: string | undefined;
+  const includeDomains: string[] = [];
+  const excludeDomains: string[] = [];
   const tokens = input.split(/\s+/);
   let cursor = 0;
   while (cursor < tokens.length) {
@@ -171,6 +177,30 @@ function parseSearchArgs(raw: string): {
     ) {
       endDate = nextToken;
       cursor += 2;
+    } else if (lower.startsWith('--include-domains=')) {
+      const values = parseSearchDomains(token.slice('--include-domains='.length));
+      if (values.length === 0) break;
+      includeDomains.push(...values);
+      cursor += 1;
+    } else if (
+      lower === '--include-domains' &&
+      nextToken &&
+      parseSearchDomains(nextToken).length > 0
+    ) {
+      includeDomains.push(...parseSearchDomains(nextToken));
+      cursor += 2;
+    } else if (lower.startsWith('--exclude-domains=')) {
+      const values = parseSearchDomains(token.slice('--exclude-domains='.length));
+      if (values.length === 0) break;
+      excludeDomains.push(...values);
+      cursor += 1;
+    } else if (
+      lower === '--exclude-domains' &&
+      nextToken &&
+      parseSearchDomains(nextToken).length > 0
+    ) {
+      excludeDomains.push(...parseSearchDomains(nextToken));
+      cursor += 2;
     } else if (
       lower.startsWith('--') &&
       SEARCH_TIME_RANGES.has(lower.slice(2))
@@ -187,12 +217,40 @@ function parseSearchArgs(raw: string): {
     ...(timeRange ? { timeRange } : {}),
     ...(startDate ? { startDate } : {}),
     ...(endDate ? { endDate } : {}),
+    ...(includeDomains.length ? { includeDomains } : {}),
+    ...(excludeDomains.length ? { excludeDomains } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
 }
 
 function isSearchDate(value: string): boolean {
   return SEARCH_DATE_RE.test(value);
+}
+
+function parseSearchDomains(value: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value.split(',')) {
+    const domain = normalizeSearchDomain(item);
+    if (!domain || seen.has(domain)) continue;
+    seen.add(domain);
+    out.push(domain);
+  }
+  return out;
+}
+
+function normalizeSearchDomain(value: string): string | null {
+  let text = value.trim().toLowerCase();
+  if (!text) return null;
+  if (/^https?:\/\//.test(text)) {
+    try {
+      text = new URL(text).hostname;
+    } catch {
+      return null;
+    }
+  }
+  text = text.split(/[/?#]/)[0]?.replace(/:\d+$/, '') ?? '';
+  return SEARCH_DOMAIN_RE.test(text) ? text : null;
 }
 
 function researchMaxSourcesForDepth(depth: ResearchDepth): number {
@@ -502,11 +560,22 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       timeRange?: ResearchTimeRange;
       startDate?: string;
       endDate?: string;
+      includeDomains?: string[];
+      excludeDomains?: string[];
     } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
       const parsed = parseSearchArgs(m[1]?.trim() ?? '');
-      const { query, depth, topic, timeRange, startDate, endDate } = parsed;
+      const {
+        query,
+        depth,
+        topic,
+        timeRange,
+        startDate,
+        endDate,
+        includeDomains,
+        excludeDomains,
+      } = parsed;
       if (!query) return null;
       const maxSources = researchMaxSourcesForDepth(depth);
       const commandSuffix = [
@@ -515,6 +584,12 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(timeRange ? [`--time-range ${timeRange}`] : []),
         ...(startDate ? [`--start-date ${startDate}`] : []),
         ...(endDate ? [`--end-date ${endDate}`] : []),
+        ...(includeDomains?.length
+          ? [`--include-domains ${includeDomains.join(',')}`]
+          : []),
+        ...(excludeDomains?.length
+          ? [`--exclude-domains ${excludeDomains.join(',')}`]
+          : []),
         `--max-sources ${maxSources}`,
       ].join(' ');
       return {
@@ -524,6 +599,8 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(timeRange ? { timeRange } : {}),
         ...(startDate ? { startDate } : {}),
         ...(endDate ? { endDate } : {}),
+        ...(includeDomains?.length ? { includeDomains } : {}),
+        ...(excludeDomains?.length ? { excludeDomains } : {}),
         prompt: [
           `Search for: ${query}`,
           '',
@@ -537,6 +614,12 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           ...(timeRange ? [`Research time range: ${timeRange}.`] : []),
           ...(startDate ? [`Research start date: ${startDate}.`] : []),
           ...(endDate ? [`Research end date: ${endDate}.`] : []),
+          ...(includeDomains?.length
+            ? [`Research include domains: ${includeDomains.join(', ')}.`]
+            : []),
+          ...(excludeDomains?.length
+            ? [`Research exclude domains: ${excludeDomains.join(', ')}.`]
+            : []),
           '',
           'Canonical query:',
           '',
@@ -776,6 +859,12 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             ...(search.timeRange ? { timeRange: search.timeRange } : {}),
             ...(search.startDate ? { startDate: search.startDate } : {}),
             ...(search.endDate ? { endDate: search.endDate } : {}),
+            ...(search.includeDomains?.length
+              ? { includeDomains: search.includeDomains }
+              : {}),
+            ...(search.excludeDomains?.length
+              ? { excludeDomains: search.excludeDomains }
+              : {}),
           },
         });
         reset();

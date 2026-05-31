@@ -1,9 +1,12 @@
 const DEFAULT_MAX_SOURCES = 5;
 const TAVILY_MAX_RESULTS_LIMIT = 20;
+const RESEARCH_DOMAIN_FILTER_LIMIT = 20;
 const RESEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const RESEARCH_TOPICS = new Set(['general', 'news', 'finance']);
 const RESEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
 const RESEARCH_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const RESEARCH_DOMAIN_RE =
+  /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 const DEFAULT_MAX_SOURCES_BY_DEPTH = {
   shallow: 5,
   medium: 12,
@@ -18,6 +21,8 @@ export interface ResearchCommandContractOptions {
   timeRange?: string;
   startDate?: string;
   endDate?: string;
+  includeDomains?: string[];
+  excludeDomains?: string[];
 }
 
 export function renderResearchCommandContract(
@@ -28,6 +33,8 @@ export function renderResearchCommandContract(
   const timeRange = normalizeTimeRange(options.timeRange);
   const startDate = normalizeDate(options.startDate);
   const endDate = normalizeDate(options.endDate);
+  const includeDomains = normalizeDomains(options.includeDomains);
+  const excludeDomains = normalizeDomains(options.excludeDomains);
   const maxSources = normalizeMaxSources(options.maxSources, depth);
   const commandSuffix = [
     `--depth ${depth}`,
@@ -35,6 +42,12 @@ export function renderResearchCommandContract(
     ...(timeRange ? [`--time-range ${timeRange}`] : []),
     ...(startDate ? [`--start-date ${startDate}`] : []),
     ...(endDate ? [`--end-date ${endDate}`] : []),
+    ...(includeDomains.length
+      ? [`--include-domains ${includeDomains.join(',')}`]
+      : []),
+    ...(excludeDomains.length
+      ? [`--exclude-domains ${excludeDomains.join(',')}`]
+      : []),
     `--max-sources ${maxSources}`,
   ].join(' ');
   const lines = [
@@ -116,6 +129,35 @@ function normalizeDate(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
   return RESEARCH_DATE_RE.test(trimmed) ? trimmed : undefined;
+}
+
+function normalizeDomains(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    const domain = normalizeDomain(item);
+    if (!domain || seen.has(domain)) continue;
+    seen.add(domain);
+    out.push(domain);
+    if (out.length >= RESEARCH_DOMAIN_FILTER_LIMIT) break;
+  }
+  return out;
+}
+
+function normalizeDomain(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  let text = value.trim().toLowerCase();
+  if (!text) return undefined;
+  if (/^https?:\/\//.test(text)) {
+    try {
+      text = new URL(text).hostname;
+    } catch {
+      return undefined;
+    }
+  }
+  text = text.split(/[/?#]/)[0]?.replace(/:\d+$/, '') ?? '';
+  return RESEARCH_DOMAIN_RE.test(text) ? text : undefined;
 }
 
 function normalizeMaxSources(

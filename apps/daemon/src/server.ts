@@ -287,6 +287,12 @@ export function resolveResearchCommandContract(research, message) {
     startDate:
       typeof research.startDate === 'string' ? research.startDate : undefined,
     endDate: typeof research.endDate === 'string' ? research.endDate : undefined,
+    includeDomains: Array.isArray(research.includeDomains)
+      ? research.includeDomains
+      : undefined,
+    excludeDomains: Array.isArray(research.excludeDomains)
+      ? research.excludeDomains
+      : undefined,
     maxSources:
       typeof research.maxSources === 'number' ? research.maxSources : undefined,
   });
@@ -4691,6 +4697,8 @@ export async function startServer({
         timeRange: req.body?.timeRange,
         startDate: req.body?.startDate,
         endDate: req.body?.endDate,
+        includeDomains: req.body?.includeDomains,
+        excludeDomains: req.body?.excludeDomains,
         maxSources:
           typeof req.body?.maxSources === 'number'
             ? req.body.maxSources
