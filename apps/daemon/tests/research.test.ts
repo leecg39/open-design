@@ -371,6 +371,36 @@ describe('research search', () => {
     );
   });
 
+  it('bounds source URL fallback titles when provider titles are blank', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const longUrl = `https://example.com/${'long-url-segment-'.repeat(25)}source`;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Bounded fallback title summary.',
+          results: [
+            {
+              title: '  ',
+              url: longUrl,
+              content: 'A blank title should fall back to a bounded URL title.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design source fallback title quality',
+    });
+
+    expect(findings.sources[0]?.url).toBe(longUrl);
+    expect(findings.sources[0]?.title).toHaveLength(300);
+    expect(findings.sources[0]?.title).toBe(longUrl.slice(0, 300));
+  });
+
   it('bounds and compacts provider source snippets', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const longSnippet = `First evidence line\n${'repeated evidence '.repeat(80)}`;

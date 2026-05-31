@@ -263,7 +263,7 @@ export async function tavilySearch(
             .slice(0, TAVILY_SOURCE_SNIPPET_LIMIT)
         : '';
     sources.push({
-      title: title || url,
+      title: title || url.slice(0, TAVILY_SOURCE_TITLE_LIMIT),
       url,
       snippet,
       ...(rawContent ? { rawContent } : {}),
