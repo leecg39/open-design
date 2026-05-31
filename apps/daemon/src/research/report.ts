@@ -31,13 +31,14 @@ export function resolveResearchReportPath(
   if (path.isAbsolute(normalized)) {
     throw new Error('report path must be project-relative');
   }
-  const parts = normalized.split('/').filter(Boolean);
-  if (parts.includes('..')) {
+  const rawParts = normalized.split('/').filter(Boolean);
+  if (rawParts.includes('..')) {
     throw new Error('report path must stay inside the project');
   }
-  if (parts[parts.length - 1] === '.') {
+  if (rawParts[rawParts.length - 1] === '.') {
     throw new Error('report path must include a file name');
   }
+  const parts = rawParts.filter((part) => part !== '.');
   const relativePath = parts.join('/');
   const projectRoot = path.resolve(cwd);
   const absolutePath = path.resolve(projectRoot, relativePath);

@@ -33,6 +33,10 @@ describe('research report helpers', () => {
       absolutePath: path.join(root, 'research/report.md'),
       relativePath: 'research/report.md',
     });
+    expect(resolveResearchReportPath(root, 'research/./report.md')).toEqual({
+      absolutePath: path.join(root, 'research/report.md'),
+      relativePath: 'research/report.md',
+    });
     expect(() => resolveResearchReportPath(root, '../report.md')).toThrow(
       'report path must stay inside the project',
     );
