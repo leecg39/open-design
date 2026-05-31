@@ -454,6 +454,40 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('expands /search max-sources flag into research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --max-sources=15 Open Design source coverage' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain('--depth shallow --max-sources 15');
+    expect(prompt).toContain('Research max sources: 15.');
+    expect(prompt).toContain('Open Design source coverage');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Open Design source coverage',
+        depth: 'shallow',
+        maxSources: 15,
+      },
+    });
+  });
+
   it('does not send research metadata for normal prompts', () => {
     const onSend = vi.fn();
 

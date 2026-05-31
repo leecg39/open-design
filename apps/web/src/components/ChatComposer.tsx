@@ -117,6 +117,7 @@ function parseSearchArgs(raw: string): {
   excludeDomains?: string[];
   exactMatch?: boolean;
   minScore?: number;
+  maxSources?: number;
   includeImages?: boolean;
   includeRawContent?: boolean;
   autoParameters?: boolean;
@@ -131,6 +132,7 @@ function parseSearchArgs(raw: string): {
   let endDate: string | undefined;
   let exactMatch = false;
   let minScore: number | undefined;
+  let maxSources: number | undefined;
   let includeImages = false;
   let includeRawContent = false;
   let autoParameters = false;
@@ -275,6 +277,16 @@ function parseSearchArgs(raw: string): {
       if (value == null) break;
       minScore = value;
       cursor += 2;
+    } else if (lower.startsWith('--max-sources=')) {
+      const value = parseSearchMaxSources(token.slice('--max-sources='.length));
+      if (value == null) break;
+      maxSources = value;
+      cursor += 1;
+    } else if (lower === '--max-sources' && nextToken) {
+      const value = parseSearchMaxSources(nextToken);
+      if (value == null) break;
+      maxSources = value;
+      cursor += 2;
     } else if (
       lower.startsWith('--') &&
       SEARCH_TIME_RANGES.has(lower.slice(2))
@@ -296,6 +308,7 @@ function parseSearchArgs(raw: string): {
     ...(excludeDomains.length ? { excludeDomains } : {}),
     ...(exactMatch ? { exactMatch } : {}),
     ...(minScore != null ? { minScore } : {}),
+    ...(maxSources != null ? { maxSources } : {}),
     ...(includeImages ? { includeImages } : {}),
     ...(includeRawContent ? { includeRawContent } : {}),
     ...(autoParameters ? { autoParameters } : {}),
@@ -343,6 +356,13 @@ function normalizeSearchDomain(value: string): string | null {
 function parseSearchScore(value: string): number | undefined {
   const score = Number(value);
   return Number.isFinite(score) && score >= 0 && score <= 1 ? score : undefined;
+}
+
+function parseSearchMaxSources(value: string): number | undefined {
+  const maxSources = Number(value);
+  return Number.isFinite(maxSources) && maxSources > 0
+    ? Math.floor(maxSources)
+    : undefined;
 }
 
 function researchMaxSourcesForDepth(depth: ResearchDepth): number {
@@ -657,6 +677,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       excludeDomains?: string[];
       exactMatch?: boolean;
       minScore?: number;
+      maxSources?: number;
       includeImages?: boolean;
       includeRawContent?: boolean;
       autoParameters?: boolean;
@@ -676,12 +697,13 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         excludeDomains,
         exactMatch,
         minScore,
+        maxSources: requestedMaxSources,
         includeImages,
         includeRawContent,
         autoParameters,
       } = parsed;
       if (!query) return null;
-      const maxSources = researchMaxSourcesForDepth(depth);
+      const maxSources = requestedMaxSources ?? researchMaxSourcesForDepth(depth);
       const commandSuffix = [
         `--depth ${depth}`,
         ...(topic ? [`--topic ${topic}`] : []),
@@ -714,6 +736,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(excludeDomains?.length ? { excludeDomains } : {}),
         ...(exactMatch ? { exactMatch } : {}),
         ...(minScore != null ? { minScore } : {}),
+        ...(requestedMaxSources != null ? { maxSources: requestedMaxSources } : {}),
         ...(includeImages ? { includeImages } : {}),
         ...(includeRawContent ? { includeRawContent } : {}),
         ...(autoParameters ? { autoParameters } : {}),
@@ -739,6 +762,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             : []),
           ...(exactMatch ? ['Research exact match: enabled.'] : []),
           ...(minScore != null ? [`Research minimum score: ${minScore}.`] : []),
+          ...(requestedMaxSources != null
+            ? [`Research max sources: ${requestedMaxSources}.`]
+            : []),
           ...(includeImages ? ['Research images: enabled.'] : []),
           ...(includeRawContent ? ['Research raw content: enabled.'] : []),
           ...(autoParameters ? ['Research auto parameters: enabled.'] : []),
@@ -1004,6 +1030,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
               : {}),
             ...(search.exactMatch ? { exactMatch: search.exactMatch } : {}),
             ...(search.minScore != null ? { minScore: search.minScore } : {}),
+            ...(search.maxSources != null
+              ? { maxSources: search.maxSources }
+              : {}),
             ...(search.includeImages
               ? { includeImages: search.includeImages }
               : {}),
