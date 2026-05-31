@@ -13,6 +13,7 @@ describe('renderResearchCommandContract', () => {
       endDate: '2026-05-31',
       includeDomains: ['OpenAI.com', 'docs.openai.com'],
       excludeDomains: ['reddit.com'],
+      exactMatch: true,
       maxSources: 15,
     });
 
@@ -32,13 +33,13 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('Mention the report path in the final answer');
     expect(prompt).toContain('EV market 2025 trends');
     expect(prompt).toContain(
-      '"$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --max-sources 15',
+      '"$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --max-sources 15',
     );
     expect(prompt).toContain(
-      '& $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --max-sources 15',
+      '& $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --max-sources 15',
     );
     expect(prompt).toContain(
-      '"%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --max-sources 15',
+      '"%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --max-sources 15',
     );
     expect(prompt).toContain('"depth": "deep"');
   });

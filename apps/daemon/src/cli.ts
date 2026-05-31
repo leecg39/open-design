@@ -74,6 +74,7 @@ const RESEARCH_SEARCH_STRING_FLAGS = new Set([
 const RESEARCH_SEARCH_BOOLEAN_FLAGS = new Set([
   'help',
   'h',
+  'exact-match',
 ]);
 
 const SUBCOMMAND_MAP = {
@@ -204,7 +205,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--max-sources <n>] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
@@ -286,6 +287,7 @@ async function runResearchSearch(rawArgs) {
     typeof flags['end-date'] === 'string' ? flags['end-date'].trim() : '';
   const includeDomains = splitCommaListFlag(flags['include-domains']);
   const excludeDomains = splitCommaListFlag(flags['exclude-domains']);
+  const exactMatch = flags['exact-match'] === true;
   const url = `${daemonUrl.replace(/\/$/, '')}/api/research/search`;
   let resp;
   try {
@@ -301,6 +303,7 @@ async function runResearchSearch(rawArgs) {
         ...(endDate ? { endDate } : {}),
         ...(includeDomains.length ? { includeDomains } : {}),
         ...(excludeDomains.length ? { excludeDomains } : {}),
+        ...(exactMatch ? { exactMatch } : {}),
         ...(Number.isFinite(maxSources) ? { maxSources } : {}),
       }),
     });
@@ -318,7 +321,7 @@ async function runResearchSearch(rawArgs) {
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--max-sources <n>] [--daemon-url <url>]
 
 Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
@@ -333,6 +336,7 @@ Flags:
   --end-date     Optional exact upper date bound in YYYY-MM-DD format.
   --include-domains  Optional comma-separated source domains to include.
   --exclude-domains  Optional comma-separated source domains to exclude.
+  --exact-match      Require exact quoted phrases in returned results.
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }

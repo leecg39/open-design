@@ -23,6 +23,7 @@ export interface ResearchCommandContractOptions {
   endDate?: string;
   includeDomains?: string[];
   excludeDomains?: string[];
+  exactMatch?: boolean;
 }
 
 export function renderResearchCommandContract(
@@ -48,6 +49,7 @@ export function renderResearchCommandContract(
     ...(excludeDomains.length
       ? [`--exclude-domains ${excludeDomains.join(',')}`]
       : []),
+    ...(options.exactMatch === true ? ['--exact-match'] : []),
     `--max-sources ${maxSources}`,
   ].join(' ');
   const lines = [

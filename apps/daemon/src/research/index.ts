@@ -36,6 +36,7 @@ export interface SearchResearchInput {
   endDate?: string;
   includeDomains?: string[];
   excludeDomains?: string[];
+  exactMatch?: boolean;
   maxSources?: number;
   providers?: string[];
   signal?: AbortSignal;
@@ -55,6 +56,7 @@ export async function searchResearch(
   const endDate = normalizeResearchDate(input.endDate);
   const includeDomains = normalizeResearchDomains(input.includeDomains);
   const excludeDomains = normalizeResearchDomains(input.excludeDomains);
+  const exactMatch = input.exactMatch === true;
   const requested = Array.isArray(input.providers) ? input.providers : [];
   const providers = requested.filter(
     (p: unknown): p is string => typeof p === 'string' && p.length > 0,
@@ -94,6 +96,7 @@ export async function searchResearch(
       ...(endDate ? { endDate } : {}),
       ...(includeDomains.length ? { includeDomains } : {}),
       ...(excludeDomains.length ? { excludeDomains } : {}),
+      ...(exactMatch ? { exactMatch } : {}),
       maxResults: maxSources,
       includeAnswer: depth === 'deep' ? 'advanced' : true,
       ...(depth === 'medium' ? { chunksPerSource: 2 } : {}),
@@ -127,6 +130,7 @@ export async function searchResearch(
     ...(endDate ? { endDate } : {}),
     ...(includeDomains.length ? { includeDomains } : {}),
     ...(excludeDomains.length ? { excludeDomains } : {}),
+    ...(exactMatch ? { exactMatch } : {}),
     fetchedAt: Date.now(),
   };
 }

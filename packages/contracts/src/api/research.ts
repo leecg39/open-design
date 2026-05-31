@@ -26,6 +26,8 @@ export interface ResearchOptions {
   includeDomains?: string[];
   /** Optional source domains to exclude. */
   excludeDomains?: string[];
+  /** Require exact quoted phrases to appear in returned results. */
+  exactMatch?: boolean;
   /** Cap on returned sources. Defaults follow the depth. */
   maxSources?: number;
   /** Provider preference order. Phase 1 supports ['tavily']. */
@@ -52,6 +54,7 @@ export interface ResearchFindings {
   endDate?: string;
   includeDomains?: string[];
   excludeDomains?: string[];
+  exactMatch?: boolean;
   /** Unix ms when the search returned. */
   fetchedAt: number;
 }

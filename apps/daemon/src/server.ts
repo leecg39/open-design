@@ -293,6 +293,8 @@ export function resolveResearchCommandContract(research, message) {
     excludeDomains: Array.isArray(research.excludeDomains)
       ? research.excludeDomains
       : undefined,
+    exactMatch:
+      typeof research.exactMatch === 'boolean' ? research.exactMatch : undefined,
     maxSources:
       typeof research.maxSources === 'number' ? research.maxSources : undefined,
   });
@@ -4699,6 +4701,7 @@ export async function startServer({
         endDate: req.body?.endDate,
         includeDomains: req.body?.includeDomains,
         excludeDomains: req.body?.excludeDomains,
+        exactMatch: req.body?.exactMatch === true,
         maxSources:
           typeof req.body?.maxSources === 'number'
             ? req.body.maxSources

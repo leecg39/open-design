@@ -19,6 +19,7 @@ export interface TavilySearchInput {
   endDate?: string;
   includeDomains?: string[];
   excludeDomains?: string[];
+  exactMatch?: boolean;
   maxResults?: number;
   includeAnswer?: boolean | 'basic' | 'advanced';
   chunksPerSource?: number;
@@ -83,6 +84,7 @@ export async function tavilySearch(
     ...(input.excludeDomains?.length
       ? { exclude_domains: input.excludeDomains }
       : {}),
+    ...(input.exactMatch ? { exact_match: true } : {}),
     max_results: maxResults,
     include_answer: input.includeAnswer ?? true,
     include_raw_content: false,

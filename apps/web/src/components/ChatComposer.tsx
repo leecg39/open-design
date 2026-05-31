@@ -101,6 +101,7 @@ function parseSearchArgs(raw: string): {
   endDate?: string;
   includeDomains?: string[];
   excludeDomains?: string[];
+  exactMatch?: boolean;
 } {
   const input = raw.trim();
   if (!input) return { query: '', depth: 'shallow' };
@@ -109,6 +110,7 @@ function parseSearchArgs(raw: string): {
   let timeRange: ResearchTimeRange | undefined;
   let startDate: string | undefined;
   let endDate: string | undefined;
+  let exactMatch = false;
   const includeDomains: string[] = [];
   const excludeDomains: string[] = [];
   const tokens = input.split(/\s+/);
@@ -201,6 +203,9 @@ function parseSearchArgs(raw: string): {
     ) {
       excludeDomains.push(...parseSearchDomains(nextToken));
       cursor += 2;
+    } else if (lower === '--exact-match') {
+      exactMatch = true;
+      cursor += 1;
     } else if (
       lower.startsWith('--') &&
       SEARCH_TIME_RANGES.has(lower.slice(2))
@@ -219,6 +224,7 @@ function parseSearchArgs(raw: string): {
     ...(endDate ? { endDate } : {}),
     ...(includeDomains.length ? { includeDomains } : {}),
     ...(excludeDomains.length ? { excludeDomains } : {}),
+    ...(exactMatch ? { exactMatch } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
 }
@@ -562,6 +568,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       endDate?: string;
       includeDomains?: string[];
       excludeDomains?: string[];
+      exactMatch?: boolean;
     } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
@@ -575,6 +582,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         endDate,
         includeDomains,
         excludeDomains,
+        exactMatch,
       } = parsed;
       if (!query) return null;
       const maxSources = researchMaxSourcesForDepth(depth);
@@ -590,6 +598,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(excludeDomains?.length
           ? [`--exclude-domains ${excludeDomains.join(',')}`]
           : []),
+        ...(exactMatch ? ['--exact-match'] : []),
         `--max-sources ${maxSources}`,
       ].join(' ');
       return {
@@ -601,6 +610,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(endDate ? { endDate } : {}),
         ...(includeDomains?.length ? { includeDomains } : {}),
         ...(excludeDomains?.length ? { excludeDomains } : {}),
+        ...(exactMatch ? { exactMatch } : {}),
         prompt: [
           `Search for: ${query}`,
           '',
@@ -620,6 +630,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           ...(excludeDomains?.length
             ? [`Research exclude domains: ${excludeDomains.join(', ')}.`]
             : []),
+          ...(exactMatch ? ['Research exact match: enabled.'] : []),
           '',
           'Canonical query:',
           '',
@@ -865,6 +876,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             ...(search.excludeDomains?.length
               ? { excludeDomains: search.excludeDomains }
               : {}),
+            ...(search.exactMatch ? { exactMatch: search.exactMatch } : {}),
           },
         });
         reset();

@@ -311,4 +311,44 @@ describe('research search', () => {
       exclude_domains: ['reddit.com'],
     });
   });
+
+  it('forwards exact match only when requested', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Exact phrase summary.',
+          results: [
+            {
+              title: 'Exact match result',
+              url: 'https://example.com/exact',
+              content: 'A result that contains the exact quoted phrase.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: '"Open Design" release notes',
+      exactMatch: true,
+    });
+    await searchResearch({
+      projectRoot: projectRoot!,
+      query: 'Open Design release notes',
+    });
+
+    expect(findings.exactMatch).toBe(true);
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({ exact_match: true });
+    const defaultBody = JSON.parse(
+      String((fetchMock.mock.calls[1] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(defaultBody).not.toHaveProperty('exact_match');
+  });
 });

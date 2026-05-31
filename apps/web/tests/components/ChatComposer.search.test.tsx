@@ -246,6 +246,40 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('expands /search exact-match flag into research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --exact-match "Open Design" release notes' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain('--depth shallow --exact-match --max-sources 5');
+    expect(prompt).toContain('Research exact match: enabled.');
+    expect(prompt).toContain('"Open Design" release notes');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: '"Open Design" release notes',
+        depth: 'shallow',
+        exactMatch: true,
+      },
+    });
+  });
+
   it('does not send research metadata for normal prompts', () => {
     const onSend = vi.fn();
 
