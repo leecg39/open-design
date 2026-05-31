@@ -734,6 +734,35 @@ describe('research search', () => {
     expect(body).toMatchObject({ max_results: 1 });
   });
 
+  it('falls back to the default Tavily base URL when direct baseUrl is blank', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Default base URL summary.',
+          results: [
+            {
+              title: 'Default base source',
+              url: 'https://example.com/default-base',
+              content: 'Blank base URL should not produce a malformed fetch URL.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      baseUrl: '   ',
+      query: 'Open Design direct Tavily base URL',
+    });
+
+    expect((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[0]).toBe(
+      'https://api.tavily.com/search',
+    );
+  });
+
   it('maps medium and deep depth requests to advanced Tavily search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

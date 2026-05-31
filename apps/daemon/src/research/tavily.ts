@@ -97,7 +97,8 @@ export async function tavilySearch(
   if (!apiKey) {
     throw new TavilyError('Tavily API key is not configured');
   }
-  const base = (input.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
+  const configuredBaseUrl = input.baseUrl?.trim() ?? '';
+  const base = (configuredBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
   const requestedMax =
     typeof input.maxResults === 'number' && Number.isFinite(input.maxResults)
       ? Math.floor(input.maxResults)
