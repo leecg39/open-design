@@ -126,6 +126,11 @@ export async function tavilySearch(
   const country = normalizeTavilyCountry(input.country);
   const startDate = normalizeTavilyDate(input.startDate);
   const endDate = normalizeTavilyDate(input.endDate);
+  if (startDate && endDate && startDate > endDate) {
+    throw new TavilyError(
+      'Tavily startDate must be earlier than or equal to endDate',
+    );
+  }
   const includeDomains = normalizeTavilyDomainFilters(input.includeDomains);
   const includeDomainSet = new Set(includeDomains);
   const excludeDomains = normalizeTavilyDomainFilters(input.excludeDomains).filter(

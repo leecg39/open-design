@@ -953,6 +953,23 @@ describe('research search', () => {
     expect(body).not.toHaveProperty('end_date');
   });
 
+  it('rejects reversed direct Tavily exact date ranges before provider fetch', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      tavilySearch({
+        apiKey: 'tvly-test',
+        query: 'Open Design direct Tavily reversed dates',
+        startDate: '2026-05-31',
+        endDate: '2026-05-01',
+      }),
+    ).rejects.toMatchObject({
+      message: 'Tavily startDate must be earlier than or equal to endDate',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('cleans direct Tavily domain filters before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
