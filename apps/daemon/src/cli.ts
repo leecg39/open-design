@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 // @ts-nocheck
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { startServer } from './server.js';
 import { runLiveArtifactsMcpServer } from './mcp-live-artifacts-server.js';
 import { runConnectorsToolCli } from './tools-connectors-cli.js';
@@ -8,6 +10,11 @@ import {
   parseOptionalNumberFlag,
   splitResearchSubcommand,
 } from './research/cli-args.js';
+import {
+  buildResearchMarkdownReport,
+  defaultResearchReportPath,
+  resolveResearchReportPath,
+} from './research/report.js';
 
 const argv = process.argv.slice(2);
 
@@ -74,6 +81,7 @@ const RESEARCH_SEARCH_STRING_FLAGS = new Set([
   'exclude-domains',
   'min-score',
   'max-sources',
+  'report',
   'daemon-url',
 ]);
 const RESEARCH_SEARCH_BOOLEAN_FLAGS = new Set([
@@ -88,6 +96,7 @@ const RESEARCH_SEARCH_BOOLEAN_FLAGS = new Set([
   'raw',
   'auto-parameters',
   'auto',
+  'save-report',
 ]);
 
 const SUBCOMMAND_MAP = {
@@ -354,16 +363,36 @@ async function runResearchSearch(rawArgs) {
     console.error(`daemon ${resp.status}: ${text}`);
     process.exit(4);
   }
-  process.stdout.write(`${await resp.text()}\n`);
+  const text = await resp.text();
+  if (flags['save-report'] === true || typeof flags.report === 'string') {
+    let findings;
+    try {
+      findings = JSON.parse(text);
+      const requestedReportPath =
+        typeof flags.report === 'string' && flags.report.trim()
+          ? flags.report.trim()
+          : defaultResearchReportPath(findings.query || query);
+      const report = resolveResearchReportPath(process.cwd(), requestedReportPath);
+      await mkdir(path.dirname(report.absolutePath), { recursive: true });
+      await writeFile(report.absolutePath, buildResearchMarkdownReport(findings), 'utf8');
+      process.stdout.write(`${JSON.stringify({ ...findings, reportPath: report.relativePath })}\n`);
+      return;
+    } catch (err) {
+      console.error(`failed to save research report: ${(err && err.message) || String(err)}`);
+      process.exit(5);
+    }
+  }
+  process.stdout.write(`${text}\n`);
 }
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--auto-parameters] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--auto-parameters] [--max-sources <n>] [--save-report] [--report research/file.md] [--daemon-url <url>]
 
 Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
   { "query": "...", "summary": "...", "sources": [...], "provider": "tavily", "depth": "shallow", "fetchedAt": 0 }
+With --save-report or --report, also writes a Markdown report and adds "reportPath" to stdout JSON.
 
 Flags:
   --query        Required search query.
@@ -381,6 +410,8 @@ Flags:
   --include-raw-content  Include bounded page content evidence (aliases: --raw-content, --raw).
   --auto-parameters  Let the provider tune supported parameters (aliases: --auto).
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
+  --save-report  Save a Markdown report under research/<safe-query-slug>.md.
+  --report       Save the Markdown report to an explicit project-relative path.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }
 

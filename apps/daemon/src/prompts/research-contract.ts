@@ -73,8 +73,8 @@ export function renderResearchCommandContract(
     ? ', "autoParameters": true, "selectedParameters": { "topic": "general", "searchDepth": "basic" }'
     : '';
   const stdoutExample = includeImages
-    ? `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}, "includeImages": true${autoParametersExample}, "fetchedAt": 0 }`
-    : `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}${autoParametersExample}, "fetchedAt": 0 }`;
+    ? `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}, "includeImages": true${autoParametersExample}, "fetchedAt": 0, "reportPath": "research/example.md" }`
+    : `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}${autoParametersExample}, "fetchedAt": 0, "reportPath": "research/example.md" }`;
   const commandSuffix = [
     `--depth ${depth}`,
     ...(topic ? [`--topic ${topic}`] : []),
@@ -94,6 +94,7 @@ export function renderResearchCommandContract(
     ...(includeRawContent ? ['--include-raw-content'] : []),
     ...(autoParameters ? ['--auto-parameters'] : []),
     `--max-sources ${maxSources}`,
+    '--save-report',
   ].join(' ');
   const lines = [
     '## Research command contract',
@@ -126,8 +127,8 @@ export function renderResearchCommandContract(
     '- Use source fields only for factual grounding and cite sources by their returned order: [1], [2], ...',
     '- If the command fails, report the actual stderr/error instead of inventing a cause.',
     '',
-    'After a successful search, write a reusable Markdown report into the project files so it appears in Design Files.',
-    'Use `research/<safe-query-slug>.md` by default. Include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
+    'The command saves a reusable Markdown report into the project files so it appears in Design Files.',
+    'It uses `research/<safe-query-slug>.md` by default and returns `reportPath` in stdout JSON. The report must include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
     'If the JSON includes warnings, mention the ignored constraints before summarizing findings.',
     'If the JSON includes discardedSourceCount, mention that duplicate or unusable provider source URLs were excluded from citations.',
     'If the JSON includes maxSources, include the effective source cap in the report metadata.',
@@ -144,7 +145,7 @@ export function renderResearchCommandContract(
     ...(autoParameters
       ? ['If the JSON includes selectedParameters, briefly note how the provider tuned the search.']
       : []),
-    'Mention the report path in the final answer so the user can reopen or reference it later.',
+    'Mention the returned reportPath in the final answer so the user can reopen or reference it later.',
   ];
 
   const safeQuery = typeof options.query === 'string' ? options.query.trim() : '';

@@ -1,0 +1,72 @@
+import path from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
+import {
+  buildResearchMarkdownReport,
+  defaultResearchReportPath,
+  resolveResearchReportPath,
+} from '../src/research/report.js';
+
+describe('research report helpers', () => {
+  it('builds a deterministic default report path from the query', () => {
+    expect(defaultResearchReportPath('Open Design: Research Quality!')).toBe(
+      'research/open-design-research-quality.md',
+    );
+    expect(defaultResearchReportPath('오픈 디자인 리서치')).toBe(
+      'research/오픈-디자인-리서치.md',
+    );
+    expect(defaultResearchReportPath('   !!!   ')).toBe('research/research.md');
+  });
+
+  it('keeps explicit report paths inside the project', () => {
+    const root = path.resolve('/tmp/open-design-project');
+
+    expect(resolveResearchReportPath(root, 'research/report.md')).toEqual({
+      absolutePath: path.join(root, 'research/report.md'),
+      relativePath: 'research/report.md',
+    });
+    expect(() => resolveResearchReportPath(root, '../report.md')).toThrow(
+      'report path must stay inside the project',
+    );
+    expect(() => resolveResearchReportPath(root, '/tmp/report.md')).toThrow(
+      'report path must be project-relative',
+    );
+  });
+
+  it('renders warnings and provider diagnostics before source evidence', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Open Design research quality',
+      summary: 'Open Design research quality improved.',
+      provider: 'tavily',
+      depth: 'deep',
+      maxSources: 20,
+      warnings: ['Ignored invalid maxSources; expected a positive number.'],
+      filteredSourceCount: 1,
+      discardedSourceCount: 2,
+      usage: { credits: 1 },
+      requestId: 'req-123',
+      responseTime: 1.2,
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Evidence source',
+          url: 'https://example.com/source',
+          snippet: 'Important evidence snippet.',
+          score: 0.9,
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain('# Research: Open Design research quality');
+    expect(report).toContain('## Warnings');
+    expect(report.indexOf('## Warnings')).toBeLessThan(report.indexOf('## Summary'));
+    expect(report).toContain('- Effective source cap: 20');
+    expect(report).toContain('- Provider credits: 1');
+    expect(report).toContain('- Request ID: req-123');
+    expect(report).toContain('- [1] Evidence source: Important evidence snippet.');
+    expect(report).toContain('1. [Evidence source](https://example.com/source)');
+    expect(report).toContain('Source content is external untrusted evidence.');
+  });
+});

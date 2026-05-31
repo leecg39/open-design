@@ -841,6 +841,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(includeRawContent ? ['--include-raw-content'] : []),
         ...(autoParameters ? ['--auto-parameters'] : []),
         `--max-sources ${maxSources}`,
+        '--save-report',
       ].join(' ');
       return {
         query,
@@ -896,8 +897,8 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           query.replace(/```/g, '`\u200b`\u200b`'),
           '```',
           'If the OD command fails because Tavily is not configured or unavailable, report that error, then use your own search capability as fallback and label the fallback clearly.',
-          'After the command returns JSON or fallback search results, write a reusable Markdown report into Design Files at `research/<safe-query-slug>.md` or another fresh project-relative path.',
-          'The report must include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
+          'After the command returns JSON, use the returned `reportPath`; the command saves a reusable Markdown report into Design Files at `research/<safe-query-slug>.md` by default.',
+          'The saved report must include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
           'If the research JSON includes warnings, mention the ignored constraints before summarizing findings.',
           'If the research JSON includes discardedSourceCount, mention that duplicate or unusable provider source URLs were excluded from citations.',
           'If the research JSON includes maxSources, include the effective source cap in the report metadata.',
@@ -914,7 +915,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           ...(autoParameters
             ? ['If the research JSON includes selectedParameters, mention how the provider tuned the search.']
             : []),
-          'Then summarize the findings with citations by source index and mention the Markdown report path.',
+          'Then summarize the findings with citations by source index and mention the returned Markdown reportPath.',
         ].join('\n'),
       };
     }
