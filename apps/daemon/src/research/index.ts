@@ -151,6 +151,7 @@ export async function searchResearch(
   let requestId: string | undefined;
   let responseTime: number | undefined;
   let selectedParameters: ResearchFindings['selectedParameters'];
+  let providerSourceCount = 0;
   try {
     const out = await tavilySearch({
       apiKey: cfg.apiKey,
@@ -175,6 +176,7 @@ export async function searchResearch(
       ...(input.signal ? { signal: input.signal } : {}),
     });
     answer = out.answer;
+    providerSourceCount = out.sources.length;
     sources =
       minScore == null
         ? out.sources
@@ -193,6 +195,14 @@ export async function searchResearch(
   }
 
   if (sources.length === 0) {
+    if (minScore != null && providerSourceCount > 0) {
+      const label = providerSourceCount === 1 ? 'source' : 'sources';
+      throw new ResearchError(
+        `no sources met minScore ${minScore}; provider returned ${providerSourceCount} ${label}`,
+        404,
+        'NO_RESEARCH_SOURCES',
+      );
+    }
     throw new ResearchError('no sources found', 404, 'NO_RESEARCH_SOURCES');
   }
 

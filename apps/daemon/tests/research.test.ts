@@ -754,4 +754,37 @@ describe('research search', () => {
     });
     expect(findings.sources).toHaveLength(1);
   });
+
+  it('explains when minScore filters all provider sources', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Low relevance summary.',
+          results: [
+            {
+              title: 'Weak result',
+              url: 'https://example.com/weak',
+              content: 'Low relevance result.',
+              score: 0.42,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      searchResearch({
+        projectRoot: await tempProjectRoot(),
+        query: 'Open Design evidence quality',
+        minScore: 0.8,
+      }),
+    ).rejects.toMatchObject({
+      code: 'NO_RESEARCH_SOURCES',
+      message: 'no sources met minScore 0.8; provider returned 1 source',
+      status: 404,
+    });
+  });
 });
