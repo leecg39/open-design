@@ -427,6 +427,27 @@ describe('research report helpers', () => {
     );
   });
 
+  it('neutralizes non-web source link destinations', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Link scheme safety',
+      summary: 'Unsafe source URL schemes should not be clickable.',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Script URL',
+          url: 'javascript:alert(1)',
+          snippet: 'Evidence.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain('1. [Script URL](<about:blank>)');
+    expect(report).not.toContain('](<javascript:alert(1)>)');
+  });
+
   it('keeps provider summaries from changing markdown structure', () => {
     const report = buildResearchMarkdownReport({
       query: 'Summary safety',

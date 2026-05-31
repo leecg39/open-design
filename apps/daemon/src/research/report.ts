@@ -366,6 +366,14 @@ function markdownLinkDestination(url: string): string {
     .replace(/\s+/g, '%20')
     .replace(/</g, '%3C')
     .replace(/>/g, '%3E');
+  try {
+    const parsed = new URL(safeUrl);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return '<about:blank>';
+    }
+  } catch {
+    return '<about:blank>';
+  }
   return `<${safeUrl}>`;
 }
 
