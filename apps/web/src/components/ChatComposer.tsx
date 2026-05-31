@@ -89,6 +89,7 @@ const SEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const SEARCH_TOPICS = new Set(['general', 'news', 'finance']);
 const SEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
 const SEARCH_MAX_SOURCES_LIMIT = 20;
+const SEARCH_DOMAIN_FILTER_LIMIT = 20;
 const SEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const SEARCH_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
 const SEARCH_DOMAIN_RE =
@@ -277,40 +278,60 @@ function parseSearchArgs(raw: string): {
         cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
       }
     } else if (lower.startsWith('--include-domains=')) {
-      const values = parseSearchDomains(token.slice('--include-domains='.length));
-      if (values.length) {
-        includeDomains.push(...values);
+      const parsed = parseSearchDomains(token.slice('--include-domains='.length));
+      if (parsed.domains.length) {
+        includeDomains.push(...parsed.domains);
+        if (parsed.ignoredCount > 0) {
+          warnings.push(
+            'Ignored invalid, duplicate, or excess --include-domains entries.',
+          );
+        }
       } else {
         warnings.push('Ignored invalid --include-domains value.');
       }
       cursor += 1;
     } else if (lower === '--include-domains') {
-      const values =
+      const parsed =
         nextToken && !nextToken.startsWith('--')
           ? parseSearchDomains(nextToken)
-          : [];
-      if (values.length) {
-        includeDomains.push(...values);
+          : { domains: [], ignoredCount: 0 };
+      if (parsed.domains.length) {
+        includeDomains.push(...parsed.domains);
+        if (parsed.ignoredCount > 0) {
+          warnings.push(
+            'Ignored invalid, duplicate, or excess --include-domains entries.',
+          );
+        }
         cursor += 2;
       } else {
         warnings.push('Ignored invalid --include-domains value.');
         cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
       }
     } else if (lower.startsWith('--exclude-domains=')) {
-      const values = parseSearchDomains(token.slice('--exclude-domains='.length));
-      if (values.length) {
-        excludeDomains.push(...values);
+      const parsed = parseSearchDomains(token.slice('--exclude-domains='.length));
+      if (parsed.domains.length) {
+        excludeDomains.push(...parsed.domains);
+        if (parsed.ignoredCount > 0) {
+          warnings.push(
+            'Ignored invalid, duplicate, or excess --exclude-domains entries.',
+          );
+        }
       } else {
         warnings.push('Ignored invalid --exclude-domains value.');
       }
       cursor += 1;
     } else if (lower === '--exclude-domains') {
-      const values =
+      const parsed =
         nextToken && !nextToken.startsWith('--')
           ? parseSearchDomains(nextToken)
-          : [];
-      if (values.length) {
-        excludeDomains.push(...values);
+          : { domains: [], ignoredCount: 0 };
+      if (parsed.domains.length) {
+        excludeDomains.push(...parsed.domains);
+        if (parsed.ignoredCount > 0) {
+          warnings.push(
+            'Ignored invalid, duplicate, or excess --exclude-domains entries.',
+          );
+        }
         cursor += 2;
       } else {
         warnings.push('Ignored invalid --exclude-domains value.');
@@ -478,16 +499,27 @@ function isSearchDate(value: string): boolean {
   );
 }
 
-function parseSearchDomains(value: string): string[] {
+function parseSearchDomains(value: string): {
+  domains: string[];
+  ignoredCount: number;
+} {
   const out: string[] = [];
   const seen = new Set<string>();
-  for (const item of value.split(',')) {
+  const raw = value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  let ignoredCount = 0;
+  for (const item of raw) {
     const domain = normalizeSearchDomain(item);
-    if (!domain || seen.has(domain)) continue;
+    if (!domain || seen.has(domain) || out.length >= SEARCH_DOMAIN_FILTER_LIMIT) {
+      ignoredCount += 1;
+      continue;
+    }
     seen.add(domain);
     out.push(domain);
   }
-  return out;
+  return { domains: out, ignoredCount };
 }
 
 function normalizeSearchDomain(value: string): string | null {
