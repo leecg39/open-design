@@ -37,6 +37,7 @@ export interface SearchResearchInput {
   includeDomains?: string[];
   excludeDomains?: string[];
   exactMatch?: boolean;
+  minScore?: number;
   maxSources?: number;
   providers?: string[];
   signal?: AbortSignal;
@@ -57,6 +58,7 @@ export async function searchResearch(
   const includeDomains = normalizeResearchDomains(input.includeDomains);
   const excludeDomains = normalizeResearchDomains(input.excludeDomains);
   const exactMatch = input.exactMatch === true;
+  const minScore = normalizeMinScore(input.minScore);
   const requested = Array.isArray(input.providers) ? input.providers : [];
   const providers = requested.filter(
     (p: unknown): p is string => typeof p === 'string' && p.length > 0,
@@ -105,7 +107,10 @@ export async function searchResearch(
       ...(input.signal ? { signal: input.signal } : {}),
     });
     answer = out.answer;
-    sources = out.sources;
+    sources =
+      minScore == null
+        ? out.sources
+        : out.sources.filter((source) => (source.score ?? 0) >= minScore);
   } catch (err) {
     const message =
       err instanceof TavilyError
@@ -131,6 +136,7 @@ export async function searchResearch(
     ...(includeDomains.length ? { includeDomains } : {}),
     ...(excludeDomains.length ? { excludeDomains } : {}),
     ...(exactMatch ? { exactMatch } : {}),
+    ...(minScore != null ? { minScore } : {}),
     fetchedAt: Date.now(),
   };
 }
@@ -207,6 +213,11 @@ function normalizeResearchDomain(value: unknown): string | undefined {
   text = text.split(/[/?#]/)[0]?.replace(/:\d+$/, '') ?? '';
   if (!text || !RESEARCH_DOMAIN_RE.test(text)) return undefined;
   return text;
+}
+
+function normalizeMinScore(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  return Math.max(0, Math.min(value, 1));
 }
 
 function synthesizeFallbackSummary(sources: ResearchSource[]): string {

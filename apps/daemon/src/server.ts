@@ -295,6 +295,8 @@ export function resolveResearchCommandContract(research, message) {
       : undefined,
     exactMatch:
       typeof research.exactMatch === 'boolean' ? research.exactMatch : undefined,
+    minScore:
+      typeof research.minScore === 'number' ? research.minScore : undefined,
     maxSources:
       typeof research.maxSources === 'number' ? research.maxSources : undefined,
   });
@@ -4702,6 +4704,8 @@ export async function startServer({
         includeDomains: req.body?.includeDomains,
         excludeDomains: req.body?.excludeDomains,
         exactMatch: req.body?.exactMatch === true,
+        minScore:
+          typeof req.body?.minScore === 'number' ? req.body.minScore : undefined,
         maxSources:
           typeof req.body?.maxSources === 'number'
             ? req.body.maxSources

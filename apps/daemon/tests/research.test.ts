@@ -53,6 +53,7 @@ describe('research search', () => {
               title: 'EV report',
               url: 'https://example.com/ev',
               content: 'EV adoption increased in 2025.',
+              score: 0.91,
               published_date: '2025-05-01',
             },
           ],
@@ -79,6 +80,7 @@ describe('research search', () => {
           url: 'https://example.com/ev',
           snippet: 'EV adoption increased in 2025.',
           provider: 'tavily',
+          score: 0.91,
           publishedAt: '2025-05-01',
         },
       ],
@@ -350,5 +352,50 @@ describe('research search', () => {
       String((fetchMock.mock.calls[1] as [FetchInput, FetchInit])[1]!.body),
     );
     expect(defaultBody).not.toHaveProperty('exact_match');
+  });
+
+  it('preserves relevance scores and applies requested score filters', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Filtered relevance summary.',
+          results: [
+            {
+              title: 'Strong result',
+              url: 'https://example.com/strong',
+              content: 'High relevance result.',
+              score: 0.86,
+            },
+            {
+              title: 'Weak result',
+              url: 'https://example.com/weak',
+              content: 'Low relevance result.',
+              score: 0.42,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design evidence quality',
+      minScore: 0.5,
+    });
+
+    expect(findings).toMatchObject({
+      minScore: 0.5,
+      sources: [
+        {
+          title: 'Strong result',
+          url: 'https://example.com/strong',
+          score: 0.86,
+        },
+      ],
+    });
+    expect(findings.sources).toHaveLength(1);
   });
 });

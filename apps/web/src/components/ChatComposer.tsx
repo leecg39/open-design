@@ -102,6 +102,7 @@ function parseSearchArgs(raw: string): {
   includeDomains?: string[];
   excludeDomains?: string[];
   exactMatch?: boolean;
+  minScore?: number;
 } {
   const input = raw.trim();
   if (!input) return { query: '', depth: 'shallow' };
@@ -111,6 +112,7 @@ function parseSearchArgs(raw: string): {
   let startDate: string | undefined;
   let endDate: string | undefined;
   let exactMatch = false;
+  let minScore: number | undefined;
   const includeDomains: string[] = [];
   const excludeDomains: string[] = [];
   const tokens = input.split(/\s+/);
@@ -206,6 +208,16 @@ function parseSearchArgs(raw: string): {
     } else if (lower === '--exact-match') {
       exactMatch = true;
       cursor += 1;
+    } else if (lower.startsWith('--min-score=')) {
+      const value = parseSearchScore(token.slice('--min-score='.length));
+      if (value == null) break;
+      minScore = value;
+      cursor += 1;
+    } else if (lower === '--min-score' && nextToken) {
+      const value = parseSearchScore(nextToken);
+      if (value == null) break;
+      minScore = value;
+      cursor += 2;
     } else if (
       lower.startsWith('--') &&
       SEARCH_TIME_RANGES.has(lower.slice(2))
@@ -225,6 +237,7 @@ function parseSearchArgs(raw: string): {
     ...(includeDomains.length ? { includeDomains } : {}),
     ...(excludeDomains.length ? { excludeDomains } : {}),
     ...(exactMatch ? { exactMatch } : {}),
+    ...(minScore != null ? { minScore } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
 }
@@ -257,6 +270,11 @@ function normalizeSearchDomain(value: string): string | null {
   }
   text = text.split(/[/?#]/)[0]?.replace(/:\d+$/, '') ?? '';
   return SEARCH_DOMAIN_RE.test(text) ? text : null;
+}
+
+function parseSearchScore(value: string): number | undefined {
+  const score = Number(value);
+  return Number.isFinite(score) && score >= 0 && score <= 1 ? score : undefined;
 }
 
 function researchMaxSourcesForDepth(depth: ResearchDepth): number {
@@ -569,6 +587,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       includeDomains?: string[];
       excludeDomains?: string[];
       exactMatch?: boolean;
+      minScore?: number;
     } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
@@ -583,6 +602,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         includeDomains,
         excludeDomains,
         exactMatch,
+        minScore,
       } = parsed;
       if (!query) return null;
       const maxSources = researchMaxSourcesForDepth(depth);
@@ -599,6 +619,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           ? [`--exclude-domains ${excludeDomains.join(',')}`]
           : []),
         ...(exactMatch ? ['--exact-match'] : []),
+        ...(minScore != null ? [`--min-score ${minScore}`] : []),
         `--max-sources ${maxSources}`,
       ].join(' ');
       return {
@@ -611,6 +632,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(includeDomains?.length ? { includeDomains } : {}),
         ...(excludeDomains?.length ? { excludeDomains } : {}),
         ...(exactMatch ? { exactMatch } : {}),
+        ...(minScore != null ? { minScore } : {}),
         prompt: [
           `Search for: ${query}`,
           '',
@@ -631,6 +653,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             ? [`Research exclude domains: ${excludeDomains.join(', ')}.`]
             : []),
           ...(exactMatch ? ['Research exact match: enabled.'] : []),
+          ...(minScore != null ? [`Research minimum score: ${minScore}.`] : []),
           '',
           'Canonical query:',
           '',
@@ -877,6 +900,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
               ? { excludeDomains: search.excludeDomains }
               : {}),
             ...(search.exactMatch ? { exactMatch: search.exactMatch } : {}),
+            ...(search.minScore != null ? { minScore: search.minScore } : {}),
           },
         });
         reset();

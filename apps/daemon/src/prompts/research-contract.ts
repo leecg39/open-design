@@ -24,6 +24,7 @@ export interface ResearchCommandContractOptions {
   includeDomains?: string[];
   excludeDomains?: string[];
   exactMatch?: boolean;
+  minScore?: number;
 }
 
 export function renderResearchCommandContract(
@@ -36,6 +37,7 @@ export function renderResearchCommandContract(
   const endDate = normalizeDate(options.endDate);
   const includeDomains = normalizeDomains(options.includeDomains);
   const excludeDomains = normalizeDomains(options.excludeDomains);
+  const minScore = normalizeMinScore(options.minScore);
   const maxSources = normalizeMaxSources(options.maxSources, depth);
   const commandSuffix = [
     `--depth ${depth}`,
@@ -50,6 +52,7 @@ export function renderResearchCommandContract(
       ? [`--exclude-domains ${excludeDomains.join(',')}`]
       : []),
     ...(options.exactMatch === true ? ['--exact-match'] : []),
+    ...(minScore != null ? [`--min-score ${minScore}`] : []),
     `--max-sources ${maxSources}`,
   ].join(' ');
   const lines = [
@@ -74,7 +77,7 @@ export function renderResearchCommandContract(
     'The command prints exactly one JSON object on stdout:',
     '',
     '```json',
-    `{ "query": "...", "summary": "...", "sources": [{ "title": "...", "url": "...", "snippet": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "fetchedAt": 0 }`,
+    `{ "query": "...", "summary": "...", "sources": [{ "title": "...", "url": "...", "snippet": "...", "score": 0.9, "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "fetchedAt": 0 }`,
     '```',
     '',
     'Security rules:',
@@ -160,6 +163,11 @@ function normalizeDomain(value: unknown): string | undefined {
   }
   text = text.split(/[/?#]/)[0]?.replace(/:\d+$/, '') ?? '';
   return RESEARCH_DOMAIN_RE.test(text) ? text : undefined;
+}
+
+function normalizeMinScore(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  return Math.max(0, Math.min(value, 1));
 }
 
 function normalizeMaxSources(

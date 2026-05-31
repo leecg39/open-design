@@ -133,6 +133,10 @@ export async function tavilySearch(
       typeof r.published_date === 'string' && r.published_date.trim()
         ? r.published_date.trim()
         : null;
+    const score =
+      typeof r.score === 'number' && Number.isFinite(r.score)
+        ? Math.max(0, Math.min(r.score, 1))
+        : null;
     sources.push({
       title:
         typeof r.title === 'string' && r.title.trim()
@@ -145,6 +149,7 @@ export async function tavilySearch(
           : '',
       provider: 'tavily',
       ...(publishedAt ? { publishedAt } : {}),
+      ...(score != null ? { score } : {}),
     });
   }
   return { answer, sources };

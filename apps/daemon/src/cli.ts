@@ -68,6 +68,7 @@ const RESEARCH_SEARCH_STRING_FLAGS = new Set([
   'end-date',
   'include-domains',
   'exclude-domains',
+  'min-score',
   'max-sources',
   'daemon-url',
 ]);
@@ -205,7 +206,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--max-sources <n>] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
@@ -277,6 +278,8 @@ async function runResearchSearch(rawArgs) {
     flags['daemon-url'] || process.env.OD_DAEMON_URL || 'http://127.0.0.1:7456';
   const maxSources =
     flags['max-sources'] == null ? undefined : Number(flags['max-sources']);
+  const minScore =
+    flags['min-score'] == null ? undefined : Number(flags['min-score']);
   const depth = typeof flags.depth === 'string' ? flags.depth.trim() : '';
   const topic = typeof flags.topic === 'string' ? flags.topic.trim() : '';
   const timeRange =
@@ -304,6 +307,7 @@ async function runResearchSearch(rawArgs) {
         ...(includeDomains.length ? { includeDomains } : {}),
         ...(excludeDomains.length ? { excludeDomains } : {}),
         ...(exactMatch ? { exactMatch } : {}),
+        ...(Number.isFinite(minScore) ? { minScore } : {}),
         ...(Number.isFinite(maxSources) ? { maxSources } : {}),
       }),
     });
@@ -321,7 +325,7 @@ async function runResearchSearch(rawArgs) {
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--max-sources <n>] [--daemon-url <url>]
 
 Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
@@ -337,6 +341,7 @@ Flags:
   --include-domains  Optional comma-separated source domains to include.
   --exclude-domains  Optional comma-separated source domains to exclude.
   --exact-match      Require exact quoted phrases in returned results.
+  --min-score    Optional relevance threshold from 0 to 1.
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }

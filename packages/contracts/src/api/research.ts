@@ -28,6 +28,8 @@ export interface ResearchOptions {
   excludeDomains?: string[];
   /** Require exact quoted phrases to appear in returned results. */
   exactMatch?: boolean;
+  /** Optional minimum provider relevance score from 0 to 1. */
+  minScore?: number;
   /** Cap on returned sources. Defaults follow the depth. */
   maxSources?: number;
   /** Provider preference order. Phase 1 supports ['tavily']. */
@@ -39,6 +41,7 @@ export interface ResearchSource {
   url: string;
   snippet: string;
   publishedAt?: string;
+  score?: number;
   provider: string;
 }
 
@@ -55,6 +58,7 @@ export interface ResearchFindings {
   includeDomains?: string[];
   excludeDomains?: string[];
   exactMatch?: boolean;
+  minScore?: number;
   /** Unix ms when the search returned. */
   fetchedAt: number;
 }
