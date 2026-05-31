@@ -90,6 +90,7 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('"rawContent": "..."');
     expect(prompt).toContain('"rawContentTruncated": true');
     expect(prompt).toContain('source-content safety note before the summary');
+    expect(prompt).toContain('source list with visible domains');
     expect(prompt).toContain('raw evidence excerpts when rawContent is present');
     expect(prompt).toContain('keep quoted excerpts short');
     expect(prompt).toContain('not the full page');

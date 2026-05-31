@@ -178,7 +178,9 @@ function renderSources(sources: ResearchSource[]): string[] {
   if (!sources.length) return ['No sources returned.'];
   return sources.map((source, index) => {
     const title = escapeMarkdownText(source.title);
+    const domain = sourceDomain(source.url);
     const details = [
+      domain,
       source.publishedAt ? `published ${source.publishedAt}` : '',
       source.score != null ? `score ${source.score}` : '',
       source.rawContentTruncated ? 'raw excerpt truncated' : '',
@@ -186,6 +188,14 @@ function renderSources(sources: ResearchSource[]): string[] {
     const suffix = details.length ? ` (${details.join('; ')})` : '';
     return `${index + 1}. [${title}](${source.url})${suffix}`;
   });
+}
+
+function sourceDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
 }
 
 function renderRawEvidence(sources: ResearchSource[]): string[] {

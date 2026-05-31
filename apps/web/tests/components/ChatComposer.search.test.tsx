@@ -260,6 +260,7 @@ describe('ChatComposer /search command', () => {
     expect(prompt).toContain('--depth shallow --include-raw-content --max-sources 5');
     expect(prompt).toContain('Research raw content: enabled.');
     expect(prompt).toContain('source-content safety note before the summary');
+    expect(prompt).toContain('source list with visible domains');
     expect(prompt).toContain('rawContent fields');
     expect(prompt).toContain('rawContentTruncated');
     expect(prompt).toContain('raw evidence excerpts when rawContent is present');

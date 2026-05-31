@@ -111,6 +111,9 @@ describe('research report helpers', () => {
     expect(report).toContain('- Request ID: req-123');
     expect(report).toContain('- [1] Evidence source: Important evidence snippet.');
     expect(report).toContain('1. [Evidence source](https://example.com/source)');
+    expect(report).toContain(
+      '1. [Evidence source](https://example.com/source) (example.com; score 0.9)',
+    );
     expect(report).toContain('Source content is external untrusted evidence.');
   });
 
