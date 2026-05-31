@@ -308,4 +308,31 @@ describe('research report helpers', () => {
       'Provider answer \\#\\# Injected Summary \\*\\*bold claim\\*\\*',
     );
   });
+
+  it('escapes link-breaking source titles and leading summary markers', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Escape coverage',
+      summary: '> injected quote',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 5, 1),
+      sources: [
+        {
+          title: 'Breaking ](https://bad.example)',
+          url: 'https://example.com/source',
+          snippet: '1. list-like snippet',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).not.toContain('\n> injected quote');
+    expect(report).toContain('\\> injected quote');
+    expect(report).toContain(
+      '1. [Breaking \\]\\(https://bad.example\\)](<https://example.com/source>)',
+    );
+    expect(report).toContain(
+      '- [1] Breaking \\]\\(https://bad.example\\): 1\\. list-like snippet',
+    );
+  });
 });

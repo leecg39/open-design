@@ -287,8 +287,11 @@ function clip(value: string, maxLength: number): string {
 }
 
 function escapeMarkdownText(value: string): string {
-  return value
+  const text = value
     .replace(/\s+/g, ' ')
     .trim()
-    .replace(/[\\`*_{}\[\]<#|]/g, '\\$&');
+    .replace(/[\\`*_{}\[\]()<>#|]/g, '\\$&');
+  return text
+    .replace(/^([>+-])/, '\\$1')
+    .replace(/^(\d+)\./, '$1\\.');
 }
