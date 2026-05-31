@@ -202,4 +202,35 @@ describe('research report helpers', () => {
     expect(report).toContain('# Research: Market scan \\#\\# Injected Heading');
     expect(report).toContain('- Query: Market scan \\#\\# Injected Heading');
   });
+
+  it('renders source-level visual evidence with source citations', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Visual evidence',
+      summary: 'Source-level images should stay tied to their source.',
+      provider: 'tavily',
+      depth: 'shallow',
+      includeImages: true,
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Visual source [one]',
+          url: 'https://example.com/source',
+          snippet: 'Visual evidence.',
+          images: [
+            {
+              url: 'https://example.com/source-image.png',
+              description: 'Diagram [source]',
+              provider: 'tavily',
+            },
+          ],
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain('## Source-Level Visual Evidence');
+    expect(report).toContain(
+      '- [1.1] [1] Visual source \\[one\\]: Diagram \\[source\\]: https://example.com/source-image.png',
+    );
+  });
 });

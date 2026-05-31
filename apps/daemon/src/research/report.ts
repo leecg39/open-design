@@ -66,6 +66,7 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     : 'unknown';
   const query = escapeMarkdownText(findings.query);
   const rawEvidence = renderRawEvidence(findings.sources);
+  const sourceImages = renderSourceImages(findings.sources);
   const lines = [
     `# Research: ${query}`,
     '',
@@ -135,6 +136,9 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     ...renderSources(findings.sources),
     ...(rawEvidence.length
       ? ['', '## Raw Evidence Excerpts', '', ...rawEvidence]
+      : []),
+    ...(sourceImages.length
+      ? ['', '## Source-Level Visual Evidence', '', ...sourceImages]
       : []),
     ...(findings.images?.length
       ? ['', '## Visual References', '', ...findings.images.map(renderImage)]
@@ -207,6 +211,22 @@ function renderRawEvidence(sources: ResearchSource[]): string[] {
     const excerpt = escapeMarkdownText(clip(rawContent, 700));
     const marker = source.rawContentTruncated ? ' (truncated excerpt)' : '';
     return [`- [${index + 1}] ${title}${marker}: ${excerpt}`];
+  });
+}
+
+function renderSourceImages(sources: ResearchSource[]): string[] {
+  return sources.flatMap((source, sourceIndex) => {
+    const images = source.images ?? [];
+    if (!images.length) return [];
+    const title = escapeMarkdownText(source.title);
+    return images.map((image, imageIndex) => {
+      const imageCitation = `[${sourceIndex + 1}.${imageIndex + 1}]`;
+      const sourceCitation = `[${sourceIndex + 1}]`;
+      const description = image.description
+        ? `${escapeMarkdownText(image.description)}: `
+        : '';
+      return `- ${imageCitation} ${sourceCitation} ${title}: ${description}${image.url}`;
+    });
   });
 }
 
