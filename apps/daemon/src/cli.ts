@@ -497,6 +497,8 @@ async function runMediaGenerate(rawArgs) {
     console.error('--model required (see http://<daemon>/api/media/models)');
     process.exit(2);
   }
+  const length = parsePositiveNumberFlag(flags.length, 'length');
+  const duration = parsePositiveNumberFlag(flags.duration, 'duration');
 
   const body = {
     surface,
@@ -510,8 +512,8 @@ async function runMediaGenerate(rawArgs) {
     image: flags.image,
     language: flags.language,
   };
-  if (flags.length != null) body.length = Number(flags.length);
-  if (flags.duration != null) body.duration = Number(flags.duration);
+  if (length != null) body.length = length;
+  if (duration != null) body.duration = duration;
 
   const url = `${daemonUrl.replace(/\/$/, '')}/api/projects/${encodeURIComponent(projectId)}/media/generate`;
   let resp;
@@ -697,6 +699,16 @@ function surfaceFetchError(err, daemonUrl) {
         'reached from a regular shell.',
     );
   }
+}
+
+function parsePositiveNumberFlag(value, flagName) {
+  if (value == null) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    console.error(`flag --${flagName} requires a positive number`);
+    process.exit(2);
+  }
+  return parsed;
 }
 
 function printMediaHelp() {
