@@ -14,6 +14,7 @@ import { tavilySearch, TavilyError } from './tavily.js';
 
 const TAVILY_MAX_RESULTS_LIMIT = 20;
 const RESEARCH_QUERY_LIMIT = 1000;
+const RESEARCH_QUERY_BEST_PRACTICE_LIMIT = 400;
 const RESEARCH_INCLUDE_DOMAIN_FILTER_LIMIT = 300;
 const RESEARCH_EXCLUDE_DOMAIN_FILTER_LIMIT = 150;
 const RESEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -87,6 +88,11 @@ export async function searchResearch(
   const warnings: string[] = [];
   if (rawQuery.length > RESEARCH_QUERY_LIMIT) {
     warnings.push(`Truncated query to ${RESEARCH_QUERY_LIMIT} characters.`);
+  }
+  if (query.length > RESEARCH_QUERY_BEST_PRACTICE_LIMIT) {
+    warnings.push(
+      'Tavily recommends keeping search queries under 400 characters; consider splitting complex research into sub-queries.',
+    );
   }
   const normalizedDepth = normalizeResearchDepthValue(input.depth);
   const depth = normalizedDepth ?? 'shallow';

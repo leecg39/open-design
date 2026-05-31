@@ -150,6 +150,7 @@ describe('research search', () => {
     expect(findings.query).toHaveLength(1000);
     expect(findings.warnings).toEqual([
       'Truncated query to 1000 characters.',
+      'Tavily recommends keeping search queries under 400 characters; consider splitting complex research into sub-queries.',
     ]);
     const body = JSON.parse(
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
