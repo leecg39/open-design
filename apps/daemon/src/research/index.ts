@@ -512,15 +512,22 @@ function synthesizeFallbackSummary(sources: ResearchSource[]): string {
   const lead = sources
     .slice(0, 5)
     .map((s, i) => {
-      const snippet = s.snippet.trim();
-      const rawExcerpt = snippet ? '' : s.rawContent?.trim() ?? '';
+      const title = compactFallbackSummaryText(s.title) || s.url;
+      const snippet = compactFallbackSummaryText(s.snippet);
+      const rawExcerpt = snippet
+        ? ''
+        : compactFallbackSummaryText(s.rawContent ?? '');
       const urlExcerpt = snippet || rawExcerpt ? '' : s.url;
       const text = (snippet || rawExcerpt || urlExcerpt).slice(0, 200);
       const label = rawExcerpt ? ' [raw excerpt]' : urlExcerpt ? ' [url]' : '';
-      return `- [${i + 1}] ${s.title}${label}: ${text}`;
+      return `- [${i + 1}] ${title}${label}: ${text}`;
     })
     .join('\n');
   return `(No provider summary; top snippets follow.)\n${lead}`;
+}
+
+function compactFallbackSummaryText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
 }
 
 function clampMaxSources(

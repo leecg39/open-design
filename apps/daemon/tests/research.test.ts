@@ -808,6 +808,36 @@ describe('research search', () => {
     );
   });
 
+  it('keeps fallback summary source lines compact', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          results: [
+            {
+              title: 'Injected title\n## Fake Heading',
+              url: 'https://example.com/compact-fallback',
+              content: 'First line\n- fake list item',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design compact fallback',
+    });
+
+    expect(findings.summary).toContain(
+      '[1] Injected title ## Fake Heading: First line - fake list item',
+    );
+    expect(findings.summary).not.toContain('\n## Fake Heading');
+    expect(findings.summary).not.toContain('\n- fake list item');
+  });
+
   it('returns provider-selected parameters only when automatic tuning is requested', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
