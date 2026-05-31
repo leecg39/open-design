@@ -372,6 +372,29 @@ describe('research report helpers', () => {
     );
   });
 
+  it('keeps unsafe source link destinations on one markdown line', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Link destination safety',
+      summary: 'Source URLs should not split markdown links.',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Source',
+          url: 'https://example.com/source path\n## Injected Link',
+          snippet: 'Evidence.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).not.toContain('\n## Injected Link');
+    expect(report).toContain(
+      '1. [Source](<https://example.com/source%20path%20##%20Injected%20Link>)',
+    );
+  });
+
   it('keeps provider summaries from changing markdown structure', () => {
     const report = buildResearchMarkdownReport({
       query: 'Summary safety',

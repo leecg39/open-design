@@ -328,7 +328,12 @@ function formatFetchedAt(value: number): string {
 }
 
 function markdownLinkDestination(url: string): string {
-  return `<${url.replace(/>/g, '%3E')}>`;
+  const safeUrl = url
+    .trim()
+    .replace(/\s+/g, '%20')
+    .replace(/</g, '%3C')
+    .replace(/>/g, '%3E');
+  return `<${safeUrl}>`;
 }
 
 function clip(value: string, maxLength: number): string {
