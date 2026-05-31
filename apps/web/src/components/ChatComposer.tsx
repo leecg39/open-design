@@ -752,7 +752,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           'After the command returns JSON or fallback search results, write a reusable Markdown report into Design Files at `research/<safe-query-slug>.md` or another fresh project-relative path.',
           'The report must include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
           ...(includeImages
-            ? ['If the research JSON includes images, add a Visual references section with image URLs and descriptions.']
+            ? ['If the research JSON includes images, add a Visual references section with image URLs and descriptions. Keep source-level images tied to their source citation when present.']
             : []),
           ...(includeRawContent
             ? ['If the research JSON includes rawContent fields, use them as evidence and keep quoted excerpts short.']

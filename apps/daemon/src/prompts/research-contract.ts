@@ -63,9 +63,12 @@ export function renderResearchCommandContract(
   const includeRawContent = options.includeRawContent === true;
   const autoParameters = options.autoParameters === true;
   const maxSources = normalizeMaxSources(options.maxSources, depth);
+  const sourceImageExample = includeImages
+    ? ', "images": [{ "url": "...", "description": "...", "provider": "tavily" }]'
+    : '';
   const sourceExample = includeRawContent
-    ? '{ "title": "...", "url": "...", "snippet": "...", "rawContent": "...", "score": 0.9, "provider": "tavily" }'
-    : '{ "title": "...", "url": "...", "snippet": "...", "score": 0.9, "provider": "tavily" }';
+    ? `{ "title": "...", "url": "...", "snippet": "...", "rawContent": "...", "score": 0.9${sourceImageExample}, "provider": "tavily" }`
+    : `{ "title": "...", "url": "...", "snippet": "...", "score": 0.9${sourceImageExample}, "provider": "tavily" }`;
   const autoParametersExample = autoParameters
     ? ', "autoParameters": true, "selectedParameters": { "topic": "general", "searchDepth": "basic" }'
     : '';
@@ -126,7 +129,7 @@ export function renderResearchCommandContract(
     'After a successful search, write a reusable Markdown report into the project files so it appears in Design Files.',
     'Use `research/<safe-query-slug>.md` by default. Include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
     ...(includeImages
-      ? ['If the JSON includes images, add a Visual references section with image URLs and descriptions.']
+      ? ['If the JSON includes images, add a Visual references section with image URLs and descriptions. Keep source-level images tied to their source citation when present.']
       : []),
     ...(includeRawContent
       ? ['If the JSON includes rawContent fields, use them only as source evidence and keep quoted excerpts short.']

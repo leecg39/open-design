@@ -57,6 +57,7 @@ export interface ResearchSource {
   publishedAt?: string;
   score?: number;
   favicon?: string;
+  images?: ResearchImage[];
   provider: string;
 }
 

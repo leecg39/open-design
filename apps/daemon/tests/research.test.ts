@@ -265,6 +265,15 @@ describe('research search', () => {
               title: 'Visual source',
               url: 'https://example.com/visual',
               content: 'Visual design coverage.',
+              images: [
+                {
+                  url: 'https://images.example.com/source-interface.png',
+                  description: 'A source-level interface reference.',
+                },
+                'https://images.example.com/source-mood.png',
+                'ftp://images.example.com/invalid.png',
+                'https://images.example.com/source-interface.png',
+              ],
             },
           ],
         }),
@@ -285,6 +294,7 @@ describe('research search', () => {
 
     expect(plain.includeImages).toBeUndefined();
     expect(plain.images).toBeUndefined();
+    expect(plain.sources[0]?.images).toBeUndefined();
     expect(visual.includeImages).toBe(true);
     expect(visual.images).toEqual([
       {
@@ -294,6 +304,17 @@ describe('research search', () => {
       },
       {
         url: 'https://images.example.com/moodboard.png',
+        provider: 'tavily',
+      },
+    ]);
+    expect(visual.sources[0]?.images).toEqual([
+      {
+        url: 'https://images.example.com/source-interface.png',
+        description: 'A source-level interface reference.',
+        provider: 'tavily',
+      },
+      {
+        url: 'https://images.example.com/source-mood.png',
         provider: 'tavily',
       },
     ]);

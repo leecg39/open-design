@@ -220,6 +220,7 @@ describe('ChatComposer /search command', () => {
     expect(prompt).toContain('--depth shallow --include-images --max-sources 5');
     expect(prompt).toContain('Research images: enabled.');
     expect(prompt).toContain('Visual references section');
+    expect(prompt).toContain('source-level images tied to their source citation');
     expect(meta).toEqual({
       research: {
         enabled: true,

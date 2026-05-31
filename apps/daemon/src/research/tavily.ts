@@ -42,6 +42,7 @@ interface TavilyRawResult {
   score?: unknown;
   published_date?: unknown;
   favicon?: unknown;
+  images?: unknown;
 }
 
 interface TavilyRawResponse {
@@ -179,6 +180,9 @@ export async function tavilySearch(
       input.includeRawContent && typeof r.raw_content === 'string'
         ? r.raw_content.trim().slice(0, TAVILY_RAW_CONTENT_LIMIT)
         : '';
+    const sourceImages = input.includeImages
+      ? normalizeTavilyImages(r.images, 3)
+      : [];
     sources.push({
       title:
         typeof r.title === 'string' && r.title.trim()
@@ -190,6 +194,7 @@ export async function tavilySearch(
           ? r.content.trim().slice(0, 800)
           : '',
       ...(rawContent ? { rawContent } : {}),
+      ...(sourceImages.length ? { images: sourceImages } : {}),
       provider: 'tavily',
       ...(publishedAt ? { publishedAt } : {}),
       ...(score != null ? { score } : {}),
@@ -247,7 +252,7 @@ function normalizeNonNegativeNumber(value: unknown): number | undefined {
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-function normalizeTavilyImages(value: unknown): ResearchImage[] {
+function normalizeTavilyImages(value: unknown, limit = 10): ResearchImage[] {
   if (!Array.isArray(value)) return [];
   const images: ResearchImage[] = [];
   const seen = new Set<string>();
@@ -256,7 +261,7 @@ function normalizeTavilyImages(value: unknown): ResearchImage[] {
     if (!image || seen.has(image.url)) continue;
     seen.add(image.url);
     images.push(image);
-    if (images.length >= 10) break;
+    if (images.length >= limit) break;
   }
   return images;
 }

@@ -68,6 +68,7 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('--depth shallow --include-images --max-sources 5');
     expect(prompt).toContain('"images": [{ "url": "..."');
     expect(prompt).toContain('Visual references section');
+    expect(prompt).toContain('source-level images tied to their source citation');
   });
 
   it('includes raw content research flags when full evidence is requested', () => {
