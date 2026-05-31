@@ -128,6 +128,7 @@ export function renderResearchCommandContract(
     '',
     'After a successful search, write a reusable Markdown report into the project files so it appears in Design Files.',
     'Use `research/<safe-query-slug>.md` by default. Include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
+    'If the JSON includes warnings, mention the ignored constraints before summarizing findings.',
     ...(includeImages
       ? ['If the JSON includes images, add a Visual references section with image URLs and descriptions. Keep source-level images tied to their source citation when present.']
       : []),

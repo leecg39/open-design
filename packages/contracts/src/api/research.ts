@@ -91,6 +91,7 @@ export interface ResearchFindings {
   includeRawContent?: boolean;
   autoParameters?: boolean;
   selectedParameters?: ResearchSelectedParameters;
+  warnings?: string[];
   usage?: ResearchUsage;
   requestId?: string;
   responseTime?: number;

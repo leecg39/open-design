@@ -554,6 +554,7 @@ describe('research search', () => {
       endDate: '2026-05-31',
       sources: [{ publishedAt: '2026-05-15' }],
     });
+    expect(findings.warnings).toBeUndefined();
     const body = JSON.parse(
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );
@@ -610,6 +611,10 @@ describe('research search', () => {
 
     expect(findings.startDate).toBeUndefined();
     expect(findings.endDate).toBeUndefined();
+    expect(findings.warnings).toEqual([
+      'Ignored invalid startDate; expected YYYY-MM-DD.',
+      'Ignored invalid endDate; expected YYYY-MM-DD.',
+    ]);
     const body = JSON.parse(
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );
@@ -651,6 +656,10 @@ describe('research search', () => {
     expect(findings).toMatchObject({
       includeDomains: ['openai.com', 'docs.openai.com'],
       excludeDomains: ['reddit.com'],
+      warnings: [
+        'Ignored invalid, duplicate, or excess includeDomains entries.',
+        'Ignored invalid, duplicate, or excess excludeDomains entries.',
+      ],
     });
     const body = JSON.parse(
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),

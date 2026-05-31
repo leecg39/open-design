@@ -76,6 +76,13 @@ export async function searchResearch(
   const timeRange = normalizeResearchTimeRange(input.timeRange);
   const startDate = normalizeResearchDate(input.startDate);
   const endDate = normalizeResearchDate(input.endDate);
+  const warnings: string[] = [];
+  if (hasNonEmptyString(input.startDate) && !startDate) {
+    warnings.push('Ignored invalid startDate; expected YYYY-MM-DD.');
+  }
+  if (hasNonEmptyString(input.endDate) && !endDate) {
+    warnings.push('Ignored invalid endDate; expected YYYY-MM-DD.');
+  }
   if (startDate && endDate && startDate > endDate) {
     throw new ResearchError(
       'startDate must be earlier than or equal to endDate',
@@ -85,8 +92,21 @@ export async function searchResearch(
   }
   const includeDomains = normalizeResearchDomains(input.includeDomains);
   const excludeDomains = normalizeResearchDomains(input.excludeDomains);
+  if (countResearchDomainInputs(input.includeDomains) > includeDomains.length) {
+    warnings.push(
+      'Ignored invalid, duplicate, or excess includeDomains entries.',
+    );
+  }
+  if (countResearchDomainInputs(input.excludeDomains) > excludeDomains.length) {
+    warnings.push(
+      'Ignored invalid, duplicate, or excess excludeDomains entries.',
+    );
+  }
   const exactMatch = input.exactMatch === true;
   const minScore = normalizeMinScore(input.minScore);
+  if (input.minScore != null && minScore == null) {
+    warnings.push('Ignored invalid minScore; expected a number from 0 to 1.');
+  }
   const includeImages = input.includeImages === true;
   const includeRawContent = input.includeRawContent === true;
   const autoParameters = input.autoParameters === true;
@@ -98,6 +118,14 @@ export async function searchResearch(
   const maxSources = clampMaxSources(
     input.maxSources ?? RESEARCH_DEFAULT_MAX_SOURCES[depth],
   );
+  if (
+    input.maxSources != null &&
+    (typeof input.maxSources !== 'number' ||
+      !Number.isFinite(input.maxSources) ||
+      input.maxSources <= 0)
+  ) {
+    warnings.push('Ignored invalid maxSources; expected a positive number.');
+  }
 
   if (provider !== 'tavily') {
     throw new ResearchError(
@@ -188,6 +216,7 @@ export async function searchResearch(
     ...(includeRawContent ? { includeRawContent } : {}),
     ...(autoParameters ? { autoParameters } : {}),
     ...(selectedParameters ? { selectedParameters } : {}),
+    ...(warnings.length ? { warnings } : {}),
     ...(usage ? { usage } : {}),
     ...(requestId ? { requestId } : {}),
     ...(responseTime != null ? { responseTime } : {}),
@@ -243,6 +272,10 @@ function normalizeResearchDate(value: unknown): string | undefined {
   return trimmed;
 }
 
+function hasNonEmptyString(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 function normalizeResearchDomains(value: unknown): string[] {
   const raw = Array.isArray(value)
     ? value
@@ -259,6 +292,17 @@ function normalizeResearchDomains(value: unknown): string[] {
     if (out.length >= RESEARCH_DOMAIN_FILTER_LIMIT) break;
   }
   return out;
+}
+
+function countResearchDomainInputs(value: unknown): number {
+  if (Array.isArray(value)) return value.length;
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean).length;
+  }
+  return 0;
 }
 
 function normalizeResearchDomain(value: unknown): string | undefined {
