@@ -21,6 +21,33 @@ describe('research CLI', () => {
     });
   });
 
+  it('finds the research subcommand after leading value flags', () => {
+    expect(
+      splitResearchSubcommand([
+        '--daemon-url',
+        'http://127.0.0.1:7456',
+        'search',
+        '--query',
+        'Open Design research',
+      ]),
+    ).toEqual({
+      sub: 'search',
+      subArgs: [
+        '--daemon-url',
+        'http://127.0.0.1:7456',
+        '--query',
+        'Open Design research',
+      ],
+    });
+  });
+
+  it('does not treat search-like flag values as research subcommands', () => {
+    expect(splitResearchSubcommand(['--query', 'search'])).toEqual({
+      sub: undefined,
+      subArgs: ['--query', 'search'],
+    });
+  });
+
   it('keeps depth flags inside the search subcommand args', () => {
     expect(
       splitResearchSubcommand([
