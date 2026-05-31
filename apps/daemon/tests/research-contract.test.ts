@@ -91,6 +91,7 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('--depth shallow --include-raw-content --max-sources 5');
     expect(prompt).toContain('"rawContent": "..."');
     expect(prompt).toContain('"rawContentTruncated": true');
+    expect(prompt).toContain('"includeRawContent": true');
     expect(prompt).toContain('source-content safety note before the summary');
     expect(prompt).toContain('source list with visible domains');
     expect(prompt).toContain('raw evidence excerpts when rawContent is present');

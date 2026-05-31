@@ -69,12 +69,19 @@ export function renderResearchCommandContract(
   const sourceExample = includeRawContent
     ? `{ "title": "...", "url": "...", "snippet": "...", "rawContent": "...", "rawContentTruncated": true, "score": 0.9${sourceImageExample}, "provider": "tavily" }`
     : `{ "title": "...", "url": "...", "snippet": "...", "score": 0.9${sourceImageExample}, "provider": "tavily" }`;
-  const autoParametersExample = autoParameters
-    ? ', "autoParameters": true, "selectedParameters": { "topic": "general", "searchDepth": "basic" }'
-    : '';
+  const stdoutOptionFields = [
+    includeImages ? '"includeImages": true' : '',
+    includeRawContent ? '"includeRawContent": true' : '',
+    autoParameters
+      ? '"autoParameters": true, "selectedParameters": { "topic": "general", "searchDepth": "basic" }'
+      : '',
+  ]
+    .filter(Boolean)
+    .map((field) => `, ${field}`)
+    .join('');
   const stdoutExample = includeImages
-    ? `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}, "includeImages": true${autoParametersExample}, "fetchedAt": 0, "reportPath": "research/example.md" }`
-    : `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}${autoParametersExample}, "fetchedAt": 0, "reportPath": "research/example.md" }`;
+    ? `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}${stdoutOptionFields}, "fetchedAt": 0, "reportPath": "research/example.md" }`
+    : `{ "query": "...", "summary": "...", "sources": [${sourceExample}], "provider": "tavily", "depth": "${depth}", "maxSources": ${maxSources}${stdoutOptionFields}, "fetchedAt": 0, "reportPath": "research/example.md" }`;
   const commandSuffix = [
     `--depth ${depth}`,
     ...(topic ? [`--topic ${topic}`] : []),
