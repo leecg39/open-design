@@ -417,8 +417,9 @@ function synthesizeFallbackSummary(sources: ResearchSource[]): string {
     .map((s, i) => {
       const snippet = s.snippet.trim();
       const rawExcerpt = snippet ? '' : s.rawContent?.trim() ?? '';
-      const text = (snippet || rawExcerpt).slice(0, 200);
-      const label = rawExcerpt ? ' [raw excerpt]' : '';
+      const urlExcerpt = snippet || rawExcerpt ? '' : s.url;
+      const text = (snippet || rawExcerpt || urlExcerpt).slice(0, 200);
+      const label = rawExcerpt ? ' [raw excerpt]' : urlExcerpt ? ' [url]' : '';
       return `- [${i + 1}] ${s.title}${label}: ${text}`;
     })
     .join('\n');

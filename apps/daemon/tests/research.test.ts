@@ -590,6 +590,34 @@ describe('research search', () => {
     );
   });
 
+  it('uses source URLs in fallback summaries when excerpts are missing', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          results: [
+            {
+              title: 'URL-only source',
+              url: 'https://example.com/url-only',
+              content: '',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design URL fallback',
+    });
+
+    expect(findings.summary).toContain(
+      '[1] URL-only source [url]: https://example.com/url-only',
+    );
+  });
+
   it('returns provider-selected parameters only when automatic tuning is requested', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
