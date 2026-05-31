@@ -255,6 +255,47 @@ describe('research search', () => {
     expect(findings.discardedSourceCount).toBe(4);
   });
 
+  it('dedupes source URLs with reordered query parameters', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Query-order dedupe summary.',
+          results: [
+            {
+              title: 'Primary query source',
+              url: 'https://example.com/source?b=2&a=1',
+              content: 'Primary source content.',
+            },
+            {
+              title: 'Reordered duplicate query source',
+              url: 'https://example.com/source?a=1&b=2',
+              content: 'Duplicate source content.',
+            },
+            {
+              title: 'Distinct query source',
+              url: 'https://example.com/source?a=1&b=3',
+              content: 'Distinct source content.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design query order source quality',
+    });
+
+    expect(findings.sources.map((source) => source.url)).toEqual([
+      'https://example.com/source?a=1&b=2',
+      'https://example.com/source?a=1&b=3',
+    ]);
+    expect(findings.discardedSourceCount).toBe(1);
+  });
+
   it('discards malformed provider result entries without dropping valid sources', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

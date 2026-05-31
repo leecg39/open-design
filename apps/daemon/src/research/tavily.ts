@@ -334,6 +334,7 @@ function normalizeSourceUrl(value: unknown): string | undefined {
       url.pathname = url.pathname.replace(/\/+$/, '');
     }
     stripTrackingQueryParameters(url);
+    sortQueryParameters(url);
     return url.toString();
   } catch {
     return undefined;
@@ -350,6 +351,17 @@ function stripTrackingQueryParameters(url: URL): void {
   });
   for (const key of keysToDelete) {
     url.searchParams.delete(key);
+  }
+}
+
+function sortQueryParameters(url: URL): void {
+  const entries = Array.from(url.searchParams.entries()).sort(
+    ([keyA, valueA], [keyB, valueB]) =>
+      keyA.localeCompare(keyB) || valueA.localeCompare(valueB),
+  );
+  url.search = '';
+  for (const [key, value] of entries) {
+    url.searchParams.append(key, value);
   }
 }
 
@@ -415,6 +427,7 @@ function normalizeImageUrl(value: unknown): string | undefined {
     stripUrlCredentials(url);
     url.hash = '';
     stripTrackingQueryParameters(url);
+    sortQueryParameters(url);
     return url.toString();
   } catch {
     return undefined;
