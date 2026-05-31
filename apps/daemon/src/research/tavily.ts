@@ -22,6 +22,7 @@ const TAVILY_REQUEST_ID_LIMIT = 120;
 const TAVILY_ANSWER_LIMIT = 4_000;
 const TAVILY_RAW_CONTENT_LIMIT = 4_000;
 const TAVILY_ERROR_TEXT_LIMIT = 200;
+const TAVILY_DOMAIN_FILTER_LIMIT = 20;
 const TAVILY_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 const TRACKING_QUERY_PARAMETERS = new Set([
@@ -352,6 +353,7 @@ function normalizeTavilyDomainFilters(domains: string[] | undefined): string[] {
     if (!domain || seen.has(domain)) continue;
     seen.add(domain);
     normalized.push(domain);
+    if (normalized.length >= TAVILY_DOMAIN_FILTER_LIMIT) break;
   }
   return normalized;
 }

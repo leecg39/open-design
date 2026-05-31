@@ -970,6 +970,46 @@ describe('research search', () => {
     expect(body.exclude_domains).toEqual(['news.example.com']);
   });
 
+  it('caps direct Tavily domain filters before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Domain cap summary.',
+          results: [
+            {
+              title: 'Domain cap source',
+              url: 'https://example.com/domain-cap',
+              content: 'Excess domain filters should not reach Tavily.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily domain cap',
+      includeDomains: Array.from(
+        { length: 25 },
+        (_unused, index) => `include-${index}.example.com`,
+      ),
+      excludeDomains: Array.from(
+        { length: 25 },
+        (_unused, index) => `exclude-${index}.example.com`,
+      ),
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body.include_domains).toHaveLength(20);
+    expect(body.exclude_domains).toHaveLength(20);
+    expect(body.include_domains[19]).toBe('include-19.example.com');
+    expect(body.exclude_domains[19]).toBe('exclude-19.example.com');
+  });
+
   it('maps medium and deep depth requests to advanced Tavily search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
