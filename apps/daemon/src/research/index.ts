@@ -439,7 +439,7 @@ function normalizeResearchTimeRange(
 
 function normalizeResearchDate(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
+  const trimmed = stripResearchWrappingQuotes(value);
   const match = RESEARCH_DATE_RE.exec(trimmed);
   if (!match) return undefined;
   const year = Number(match[1]);

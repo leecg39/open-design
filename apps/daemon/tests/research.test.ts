@@ -1265,6 +1265,40 @@ describe('research search', () => {
     expect(body).not.toHaveProperty('end_date');
   });
 
+  it('normalizes quoted direct Tavily exact date filters before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Quoted date summary.',
+          results: [
+            {
+              title: 'Quoted date source',
+              url: 'https://example.com/quoted-date',
+              content: 'Quoted exact date filters should be normalized.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily quoted dates',
+      startDate: '"2026-05-01"',
+      endDate: "'2026-05-31'",
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({
+      start_date: '2026-05-01',
+      end_date: '2026-05-31',
+    });
+  });
+
   it('rejects reversed direct Tavily exact date ranges before provider fetch', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -2153,8 +2187,8 @@ describe('research search', () => {
     const findings = await searchResearch({
       projectRoot: await tempProjectRoot(),
       query: 'Open Design May updates',
-      startDate: '2026-05-01',
-      endDate: '2026-05-31',
+      startDate: '"2026-05-01"',
+      endDate: "'2026-05-31'",
     });
 
     expect(findings).toMatchObject({

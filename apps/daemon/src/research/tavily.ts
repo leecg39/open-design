@@ -489,7 +489,7 @@ function normalizeTavilyRawContent(
 
 function normalizeTavilyDate(value: string | undefined): string {
   if (value == null) return '';
-  const trimmed = value.trim();
+  const trimmed = stripTavilyWrappingQuotes(value);
   const match = TAVILY_DATE_RE.exec(trimmed);
   if (!match) return '';
   const year = Number(match[1]);
