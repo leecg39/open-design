@@ -373,16 +373,23 @@ async function runResearchSearch(rawArgs) {
         typeof flags.report === 'string' && flags.report.trim()
           ? flags.report.trim()
           : defaultResearchReportPath(findings.query || query);
-      const reportContents = buildResearchMarkdownReport(findings);
       const report =
         typeof flags.report === 'string' && flags.report.trim()
           ? resolveResearchReportPath(process.cwd(), requestedReportPath)
           : await writeAvailableResearchReportFile(
               process.cwd(),
               requestedReportPath,
-              reportContents,
+              (candidate) =>
+                buildResearchMarkdownReport({
+                  ...findings,
+                  reportPath: candidate.relativePath,
+                }),
             );
       if (typeof flags.report === 'string' && flags.report.trim()) {
+        const reportContents = buildResearchMarkdownReport({
+          ...findings,
+          reportPath: report.relativePath,
+        });
         await mkdir(path.dirname(report.absolutePath), { recursive: true });
         await writeFile(report.absolutePath, reportContents, 'utf8');
       }

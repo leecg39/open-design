@@ -84,9 +84,31 @@ describe('research report helpers', () => {
     }
   });
 
+  it('passes the selected automatic report path into generated contents', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'open-design-research-report-'));
+    try {
+      await mkdir(path.join(root, 'research'), { recursive: true });
+      await writeFile(path.join(root, 'research/open-design.md'), 'existing report', 'utf8');
+
+      const report = await writeAvailableResearchReportFile(
+        root,
+        'research/open-design.md',
+        (candidate) => `report path: ${candidate.relativePath}`,
+      );
+
+      expect(report.relativePath).toBe('research/open-design-2.md');
+      await expect(readFile(report.absolutePath, 'utf8')).resolves.toBe(
+        'report path: research/open-design-2.md',
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('renders warnings and provider diagnostics before source evidence', () => {
     const report = buildResearchMarkdownReport({
       query: 'Open Design research quality',
+      reportPath: 'research/open-design-quality.md',
       summary: 'Open Design research quality improved.',
       provider: 'tavily',
       depth: 'deep',
@@ -120,6 +142,7 @@ describe('research report helpers', () => {
     });
 
     expect(report).toContain('# Research: Open Design research quality');
+    expect(report).toContain('- Report path: research/open-design-quality.md');
     expect(report).toContain('## Warnings');
     expect(report.indexOf('## Warnings')).toBeLessThan(report.indexOf('## Summary'));
     expect(report.indexOf('## Evidence Safety')).toBeLessThan(

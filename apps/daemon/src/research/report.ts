@@ -53,12 +53,16 @@ export async function resolveAvailableResearchReportPath(
 export async function writeAvailableResearchReportFile(
   cwd: string,
   requestedPath: string,
-  contents: string,
+  contents:
+    | string
+    | ((report: { absolutePath: string; relativePath: string }) => string),
 ): Promise<{ absolutePath: string; relativePath: string }> {
   for (const candidate of researchReportPathCandidates(cwd, requestedPath)) {
     await mkdir(path.dirname(candidate.absolutePath), { recursive: true });
     try {
-      await writeFile(candidate.absolutePath, contents, {
+      const reportContents =
+        typeof contents === 'function' ? contents(candidate) : contents;
+      await writeFile(candidate.absolutePath, reportContents, {
         encoding: 'utf8',
         flag: 'wx',
       });
@@ -87,6 +91,9 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     '## Metadata',
     '',
     `- Query: ${query}`,
+    ...(findings.reportPath
+      ? [`- Report path: ${escapeMarkdownText(findings.reportPath)}`]
+      : []),
     `- Fetched: ${fetchedAt}`,
     `- Provider: ${findings.provider}`,
     `- Depth: ${findings.depth}`,
