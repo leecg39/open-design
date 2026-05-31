@@ -106,6 +106,12 @@ export async function searchResearch(
   const minScore = normalizeMinScore(input.minScore);
   if (input.minScore != null && minScore == null) {
     warnings.push('Ignored invalid minScore; expected a number from 0 to 1.');
+  } else if (
+    typeof input.minScore === 'number' &&
+    Number.isFinite(input.minScore) &&
+    (input.minScore < 0 || input.minScore > 1)
+  ) {
+    warnings.push('Clamped minScore to the supported range 0..1.');
   }
   const includeImages = input.includeImages === true;
   const includeRawContent = input.includeRawContent === true;
@@ -125,6 +131,14 @@ export async function searchResearch(
       input.maxSources <= 0)
   ) {
     warnings.push('Ignored invalid maxSources; expected a positive number.');
+  } else if (
+    typeof input.maxSources === 'number' &&
+    Number.isFinite(input.maxSources) &&
+    input.maxSources > TAVILY_MAX_RESULTS_LIMIT
+  ) {
+    warnings.push(
+      `Clamped maxSources to provider limit ${TAVILY_MAX_RESULTS_LIMIT}.`,
+    );
   }
 
   if (provider !== 'tavily') {

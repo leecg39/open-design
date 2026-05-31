@@ -90,6 +90,7 @@ describe('research search', () => {
           publishedAt: '2025-05-01',
         },
       ],
+      warnings: ['Clamped maxSources to provider limit 20.'],
     });
     const [, init] = fetchMock.mock.calls[0] as [FetchInput, FetchInit];
     const body = JSON.parse(String(init!.body));
@@ -753,6 +754,46 @@ describe('research search', () => {
       ],
     });
     expect(findings.sources).toHaveLength(1);
+  });
+
+  it('warns when numeric controls are clamped to supported ranges', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Clamped control summary.',
+          results: [
+            {
+              title: 'Perfect result',
+              url: 'https://example.com/perfect',
+              content: 'High relevance result.',
+              score: 1,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design evidence quality',
+      minScore: 2,
+      maxSources: 50,
+    });
+
+    expect(findings).toMatchObject({
+      minScore: 1,
+      warnings: [
+        'Clamped minScore to the supported range 0..1.',
+        'Clamped maxSources to provider limit 20.',
+      ],
+    });
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({ max_results: 20 });
   });
 
   it('explains when minScore filters all provider sources', async () => {
