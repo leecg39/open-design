@@ -1031,6 +1031,49 @@ describe('research search', () => {
     expect(body.include_raw_content).toBe(false);
   });
 
+  it('uses normalized direct Tavily evidence controls when reading responses', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Evidence control summary.',
+          images: [
+            {
+              url: 'https://images.example.com/top.png',
+              description: 'Top image.',
+            },
+          ],
+          results: [
+            {
+              title: 'Evidence control source',
+              url: 'https://example.com/evidence-control',
+              content: 'Evidence controls should gate returned evidence fields.',
+              raw_content: 'Raw evidence that was not requested.',
+              images: [
+                {
+                  url: 'https://images.example.com/source.png',
+                  description: 'Source image.',
+                },
+              ],
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const output = await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily evidence controls',
+      includeImages: 'true',
+      includeRawContent: 'true',
+    } as any);
+
+    expect(output.images).toEqual([]);
+    expect(output.sources[0]?.rawContent).toBeUndefined();
+    expect(output.sources[0]?.images).toBeUndefined();
+  });
+
   it('omits unsupported direct Tavily country boosts before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(

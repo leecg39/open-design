@@ -283,7 +283,7 @@ export async function tavilySearch(
     throw new TavilyError('Tavily returned invalid results list');
   }
   const rawResults = json.results ?? [];
-  const images = normalizeTavilyImages(json.images);
+  const images = includeImages ? normalizeTavilyImages(json.images) : [];
   const usage = normalizeTavilyUsage(json.usage);
   const selectedParameters = input.autoParameters
     ? normalizeTavilyAutoParameters(json.auto_parameters)
@@ -324,13 +324,13 @@ export async function tavilySearch(
         : null;
     const favicon = normalizeImageUrl(r.favicon);
     const rawContentText =
-      input.includeRawContent && typeof r.raw_content === 'string'
+      includeRawContent && typeof r.raw_content === 'string'
         ? r.raw_content.trim()
         : '';
     const rawContent = rawContentText.slice(0, TAVILY_RAW_CONTENT_LIMIT);
     const rawContentTruncated =
       rawContentText.length > TAVILY_RAW_CONTENT_LIMIT;
-    const sourceImages = input.includeImages
+    const sourceImages = includeImages
       ? normalizeTavilyImages(r.images, 3)
       : [];
     const title =
