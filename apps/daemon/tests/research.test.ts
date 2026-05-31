@@ -268,6 +268,38 @@ describe('research search', () => {
     expect(findings.discardedSourceCount).toBe(4);
   });
 
+  it('bounds and compacts provider source titles', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const longTitle = `Verbose source title\n${'repeated title '.repeat(40)}`;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Bounded title summary.',
+          results: [
+            {
+              title: longTitle,
+              url: 'https://example.com/bounded-title',
+              content: 'Source title should be compact and bounded.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design source title quality',
+    });
+
+    expect(findings.sources[0]?.title).not.toContain('\n');
+    expect(findings.sources[0]?.title).toHaveLength(300);
+    expect(findings.sources[0]?.title).toBe(
+      longTitle.replace(/\s+/g, ' ').trim().slice(0, 300),
+    );
+  });
+
   it('explains when all provider results are discarded by source URL normalization', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

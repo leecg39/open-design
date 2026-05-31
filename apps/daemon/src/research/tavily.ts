@@ -10,6 +10,7 @@ import type {
 const DEFAULT_BASE_URL = 'https://api.tavily.com';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const TAVILY_MAX_RESULTS_LIMIT = 20;
+const TAVILY_SOURCE_TITLE_LIMIT = 300;
 const TAVILY_RAW_CONTENT_LIMIT = 4_000;
 const TRACKING_QUERY_PARAMETERS = new Set([
   'fbclid',
@@ -233,11 +234,15 @@ export async function tavilySearch(
     const sourceImages = input.includeImages
       ? normalizeTavilyImages(r.images, 3)
       : [];
+    const title =
+      typeof r.title === 'string'
+        ? r.title
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, TAVILY_SOURCE_TITLE_LIMIT)
+        : '';
     sources.push({
-      title:
-        typeof r.title === 'string' && r.title.trim()
-          ? r.title.trim()
-          : url,
+      title: title || url,
       url,
       snippet:
         typeof r.content === 'string'
