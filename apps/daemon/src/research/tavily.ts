@@ -290,6 +290,9 @@ function normalizeSourceUrl(value: unknown): string | undefined {
       return undefined;
     }
     url.hash = '';
+    if (url.pathname.length > 1) {
+      url.pathname = url.pathname.replace(/\/+$/, '');
+    }
     return url.toString();
   } catch {
     return undefined;

@@ -177,6 +177,11 @@ describe('research search', () => {
               content: 'Duplicate source content.',
             },
             {
+              title: 'Duplicate trailing slash',
+              url: 'https://example.com/source/',
+              content: 'Duplicate source content.',
+            },
+            {
               title: 'Unsafe source',
               url: 'javascript:alert(1)',
               content: 'Unsafe source content.',
@@ -212,7 +217,7 @@ describe('research search', () => {
         provider: 'tavily',
       },
     ]);
-    expect(findings.discardedSourceCount).toBe(2);
+    expect(findings.discardedSourceCount).toBe(3);
   });
 
   it('explains when all provider results are discarded by source URL normalization', async () => {
