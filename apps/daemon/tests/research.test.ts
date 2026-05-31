@@ -159,6 +159,36 @@ describe('research search', () => {
     });
   });
 
+  it('omits blank provider numeric metadata instead of treating it as zero', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Blank numeric metadata summary.',
+          response_time: '   ',
+          usage: { credits: '' },
+          results: [
+            {
+              title: 'Blank numeric metadata source',
+              url: 'https://example.com/blank-numeric-metadata',
+              content: 'Blank numeric metadata should be omitted.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design blank numeric metadata',
+    });
+
+    expect(findings.responseTime).toBeUndefined();
+    expect(findings.usage).toBeUndefined();
+  });
+
   it('drops duplicate and non-web source URLs before citation output', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

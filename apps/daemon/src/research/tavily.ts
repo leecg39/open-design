@@ -359,6 +359,7 @@ function stripUrlCredentials(url: URL): void {
 }
 
 function normalizeNonNegativeNumber(value: unknown): number | undefined {
+  if (typeof value === 'string' && !value.trim()) return undefined;
   const n =
     typeof value === 'number'
       ? value
