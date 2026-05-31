@@ -917,11 +917,11 @@ describe('research search', () => {
         'https://Docs.Example.com/platform?utm=1',
         'example.com:443',
         ' ',
-        'OpenAI.com',
+        '"OpenAI.com"',
         'not a domain',
       ],
       excludeDomains: [
-        ' https://News.Example.com/story ',
+        " 'https://News.Example.com/story' ",
         'news.example.com',
         '\t',
       ],

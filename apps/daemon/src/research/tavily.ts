@@ -359,7 +359,7 @@ function normalizeTavilyDomainFilters(domains: string[] | undefined): string[] {
 }
 
 function normalizeTavilyDomainFilter(value: string): string | undefined {
-  let text = value.trim().toLowerCase();
+  let text = stripTavilyWrappingQuotes(value).toLowerCase();
   if (!text) return undefined;
   if (/^https?:\/\//.test(text)) {
     try {
@@ -371,6 +371,17 @@ function normalizeTavilyDomainFilter(value: string): string | undefined {
   text = text.split(/[/?#]/)[0]?.replace(/:\d+$/, '') ?? '';
   if (!text || !TAVILY_DOMAIN_RE.test(text)) return undefined;
   return text;
+}
+
+function stripTavilyWrappingQuotes(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length < 2) return trimmed;
+  const first = trimmed[0];
+  const last = trimmed[trimmed.length - 1];
+  if ((first === '"' || first === "'") && last === first) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
 }
 
 function normalizeTavilyBaseUrl(value: string): string {
