@@ -93,7 +93,8 @@ export class TavilyError extends Error {
 export async function tavilySearch(
   input: TavilySearchInput,
 ): Promise<TavilySearchOutput> {
-  if (!input.apiKey) {
+  const apiKey = input.apiKey.trim();
+  if (!apiKey) {
     throw new TavilyError('Tavily API key is not configured');
   }
   const base = (input.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
@@ -164,7 +165,7 @@ export async function tavilySearch(
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${input.apiKey}`,
+        authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(body),
       signal: ctrl.signal,
