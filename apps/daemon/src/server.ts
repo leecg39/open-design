@@ -4706,6 +4706,18 @@ export async function startServer({
       });
     }
 
+    const controller = new AbortController();
+    const abortIfRequestAborted = () => {
+      if ((req.aborted || !req.complete) && !res.writableEnded) {
+        controller.abort();
+      }
+    };
+    const abortIfResponseClosed = () => {
+      if (!res.writableEnded) controller.abort();
+    };
+    req.on('close', abortIfRequestAborted);
+    res.on('close', abortIfResponseClosed);
+
     try {
       const result = await searchResearch({
         projectRoot: PROJECT_ROOT,
@@ -4725,6 +4737,7 @@ export async function startServer({
         autoParameters: req.body?.autoParameters,
         maxSources: req.body?.maxSources,
         providers: req.body?.providers,
+        signal: controller.signal,
       });
       res.json(result);
     } catch (err) {
@@ -4739,6 +4752,9 @@ export async function startServer({
           message: String(err && err.message ? err.message : err),
         },
       });
+    } finally {
+      req.off('close', abortIfRequestAborted);
+      res.off('close', abortIfResponseClosed);
     }
   });
 

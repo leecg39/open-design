@@ -1,5 +1,5 @@
 import { mkdtemp, rm } from 'node:fs/promises';
-import type { Server as HttpServer } from 'node:http';
+import http from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -10,7 +10,7 @@ import { tavilySearch } from '../src/research/tavily.js';
 const TAVILY_ENV_KEYS = ['OD_TAVILY_API_KEY', 'TAVILY_API_KEY'];
 type FetchInput = Parameters<typeof fetch>[0];
 type FetchInit = Parameters<typeof fetch>[1];
-type StartedServer = { server: HttpServer; url: string };
+type StartedServer = { server: http.Server; url: string };
 
 describe('research search', () => {
   const originalEnv = Object.fromEntries(
@@ -35,10 +35,19 @@ describe('research search', () => {
     return projectRoot;
   }
 
-  function closeServer(server: HttpServer): Promise<void> {
+  function closeServer(server: http.Server): Promise<void> {
     return new Promise((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
+  }
+
+  async function waitFor(predicate: () => boolean, timeoutMs: number) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() <= deadline) {
+      if (predicate()) return;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    throw new Error('waitFor: predicate did not become true');
   }
 
   it('requires a Tavily API key', async () => {
@@ -1492,6 +1501,62 @@ describe('research search', () => {
       expect(body).not.toHaveProperty('time_range');
       expect(body).not.toHaveProperty('start_date');
       expect(body).not.toHaveProperty('end_date');
+    } finally {
+      await closeServer(started.server);
+    }
+  });
+
+  it('aborts API research search when the client disconnects', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const capture: { signal: AbortSignal | null } = { signal: null };
+    const fetchMock = vi.fn(
+      async (_input: FetchInput, init?: FetchInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          capture.signal = (init?.signal as AbortSignal | undefined) ?? null;
+          const rejectAbort = () => {
+            const error = new Error('aborted');
+            error.name = 'AbortError';
+            reject(error);
+          };
+          if (capture.signal?.aborted) {
+            rejectAbort();
+            return;
+          }
+          capture.signal?.addEventListener('abort', rejectAbort, {
+            once: true,
+          });
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { startServer } = await import('../src/server.js');
+    const started = (await startServer({
+      port: 0,
+      returnServer: true,
+    })) as StartedServer;
+
+    try {
+      const url = new URL(`${started.url}/api/research/search`);
+      const body = JSON.stringify({ query: 'Open Design abort validation' });
+      const clientReq = http.request(
+        {
+          hostname: url.hostname,
+          port: url.port,
+          path: url.pathname,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body),
+          },
+        },
+        () => {},
+      );
+      clientReq.on('error', () => {});
+      clientReq.write(body);
+      clientReq.end();
+
+      await waitFor(() => capture.signal !== null, 5_000);
+      clientReq.destroy();
+      await waitFor(() => capture.signal?.aborted === true, 5_000);
     } finally {
       await closeServer(started.server);
     }
