@@ -335,4 +335,41 @@ describe('research report helpers', () => {
       '- [1] Breaking \\]\\(https://bad.example\\): 1\\. list-like snippet',
     );
   });
+
+  it('escapes provider and source metadata fields', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Metadata safety',
+      summary: 'Metadata should stay in metadata fields.',
+      provider: 'tavily',
+      depth: 'deep',
+      selectedParameters: {
+        searchDepth: 'advanced\n## Injected Search Depth',
+      },
+      warnings: ['> injected warning'],
+      requestId: 'req]\n## Injected Request',
+      fetchedAt: Date.UTC(2026, 5, 1),
+      sources: [
+        {
+          title: 'Source',
+          url: 'https://example.com/source',
+          snippet: 'Evidence.',
+          publishedAt: '2026-06-01\n## Injected Date',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).not.toContain('\n## Injected Search Depth');
+    expect(report).not.toContain('\n## Injected Request');
+    expect(report).not.toContain('\n## Injected Date');
+    expect(report).not.toContain('\n> injected warning');
+    expect(report).toContain('- \\> injected warning');
+    expect(report).toContain(
+      '- Selected search depth: advanced \\#\\# Injected Search Depth',
+    );
+    expect(report).toContain('- Request ID: req\\] \\#\\# Injected Request');
+    expect(report).toContain(
+      '(example.com; published 2026-06-01 \\#\\# Injected Date)',
+    );
+  });
 });

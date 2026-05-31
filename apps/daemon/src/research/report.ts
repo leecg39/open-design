@@ -110,7 +110,11 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
       ? [`- Selected topic: ${findings.selectedParameters.topic}`]
       : []),
     ...(findings.selectedParameters?.searchDepth
-      ? [`- Selected search depth: ${findings.selectedParameters.searchDepth}`]
+      ? [
+          `- Selected search depth: ${escapeMarkdownText(
+            findings.selectedParameters.searchDepth,
+          )}`,
+        ]
       : []),
     ...(findings.maxSources != null
       ? [`- Effective source cap: ${findings.maxSources}`]
@@ -122,7 +126,9 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     ...(findings.discardedSourceCount != null
       ? [`- Discarded unusable provider results: ${findings.discardedSourceCount}`]
       : []),
-    ...(findings.requestId ? [`- Request ID: ${findings.requestId}`] : []),
+    ...(findings.requestId
+      ? [`- Request ID: ${escapeMarkdownText(findings.requestId)}`]
+      : []),
     ...(findings.responseTime != null
       ? [`- Provider response time: ${findings.responseTime}`]
       : []),
@@ -131,7 +137,12 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
       : []),
     '',
     ...(findings.warnings?.length
-      ? ['## Warnings', '', ...findings.warnings.map((warning) => `- ${warning}`), '']
+      ? [
+          '## Warnings',
+          '',
+          ...findings.warnings.map((warning) => `- ${escapeMarkdownText(warning)}`),
+          '',
+        ]
       : []),
     '## Evidence Safety',
     '',
@@ -226,7 +237,9 @@ function renderSources(sources: ResearchSource[]): string[] {
     const domain = sourceDomain(source.url);
     const details = [
       domain,
-      source.publishedAt ? `published ${source.publishedAt}` : '',
+      source.publishedAt
+        ? `published ${escapeMarkdownText(source.publishedAt)}`
+        : '',
       source.score != null ? `score ${source.score}` : '',
       source.rawContentTruncated ? 'raw excerpt truncated' : '',
     ].filter(Boolean);
