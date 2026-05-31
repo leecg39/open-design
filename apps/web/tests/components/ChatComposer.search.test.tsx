@@ -912,6 +912,46 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('warns about unknown /search flags without leaking them into the query', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: {
+        value: '/search --provider=tavily Open Design research',
+      },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] =
+      onSend.mock.calls[0]!;
+    expect(prompt).toContain('Open Design research');
+    expect(prompt).not.toContain(
+      'Canonical query:\n\n```text\n--provider=tavily',
+    );
+    expect(prompt).toContain(
+      'Research parser warning: Ignored unknown /search flag: --provider.',
+    );
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Open Design research',
+        depth: 'shallow',
+      },
+    });
+  });
+
   it('does not send research metadata for normal prompts', () => {
     const onSend = vi.fn();
 

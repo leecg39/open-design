@@ -423,6 +423,12 @@ function parseSearchArgs(raw: string): {
     ) {
       timeRange = lower.slice(2) as ResearchTimeRange;
       cursor += 1;
+    } else if (lower.startsWith('--')) {
+      const flagName = token.includes('=')
+        ? token.slice(0, token.indexOf('='))
+        : token;
+      warnings.push(`Ignored unknown /search flag: ${flagName}.`);
+      cursor += 1;
     } else {
       break;
     }
