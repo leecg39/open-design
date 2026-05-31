@@ -3,6 +3,7 @@ import type {
   ResearchSource,
   ResearchTimeRange,
   ResearchTopic,
+  ResearchUsage,
 } from '@open-design/contracts/api/research';
 
 const DEFAULT_BASE_URL = 'https://api.tavily.com';
@@ -41,13 +42,19 @@ interface TavilyRawResult {
 interface TavilyRawResponse {
   answer?: unknown;
   images?: unknown;
+  request_id?: unknown;
+  response_time?: unknown;
   results?: unknown;
+  usage?: unknown;
 }
 
 export interface TavilySearchOutput {
   answer: string;
   sources: ResearchSource[];
   images: ResearchImage[];
+  usage?: ResearchUsage;
+  requestId?: string;
+  responseTime?: number;
 }
 
 export class TavilyError extends Error {
@@ -96,6 +103,7 @@ export async function tavilySearch(
       ? { include_images: true, include_image_descriptions: true }
       : {}),
     include_favicon: true,
+    include_usage: true,
     max_results: maxResults,
     include_answer: input.includeAnswer ?? true,
     include_raw_content: false,
@@ -137,6 +145,12 @@ export async function tavilySearch(
   const answer = typeof json.answer === 'string' ? json.answer : '';
   const rawResults = Array.isArray(json.results) ? json.results : [];
   const images = normalizeTavilyImages(json.images);
+  const usage = normalizeTavilyUsage(json.usage);
+  const requestId =
+    typeof json.request_id === 'string' && json.request_id.trim()
+      ? json.request_id.trim()
+      : undefined;
+  const responseTime = normalizeNonNegativeNumber(json.response_time);
   const sources: ResearchSource[] = [];
   for (const r of rawResults as TavilyRawResult[]) {
     const url = typeof r.url === 'string' ? r.url : '';
@@ -166,7 +180,31 @@ export async function tavilySearch(
       ...(favicon ? { favicon } : {}),
     });
   }
-  return { answer, sources, images };
+  return {
+    answer,
+    sources,
+    images,
+    ...(usage ? { usage } : {}),
+    ...(requestId ? { requestId } : {}),
+    ...(responseTime != null ? { responseTime } : {}),
+  };
+}
+
+function normalizeTavilyUsage(value: unknown): ResearchUsage | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const record = value as Record<string, unknown>;
+  const credits = normalizeNonNegativeNumber(record.credits);
+  return credits == null ? undefined : { credits };
+}
+
+function normalizeNonNegativeNumber(value: unknown): number | undefined {
+  const n =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : NaN;
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
 function normalizeTavilyImages(value: unknown): ResearchImage[] {

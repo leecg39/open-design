@@ -115,6 +115,9 @@ export async function searchResearch(
   let answer = '';
   let sources: ResearchSource[] = [];
   let images: ResearchFindings['images'] = [];
+  let usage: ResearchFindings['usage'];
+  let requestId: string | undefined;
+  let responseTime: number | undefined;
   try {
     const out = await tavilySearch({
       apiKey: cfg.apiKey,
@@ -142,6 +145,9 @@ export async function searchResearch(
         ? out.sources
         : out.sources.filter((source) => (source.score ?? 0) >= minScore);
     images = includeImages ? out.images : [];
+    usage = out.usage;
+    requestId = out.requestId;
+    responseTime = out.responseTime;
   } catch (err) {
     const message =
       err instanceof TavilyError
@@ -171,6 +177,9 @@ export async function searchResearch(
     ...(exactMatch ? { exactMatch } : {}),
     ...(minScore != null ? { minScore } : {}),
     ...(includeImages ? { includeImages } : {}),
+    ...(usage ? { usage } : {}),
+    ...(requestId ? { requestId } : {}),
+    ...(responseTime != null ? { responseTime } : {}),
     fetchedAt: Date.now(),
   };
 }

@@ -56,6 +56,10 @@ export interface ResearchImage {
   provider: string;
 }
 
+export interface ResearchUsage {
+  credits?: number;
+}
+
 export interface ResearchFindings {
   query: string;
   summary: string;
@@ -73,6 +77,9 @@ export interface ResearchFindings {
   exactMatch?: boolean;
   minScore?: number;
   includeImages?: boolean;
+  usage?: ResearchUsage;
+  requestId?: string;
+  responseTime?: number;
   /** Unix ms when the search returned. */
   fetchedAt: number;
 }

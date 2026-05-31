@@ -48,6 +48,9 @@ describe('research search', () => {
       new Response(
         JSON.stringify({
           answer: 'EV sales are growing.',
+          request_id: 'req-ev-123',
+          response_time: '1.67',
+          usage: { credits: 1 },
           results: [
             {
               title: 'EV report',
@@ -74,6 +77,9 @@ describe('research search', () => {
       summary: 'EV sales are growing.',
       provider: 'tavily',
       depth: 'shallow',
+      usage: { credits: 1 },
+      requestId: 'req-ev-123',
+      responseTime: 1.67,
       sources: [
         {
           title: 'EV report',
@@ -93,6 +99,7 @@ describe('research search', () => {
       max_results: 20,
       include_answer: true,
       include_raw_content: false,
+      include_usage: true,
     });
   });
 
