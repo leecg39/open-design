@@ -1431,6 +1431,72 @@ describe('research search', () => {
     }
   });
 
+  it('preserves invalid API string controls for daemon warnings', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const realFetch = globalThis.fetch;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'String control warning summary.',
+          results: [
+            {
+              title: 'String control result',
+              url: 'https://example.com/string-controls',
+              content: 'String control validation should be visible.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { startServer } = await import('../src/server.js');
+    const started = (await startServer({
+      port: 0,
+      returnServer: true,
+    })) as StartedServer;
+
+    try {
+      const response = await realFetch(`${started.url}/api/research/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: 'Open Design string control validation',
+          depth: 123,
+          topic: 7,
+          country: ['kr'],
+          timeRange: false,
+          startDate: 20260531,
+          endDate: { date: '2026-05-31' },
+        }),
+      });
+      const findings = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(findings).toMatchObject({
+        depth: 'shallow',
+        warnings: [
+          'Ignored invalid depth; expected shallow, medium, or deep.',
+          'Ignored invalid topic; expected general, news, or finance.',
+          'Ignored invalid country boost.',
+          'Ignored invalid timeRange; expected day, week, month, or year.',
+          'Ignored invalid startDate; expected YYYY-MM-DD.',
+          'Ignored invalid endDate; expected YYYY-MM-DD.',
+        ],
+      });
+      const body = JSON.parse(
+        String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+      );
+      expect(body).not.toHaveProperty('topic');
+      expect(body).not.toHaveProperty('country');
+      expect(body).not.toHaveProperty('time_range');
+      expect(body).not.toHaveProperty('start_date');
+      expect(body).not.toHaveProperty('end_date');
+    } finally {
+      await closeServer(started.server);
+    }
+  });
+
   it('explains when minScore filters all provider sources', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

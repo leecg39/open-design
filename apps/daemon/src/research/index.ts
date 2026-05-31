@@ -43,12 +43,12 @@ export class ResearchError extends Error {
 export interface SearchResearchInput {
   query: unknown;
   projectRoot: string;
-  depth?: ResearchDepth;
-  topic?: ResearchTopic;
-  country?: string;
-  timeRange?: ResearchTimeRange;
-  startDate?: string;
-  endDate?: string;
+  depth?: unknown;
+  topic?: unknown;
+  country?: unknown;
+  timeRange?: unknown;
+  startDate?: unknown;
+  endDate?: unknown;
   includeDomains?: unknown;
   excludeDomains?: unknown;
   exactMatch?: unknown;
@@ -75,21 +75,28 @@ export async function searchResearch(
   }
   const depth = normalizeResearchDepth(input.depth);
   if (
-    hasNonEmptyString(input.depth) &&
-    input.depth !== 'shallow' &&
-    input.depth !== 'medium' &&
-    input.depth !== 'deep'
+    hasInvalidStringControl(input.depth) ||
+    (hasNonEmptyString(input.depth) &&
+      input.depth !== 'shallow' &&
+      input.depth !== 'medium' &&
+      input.depth !== 'deep')
   ) {
     warnings.push('Ignored invalid depth; expected shallow, medium, or deep.');
   }
   const topic = normalizeResearchTopic(input.topic);
-  if (hasNonEmptyString(input.topic) && !topic) {
+  if (
+    hasInvalidStringControl(input.topic) ||
+    (hasNonEmptyString(input.topic) && !topic)
+  ) {
     warnings.push('Ignored invalid topic; expected general, news, or finance.');
   }
   const normalizedCountry = normalizeResearchCountry(input.country);
   const country =
     topic === 'news' || topic === 'finance' ? undefined : normalizedCountry;
-  if (hasNonEmptyString(input.country) && !normalizedCountry) {
+  if (
+    hasInvalidStringControl(input.country) ||
+    (hasNonEmptyString(input.country) && !normalizedCountry)
+  ) {
     warnings.push('Ignored invalid country boost.');
   } else if (
     hasNonEmptyString(input.country) &&
@@ -101,7 +108,10 @@ export async function searchResearch(
     );
   }
   let timeRange = normalizeResearchTimeRange(input.timeRange);
-  if (hasNonEmptyString(input.timeRange) && !timeRange) {
+  if (
+    hasInvalidStringControl(input.timeRange) ||
+    (hasNonEmptyString(input.timeRange) && !timeRange)
+  ) {
     warnings.push(
       'Ignored invalid timeRange; expected day, week, month, or year.',
     );
@@ -114,10 +124,16 @@ export async function searchResearch(
     );
     timeRange = undefined;
   }
-  if (hasNonEmptyString(input.startDate) && !startDate) {
+  if (
+    hasInvalidStringControl(input.startDate) ||
+    (hasNonEmptyString(input.startDate) && !startDate)
+  ) {
     warnings.push('Ignored invalid startDate; expected YYYY-MM-DD.');
   }
-  if (hasNonEmptyString(input.endDate) && !endDate) {
+  if (
+    hasInvalidStringControl(input.endDate) ||
+    (hasNonEmptyString(input.endDate) && !endDate)
+  ) {
     warnings.push('Ignored invalid endDate; expected YYYY-MM-DD.');
   }
   if (startDate && endDate && startDate > endDate) {
@@ -395,6 +411,10 @@ function normalizeResearchDate(value: unknown): string | undefined {
 
 function hasNonEmptyString(value: unknown): boolean {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function hasInvalidStringControl(value: unknown): boolean {
+  return value != null && typeof value !== 'string';
 }
 
 function normalizeResearchDomains(value: unknown): string[] {
