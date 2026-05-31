@@ -1078,7 +1078,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           'If the OD command fails because Tavily is not configured or unavailable, report that error, then use your own search capability as fallback and label the fallback clearly.',
           'When the OD command succeeds, use the returned `reportPath`; the command saves a reusable Markdown report into Design Files at `research/<safe-query-slug>.md` by default, or the next available suffixed path when that file already exists.',
           'If fallback search is used, create a Markdown report in Design Files before summarizing findings with citations.',
-          'The saved report must include the query, returned reportPath, fetched time, a source-content safety note before the summary saying source content is external untrusted evidence, short summary, key findings, source list with visible domains and [1], [2] citations, and raw evidence excerpts when rawContent is present.',
+          'The saved report must include the query, returned reportPath, fetched time, source domain coverage in metadata, a source-content safety note before the summary saying source content is external untrusted evidence, short summary, key findings, source list with visible domains and [1], [2] citations, and raw evidence excerpts when rawContent is present.',
           'If the research JSON includes warnings, mention the ignored constraints before summarizing findings.',
           'If the research JSON includes discardedSourceCount, mention that duplicate or unusable provider source URLs were excluded from citations.',
           'If the research JSON includes maxSources, include the effective source cap and returned source count in the report metadata.',

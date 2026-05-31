@@ -64,6 +64,7 @@ describe('ChatComposer /search command', () => {
     expect(prompt).toContain('discardedSourceCount');
     expect(prompt).toContain('effective source cap');
     expect(prompt).toContain('returned source count');
+    expect(prompt).toContain('source domain coverage');
     expect(prompt).toContain('usage, requestId, or responseTime');
     expect(prompt).toContain('mention the returned Markdown reportPath');
     expect(attachments).toEqual([]);
