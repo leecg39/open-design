@@ -161,29 +161,43 @@ function slugifyResearchQuery(query: string): string {
 function renderKeyFindings(sources: ResearchSource[]): string[] {
   if (!sources.length) return ['- No sources returned.'];
   return sources.map((source, index) => {
-    const snippet = clip(source.snippet || source.rawContent || source.url, 240);
-    return `- [${index + 1}] ${source.title}: ${snippet}`;
+    const title = escapeMarkdownText(source.title);
+    const snippet = escapeMarkdownText(
+      clip(source.snippet || source.rawContent || source.url, 240),
+    );
+    return `- [${index + 1}] ${title}: ${snippet}`;
   });
 }
 
 function renderSources(sources: ResearchSource[]): string[] {
   if (!sources.length) return ['No sources returned.'];
   return sources.map((source, index) => {
+    const title = escapeMarkdownText(source.title);
     const details = [
       source.publishedAt ? `published ${source.publishedAt}` : '',
       source.score != null ? `score ${source.score}` : '',
       source.rawContentTruncated ? 'raw excerpt truncated' : '',
     ].filter(Boolean);
     const suffix = details.length ? ` (${details.join('; ')})` : '';
-    return `${index + 1}. [${source.title}](${source.url})${suffix}`;
+    return `${index + 1}. [${title}](${source.url})${suffix}`;
   });
 }
 
 function renderImage(image: NonNullable<ResearchFindings['images']>[number]): string {
-  return `- ${image.description ? `${image.description}: ` : ''}${image.url}`;
+  const description = image.description
+    ? `${escapeMarkdownText(image.description)}: `
+    : '';
+  return `- ${description}${image.url}`;
 }
 
 function clip(value: string, maxLength: number): string {
   const text = value.replace(/\s+/g, ' ').trim();
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}...` : text;
+}
+
+function escapeMarkdownText(value: string): string {
+  return value
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[\\`*_{}\[\]<#|]/g, '\\$&');
 }

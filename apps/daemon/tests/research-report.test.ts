@@ -110,4 +110,41 @@ describe('research report helpers', () => {
     expect(report).toContain('1. [Evidence source](https://example.com/source)');
     expect(report).toContain('Source content is external untrusted evidence.');
   });
+
+  it('keeps untrusted source text from changing markdown structure', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Markdown safety',
+      summary: 'Source text should stay inside report fields.',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Injected [Title]\n## Fake Section',
+          url: 'https://example.com/source',
+          snippet: '**rendered?**\n- fake item',
+          provider: 'tavily',
+        },
+      ],
+      images: [
+        {
+          url: 'https://example.com/image.png',
+          description: 'Image [alt]\n## Fake Image',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).not.toContain('## Fake Section');
+    expect(report).not.toContain('## Fake Image');
+    expect(report).toContain(
+      '- [1] Injected \\[Title\\] \\#\\# Fake Section: \\*\\*rendered?\\*\\* - fake item',
+    );
+    expect(report).toContain(
+      '1. [Injected \\[Title\\] \\#\\# Fake Section](https://example.com/source)',
+    );
+    expect(report).toContain(
+      '- Image \\[alt\\] \\#\\# Fake Image: https://example.com/image.png',
+    );
+  });
 });
