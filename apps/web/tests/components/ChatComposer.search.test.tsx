@@ -998,7 +998,7 @@ describe('ChatComposer /search command', () => {
     });
   });
 
-  it('warns about unknown /search flags without leaking them into the query', () => {
+  it('warns about unsupported /search provider flags without leaking them into the query', () => {
     const onSend = vi.fn();
 
     render(
@@ -1027,7 +1027,45 @@ describe('ChatComposer /search command', () => {
       'Canonical query:\n\n```text\n--provider=tavily',
     );
     expect(prompt).toContain(
-      'Research parser warning: Ignored unknown /search flag: --provider.',
+      'Research parser warning: Ignored unsupported --provider; OD research currently uses Tavily.',
+    );
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Open Design research',
+        depth: 'shallow',
+      },
+    });
+  });
+
+  it('keeps separate unsupported /search provider values out of the query', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: {
+        value: '/search --provider tavily Open Design research',
+      },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] =
+      onSend.mock.calls[0]!;
+    expect(prompt).toContain('Open Design research');
+    expect(prompt).not.toContain('Canonical query:\n\n```text\ntavily Open');
+    expect(prompt).toContain(
+      'Research parser warning: Ignored unsupported --provider; OD research currently uses Tavily.',
     );
     expect(meta).toEqual({
       research: {

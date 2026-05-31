@@ -359,6 +359,16 @@ function parseSearchArgs(raw: string): {
     } else if (lower === '--auto-parameters' || lower === '--auto') {
       autoParameters = true;
       cursor += 1;
+    } else if (lower.startsWith('--provider=')) {
+      warnings.push(
+        'Ignored unsupported --provider; OD research currently uses Tavily.',
+      );
+      cursor += 1;
+    } else if (lower === '--provider') {
+      warnings.push(
+        'Ignored unsupported --provider; OD research currently uses Tavily.',
+      );
+      cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
     } else if (lower.startsWith('--min-score=')) {
       const value = parseSearchScore(token.slice('--min-score='.length));
       if (value == null) {
