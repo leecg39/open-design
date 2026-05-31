@@ -56,6 +56,17 @@ describe('research report helpers', () => {
     );
   });
 
+  it('rejects explicit report paths with Windows reserved file names', () => {
+    const root = path.resolve('/tmp/open-design-project');
+
+    expect(() => resolveResearchReportPath(root, 'research/CON.md')).toThrow(
+      'report file name is reserved on Windows',
+    );
+    expect(() => resolveResearchReportPath(root, 'research/com1.txt')).toThrow(
+      'report file name is reserved on Windows',
+    );
+  });
+
   it('keeps automatic report paths from overwriting existing reports', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'open-design-research-report-'));
     try {

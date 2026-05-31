@@ -39,6 +39,9 @@ export function resolveResearchReportPath(
     throw new Error('report path must include a file name');
   }
   const parts = rawParts.filter((part) => part !== '.');
+  if (hasWindowsReservedReportFileName(parts[parts.length - 1] ?? '')) {
+    throw new Error('report file name is reserved on Windows');
+  }
   const relativePath = parts.join('/');
   const projectRoot = path.resolve(cwd);
   const absolutePath = path.resolve(projectRoot, relativePath);
@@ -266,6 +269,14 @@ function reportPathExistsError(relativePath: string): Error & { code: string } {
   };
   error.code = 'EEXIST';
   return error;
+}
+
+function hasWindowsReservedReportFileName(fileName: string): boolean {
+  const extension = path.posix.extname(fileName);
+  const basename = (extension ? fileName.slice(0, -extension.length) : fileName)
+    .replace(/[. ]+$/g, '')
+    .toLowerCase();
+  return WINDOWS_RESERVED_BASENAMES.has(basename);
 }
 
 function slugifyResearchQuery(query: string): string {
