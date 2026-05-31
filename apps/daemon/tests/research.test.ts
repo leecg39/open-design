@@ -225,6 +225,49 @@ describe('research search', () => {
     expect(findings.discardedSourceCount).toBe(4);
   });
 
+  it('discards malformed provider result entries without dropping valid sources', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Malformed results summary.',
+          results: [
+            null,
+            'not an object',
+            {
+              title: 'Valid source',
+              url: 'https://example.com/valid',
+              content: 'Valid source content.',
+            },
+            42,
+            {
+              title: 'Invalid URL source',
+              url: 'ftp://example.com/file',
+              content: 'Invalid URL content.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design malformed provider results',
+    });
+
+    expect(findings.sources).toEqual([
+      {
+        title: 'Valid source',
+        url: 'https://example.com/valid',
+        snippet: 'Valid source content.',
+        provider: 'tavily',
+      },
+    ]);
+    expect(findings.discardedSourceCount).toBe(4);
+  });
+
   it('explains when all provider results are discarded by source URL normalization', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

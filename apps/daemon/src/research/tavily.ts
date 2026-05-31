@@ -202,7 +202,12 @@ export async function tavilySearch(
   const sources: ResearchSource[] = [];
   const seenSourceUrls = new Set<string>();
   let discardedSourceCount = 0;
-  for (const r of rawResults as TavilyRawResult[]) {
+  for (const item of rawResults) {
+    if (!item || typeof item !== 'object') {
+      discardedSourceCount += 1;
+      continue;
+    }
+    const r = item as TavilyRawResult;
     const url = normalizeSourceUrl(r.url);
     if (!url || seenSourceUrls.has(url)) {
       discardedSourceCount += 1;
