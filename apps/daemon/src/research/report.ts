@@ -95,18 +95,26 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
       ? [`- Report path: ${escapeMarkdownText(findings.reportPath)}`]
       : []),
     `- Fetched: ${fetchedAt}`,
-    `- Provider: ${findings.provider}`,
-    `- Depth: ${findings.depth}`,
-    ...(findings.topic ? [`- Topic: ${findings.topic}`] : []),
-    ...(findings.country ? [`- Country: ${findings.country}`] : []),
-    ...(findings.timeRange ? [`- Time range: ${findings.timeRange}`] : []),
-    ...(findings.startDate ? [`- Start date: ${findings.startDate}`] : []),
-    ...(findings.endDate ? [`- End date: ${findings.endDate}`] : []),
+    `- Provider: ${escapeMarkdownText(findings.provider)}`,
+    `- Depth: ${escapeMarkdownText(findings.depth)}`,
+    ...(findings.topic ? [`- Topic: ${escapeMarkdownText(findings.topic)}`] : []),
+    ...(findings.country
+      ? [`- Country: ${escapeMarkdownText(findings.country)}`]
+      : []),
+    ...(findings.timeRange
+      ? [`- Time range: ${escapeMarkdownText(findings.timeRange)}`]
+      : []),
+    ...(findings.startDate
+      ? [`- Start date: ${escapeMarkdownText(findings.startDate)}`]
+      : []),
+    ...(findings.endDate
+      ? [`- End date: ${escapeMarkdownText(findings.endDate)}`]
+      : []),
     ...(findings.includeDomains?.length
-      ? [`- Include domains: ${findings.includeDomains.join(', ')}`]
+      ? [`- Include domains: ${renderMetadataList(findings.includeDomains)}`]
       : []),
     ...(findings.excludeDomains?.length
-      ? [`- Exclude domains: ${findings.excludeDomains.join(', ')}`]
+      ? [`- Exclude domains: ${renderMetadataList(findings.excludeDomains)}`]
       : []),
     ...(findings.exactMatch ? ['- Exact match: enabled'] : []),
     ...(findings.minScore != null ? [`- Minimum score: ${findings.minScore}`] : []),
@@ -114,7 +122,7 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     ...(findings.includeRawContent ? ['- Raw content evidence: enabled'] : []),
     ...(findings.autoParameters ? ['- Auto parameters: enabled'] : []),
     ...(findings.selectedParameters?.topic
-      ? [`- Selected topic: ${findings.selectedParameters.topic}`]
+      ? [`- Selected topic: ${escapeMarkdownText(findings.selectedParameters.topic)}`]
       : []),
     ...(findings.selectedParameters?.searchDepth
       ? [
@@ -295,6 +303,10 @@ function renderImage(image: NonNullable<ResearchFindings['images']>[number]): st
     ? `${escapeMarkdownText(image.description)}: `
     : '';
   return `- ${description}${image.url}`;
+}
+
+function renderMetadataList(values: string[]): string {
+  return values.map((value) => escapeMarkdownText(value)).join(', ');
 }
 
 function markdownLinkDestination(url: string): string {

@@ -363,9 +363,17 @@ describe('research report helpers', () => {
     const report = buildResearchMarkdownReport({
       query: 'Metadata safety',
       summary: 'Metadata should stay in metadata fields.',
-      provider: 'tavily',
+      provider: 'tavily\n## Injected Provider',
       depth: 'deep',
+      topic: 'news',
+      country: 'KR\n## Injected Country',
+      timeRange: 'week',
+      startDate: '2026-06-01\n## Injected Start',
+      endDate: '2026-06-02\n## Injected End',
+      includeDomains: ['example.com\n## Injected Include'],
+      excludeDomains: ['bad.example\n## Injected Exclude'],
       selectedParameters: {
+        topic: 'finance',
         searchDepth: 'advanced\n## Injected Search Depth',
       },
       warnings: ['> injected warning'],
@@ -382,10 +390,27 @@ describe('research report helpers', () => {
       ],
     });
 
+    expect(report).not.toContain('\n## Injected Provider');
+    expect(report).not.toContain('\n## Injected Country');
+    expect(report).not.toContain('\n## Injected Start');
+    expect(report).not.toContain('\n## Injected End');
+    expect(report).not.toContain('\n## Injected Include');
+    expect(report).not.toContain('\n## Injected Exclude');
     expect(report).not.toContain('\n## Injected Search Depth');
     expect(report).not.toContain('\n## Injected Request');
     expect(report).not.toContain('\n## Injected Date');
     expect(report).not.toContain('\n> injected warning');
+    expect(report).toContain('- Provider: tavily \\#\\# Injected Provider');
+    expect(report).toContain('- Country: KR \\#\\# Injected Country');
+    expect(report).toContain('- Start date: 2026-06-01 \\#\\# Injected Start');
+    expect(report).toContain('- End date: 2026-06-02 \\#\\# Injected End');
+    expect(report).toContain(
+      '- Include domains: example.com \\#\\# Injected Include',
+    );
+    expect(report).toContain(
+      '- Exclude domains: bad.example \\#\\# Injected Exclude',
+    );
+    expect(report).toContain('- Selected topic: finance');
     expect(report).toContain('- \\> injected warning');
     expect(report).toContain(
       '- Selected search depth: advanced \\#\\# Injected Search Depth',
