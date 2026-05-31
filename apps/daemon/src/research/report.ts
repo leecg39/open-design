@@ -4,6 +4,14 @@ import path from 'node:path';
 import type { ResearchFindings, ResearchSource } from '@open-design/contracts/api/research';
 
 const REPORT_SLUG_LIMIT = 80;
+const WINDOWS_RESERVED_BASENAMES = new Set([
+  'con',
+  'prn',
+  'aux',
+  'nul',
+  ...Array.from({ length: 9 }, (_unused, index) => `com${index + 1}`),
+  ...Array.from({ length: 9 }, (_unused, index) => `lpt${index + 1}`),
+]);
 
 export function defaultResearchReportPath(query: string): string {
   return `research/${slugifyResearchQuery(query)}.md`;
@@ -229,7 +237,8 @@ function slugifyResearchQuery(query: string): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, REPORT_SLUG_LIMIT)
     .replace(/-+$/g, '');
-  return slug || 'research';
+  if (!slug) return 'research';
+  return WINDOWS_RESERVED_BASENAMES.has(slug) ? `research-${slug}` : slug;
 }
 
 function renderKeyFindings(sources: ResearchSource[]): string[] {

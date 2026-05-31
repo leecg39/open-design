@@ -21,6 +21,8 @@ describe('research report helpers', () => {
       'research/오픈-디자인-리서치.md',
     );
     expect(defaultResearchReportPath('   !!!   ')).toBe('research/research.md');
+    expect(defaultResearchReportPath('CON')).toBe('research/research-con.md');
+    expect(defaultResearchReportPath('COM1')).toBe('research/research-com1.md');
   });
 
   it('keeps explicit report paths inside the project', () => {
