@@ -135,6 +135,9 @@ export function renderResearchCommandContract(
     ...(includeRawContent
       ? ['If the JSON includes rawContent fields, use them only as source evidence and keep quoted excerpts short. If rawContentTruncated is true, treat the raw content as an excerpt, not the full page.']
       : []),
+    ...(minScore != null
+      ? ['If the JSON includes filteredSourceCount, mention how many provider sources were removed by the relevance threshold.']
+      : []),
     ...(autoParameters
       ? ['If the JSON includes selectedParameters, briefly note how the provider tuned the search.']
       : []),

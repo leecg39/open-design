@@ -758,6 +758,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           ...(includeRawContent
             ? ['If the research JSON includes rawContent fields, use them as evidence and keep quoted excerpts short. If rawContentTruncated is true, treat the raw content as an excerpt, not the full page.']
             : []),
+          ...(minScore != null
+            ? ['If the research JSON includes filteredSourceCount, mention how many provider sources were removed by the relevance threshold.']
+            : []),
           ...(autoParameters
             ? ['If the research JSON includes selectedParameters, mention how the provider tuned the search.']
             : []),

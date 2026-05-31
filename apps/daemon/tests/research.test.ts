@@ -955,6 +955,7 @@ describe('research search', () => {
 
     expect(findings).toMatchObject({
       minScore: 0.5,
+      filteredSourceCount: 1,
       sources: [
         {
           title: 'Strong result',

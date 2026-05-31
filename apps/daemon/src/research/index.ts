@@ -210,6 +210,7 @@ export async function searchResearch(
   let responseTime: number | undefined;
   let selectedParameters: ResearchFindings['selectedParameters'];
   let providerSourceCount = 0;
+  let filteredSourceCount = 0;
   try {
     const out = await tavilySearch({
       apiKey: cfg.apiKey,
@@ -241,6 +242,8 @@ export async function searchResearch(
       minScore == null
         ? out.sources
         : out.sources.filter((source) => (source.score ?? 0) >= minScore);
+    filteredSourceCount =
+      minScore == null ? 0 : Math.max(0, out.sources.length - sources.length);
     images = includeImages ? out.images : [];
     usage = out.usage;
     requestId = out.requestId;
@@ -282,6 +285,7 @@ export async function searchResearch(
     ...(excludeDomains.length ? { excludeDomains } : {}),
     ...(exactMatch ? { exactMatch } : {}),
     ...(minScore != null ? { minScore } : {}),
+    ...(filteredSourceCount > 0 ? { filteredSourceCount } : {}),
     ...(includeImages ? { includeImages } : {}),
     ...(includeRawContent ? { includeRawContent } : {}),
     ...(autoParameters ? { autoParameters } : {}),

@@ -441,6 +441,7 @@ describe('ChatComposer /search command', () => {
     const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
     expect(prompt).toContain('--depth shallow --min-score 0.5 --max-sources 5');
     expect(prompt).toContain('Research minimum score: 0.5.');
+    expect(prompt).toContain('filteredSourceCount');
     expect(prompt).toContain('Open Design research quality');
     expect(meta).toEqual({
       research: {
