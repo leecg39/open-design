@@ -101,6 +101,26 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).not.toContain('--exclude-domains example.com');
   });
 
+  it('keeps domain filters beyond the old twenty-domain prompt cap', () => {
+    const includeDomains = Array.from(
+      { length: 25 },
+      (_unused, index) => `include-${index}.example.com`,
+    );
+    const excludeDomains = Array.from(
+      { length: 25 },
+      (_unused, index) => `exclude-${index}.example.com`,
+    );
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design domain limits',
+      includeDomains,
+      excludeDomains,
+      maxSources: 5,
+    });
+
+    expect(prompt).toContain('include-24.example.com');
+    expect(prompt).toContain('exclude-24.example.com');
+  });
+
   it('includes visual research flags when image evidence is requested', () => {
     const prompt = renderResearchCommandContract({
       query: 'AI dashboard visual references',

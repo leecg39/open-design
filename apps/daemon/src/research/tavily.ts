@@ -22,7 +22,8 @@ const TAVILY_REQUEST_ID_LIMIT = 120;
 const TAVILY_ANSWER_LIMIT = 4_000;
 const TAVILY_RAW_CONTENT_LIMIT = 4_000;
 const TAVILY_ERROR_TEXT_LIMIT = 200;
-const TAVILY_DOMAIN_FILTER_LIMIT = 20;
+const TAVILY_INCLUDE_DOMAIN_FILTER_LIMIT = 300;
+const TAVILY_EXCLUDE_DOMAIN_FILTER_LIMIT = 150;
 const TAVILY_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TAVILY_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
@@ -131,11 +132,15 @@ export async function tavilySearch(
       'Tavily startDate must be earlier than or equal to endDate',
     );
   }
-  const includeDomains = normalizeTavilyDomainFilters(input.includeDomains);
-  const includeDomainSet = new Set(includeDomains);
-  const excludeDomains = normalizeTavilyDomainFilters(input.excludeDomains).filter(
-    (domain) => !includeDomainSet.has(domain),
+  const includeDomains = normalizeTavilyDomainFilters(
+    input.includeDomains,
+    TAVILY_INCLUDE_DOMAIN_FILTER_LIMIT,
   );
+  const includeDomainSet = new Set(includeDomains);
+  const excludeDomains = normalizeTavilyDomainFilters(
+    input.excludeDomains,
+    TAVILY_EXCLUDE_DOMAIN_FILTER_LIMIT,
+  ).filter((domain) => !includeDomainSet.has(domain));
   const configuredBaseUrl = input.baseUrl?.trim() ?? '';
   const base = normalizeTavilyBaseUrl(configuredBaseUrl || DEFAULT_BASE_URL);
   const requestedMax =
@@ -364,7 +369,10 @@ function normalizeTavilyAutoParameters(
     : undefined;
 }
 
-function normalizeTavilyDomainFilters(domains: string[] | undefined): string[] {
+function normalizeTavilyDomainFilters(
+  domains: string[] | undefined,
+  limit: number,
+): string[] {
   const normalized: string[] = [];
   const seen = new Set<string>();
   for (const value of domains ?? []) {
@@ -372,7 +380,7 @@ function normalizeTavilyDomainFilters(domains: string[] | undefined): string[] {
     if (!domain || seen.has(domain)) continue;
     seen.add(domain);
     normalized.push(domain);
-    if (normalized.length >= TAVILY_DOMAIN_FILTER_LIMIT) break;
+    if (normalized.length >= limit) break;
   }
   return normalized;
 }

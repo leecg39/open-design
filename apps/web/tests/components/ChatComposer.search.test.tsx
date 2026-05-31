@@ -752,6 +752,46 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('keeps /search domain filters beyond the old twenty-domain cap', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    const includeDomains = Array.from(
+      { length: 25 },
+      (_unused, index) => `include-${index}.example.com`,
+    );
+    const excludeDomains = Array.from(
+      { length: 25 },
+      (_unused, index) => `exclude-${index}.example.com`,
+    );
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: {
+        value: `/search --include-domains ${includeDomains.join(',')} --exclude-domains ${excludeDomains.join(',')} Open Design source map`,
+      },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] =
+      onSend.mock.calls[0]!;
+    expect(prompt).toContain('include-24.example.com');
+    expect(prompt).toContain('exclude-24.example.com');
+    expect(prompt).not.toContain('excess --include-domains');
+    expect(prompt).not.toContain('excess --exclude-domains');
+    expect(meta.research?.includeDomains).toHaveLength(25);
+    expect(meta.research?.excludeDomains).toHaveLength(25);
+  });
+
   it('deduplicates /search domains across repeated flags', () => {
     const onSend = vi.fn();
 

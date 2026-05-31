@@ -11,7 +11,8 @@ import { tavilySearch, TavilyError } from './tavily.js';
 
 const TAVILY_MAX_RESULTS_LIMIT = 20;
 const RESEARCH_QUERY_LIMIT = 1000;
-const RESEARCH_DOMAIN_FILTER_LIMIT = 20;
+const RESEARCH_INCLUDE_DOMAIN_FILTER_LIMIT = 300;
+const RESEARCH_EXCLUDE_DOMAIN_FILTER_LIMIT = 150;
 const RESEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const RESEARCH_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
@@ -144,8 +145,14 @@ export async function searchResearch(
       'INVALID_DATE_RANGE',
     );
   }
-  const includeDomains = normalizeResearchDomains(input.includeDomains);
-  let excludeDomains = normalizeResearchDomains(input.excludeDomains);
+  const includeDomains = normalizeResearchDomains(
+    input.includeDomains,
+    RESEARCH_INCLUDE_DOMAIN_FILTER_LIMIT,
+  );
+  let excludeDomains = normalizeResearchDomains(
+    input.excludeDomains,
+    RESEARCH_EXCLUDE_DOMAIN_FILTER_LIMIT,
+  );
   if (!isResearchDomainInputShape(input.includeDomains)) {
     warnings.push(
       'Ignored invalid includeDomains; expected an array or comma-separated string.',
@@ -443,7 +450,7 @@ function hasInvalidStringControl(value: unknown): boolean {
   return value != null && typeof value !== 'string';
 }
 
-function normalizeResearchDomains(value: unknown): string[] {
+function normalizeResearchDomains(value: unknown, limit: number): string[] {
   const raw = Array.isArray(value)
     ? value
     : typeof value === 'string'
@@ -456,7 +463,7 @@ function normalizeResearchDomains(value: unknown): string[] {
     if (!domain || seen.has(domain)) continue;
     seen.add(domain);
     out.push(domain);
-    if (out.length >= RESEARCH_DOMAIN_FILTER_LIMIT) break;
+    if (out.length >= limit) break;
   }
   return out;
 }

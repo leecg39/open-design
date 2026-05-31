@@ -1,6 +1,7 @@
 const DEFAULT_MAX_SOURCES = 5;
 const TAVILY_MAX_RESULTS_LIMIT = 20;
-const RESEARCH_DOMAIN_FILTER_LIMIT = 20;
+const RESEARCH_INCLUDE_DOMAIN_FILTER_LIMIT = 300;
+const RESEARCH_EXCLUDE_DOMAIN_FILTER_LIMIT = 150;
 const RESEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const RESEARCH_TOPICS = new Set(['general', 'news', 'finance']);
 const RESEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
@@ -61,8 +62,14 @@ export function renderResearchCommandContract(
   }
   const timeRange =
     startDate || endDate ? undefined : normalizeTimeRange(options.timeRange);
-  const includeDomains = normalizeDomains(options.includeDomains);
-  let excludeDomains = normalizeDomains(options.excludeDomains);
+  const includeDomains = normalizeDomains(
+    options.includeDomains,
+    RESEARCH_INCLUDE_DOMAIN_FILTER_LIMIT,
+  );
+  let excludeDomains = normalizeDomains(
+    options.excludeDomains,
+    RESEARCH_EXCLUDE_DOMAIN_FILTER_LIMIT,
+  );
   if (includeDomains.length && excludeDomains.length) {
     const includedDomains = new Set(includeDomains);
     excludeDomains = excludeDomains.filter(
@@ -241,7 +248,7 @@ function normalizeDate(value: unknown): string | undefined {
     : undefined;
 }
 
-function normalizeDomains(value: unknown): string[] {
+function normalizeDomains(value: unknown, limit: number): string[] {
   if (!Array.isArray(value)) return [];
   const out: string[] = [];
   const seen = new Set<string>();
@@ -250,7 +257,7 @@ function normalizeDomains(value: unknown): string[] {
     if (!domain || seen.has(domain)) continue;
     seen.add(domain);
     out.push(domain);
-    if (out.length >= RESEARCH_DOMAIN_FILTER_LIMIT) break;
+    if (out.length >= limit) break;
   }
   return out;
 }
