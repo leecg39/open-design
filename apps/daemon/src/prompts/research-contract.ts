@@ -62,7 +62,13 @@ export function renderResearchCommandContract(
   const timeRange =
     startDate || endDate ? undefined : normalizeTimeRange(options.timeRange);
   const includeDomains = normalizeDomains(options.includeDomains);
-  const excludeDomains = normalizeDomains(options.excludeDomains);
+  let excludeDomains = normalizeDomains(options.excludeDomains);
+  if (includeDomains.length && excludeDomains.length) {
+    const includedDomains = new Set(includeDomains);
+    excludeDomains = excludeDomains.filter(
+      (domain) => !includedDomains.has(domain),
+    );
+  }
   const minScore = normalizeMinScore(options.minScore);
   const includeImages = options.includeImages === true;
   const includeRawContent = options.includeRawContent === true;

@@ -86,6 +86,20 @@ describe('renderResearchCommandContract', () => {
     );
   });
 
+  it('omits excluded domains that are already included', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design domain filters',
+      includeDomains: ['Example.com', 'docs.example.com'],
+      excludeDomains: ['example.com', 'other.example.com'],
+      maxSources: 5,
+    });
+
+    expect(prompt).toContain(
+      '--include-domains example.com,docs.example.com --exclude-domains other.example.com',
+    );
+    expect(prompt).not.toContain('--exclude-domains example.com');
+  });
+
   it('includes visual research flags when image evidence is requested', () => {
     const prompt = renderResearchCommandContract({
       query: 'AI dashboard visual references',
