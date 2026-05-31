@@ -300,6 +300,38 @@ describe('research search', () => {
     );
   });
 
+  it('bounds and compacts provider source snippets', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const longSnippet = `First evidence line\n${'repeated evidence '.repeat(80)}`;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Bounded snippet summary.',
+          results: [
+            {
+              title: 'Snippet source',
+              url: 'https://example.com/bounded-snippet',
+              content: longSnippet,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design source snippet quality',
+    });
+
+    expect(findings.sources[0]?.snippet).not.toContain('\n');
+    expect(findings.sources[0]?.snippet).toHaveLength(800);
+    expect(findings.sources[0]?.snippet).toBe(
+      longSnippet.replace(/\s+/g, ' ').trim().slice(0, 800),
+    );
+  });
+
   it('explains when all provider results are discarded by source URL normalization', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
