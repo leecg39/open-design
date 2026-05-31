@@ -121,6 +121,7 @@ function parseSearchArgs(raw: string): {
   includeImages?: boolean;
   includeRawContent?: boolean;
   autoParameters?: boolean;
+  warnings?: string[];
 } {
   const input = raw.trim();
   if (!input) return { query: '', depth: 'shallow' };
@@ -136,6 +137,7 @@ function parseSearchArgs(raw: string): {
   let includeImages = false;
   let includeRawContent = false;
   let autoParameters = false;
+  const warnings: string[] = [];
   const includeDomains: string[] = [];
   const excludeDomains: string[] = [];
   const tokens = input.split(/\s+/);
@@ -269,24 +271,54 @@ function parseSearchArgs(raw: string): {
       cursor += 1;
     } else if (lower.startsWith('--min-score=')) {
       const value = parseSearchScore(token.slice('--min-score='.length));
-      if (value == null) break;
-      minScore = value;
+      if (value == null) {
+        warnings.push(
+          'Ignored invalid --min-score; expected a number from 0 to 1.',
+        );
+      } else {
+        minScore = value;
+      }
       cursor += 1;
     } else if (lower === '--min-score' && nextToken) {
       const value = parseSearchScore(nextToken);
-      if (value == null) break;
-      minScore = value;
+      if (value == null) {
+        warnings.push(
+          'Ignored invalid --min-score; expected a number from 0 to 1.',
+        );
+      } else {
+        minScore = value;
+      }
       cursor += 2;
+    } else if (lower === '--min-score') {
+      warnings.push(
+        'Ignored invalid --min-score; expected a number from 0 to 1.',
+      );
+      cursor += 1;
     } else if (lower.startsWith('--max-sources=')) {
       const value = parseSearchMaxSources(token.slice('--max-sources='.length));
-      if (value == null) break;
-      maxSources = value;
+      if (value == null) {
+        warnings.push(
+          'Ignored invalid --max-sources; expected a positive number.',
+        );
+      } else {
+        maxSources = value;
+      }
       cursor += 1;
     } else if (lower === '--max-sources' && nextToken) {
       const value = parseSearchMaxSources(nextToken);
-      if (value == null) break;
-      maxSources = value;
+      if (value == null) {
+        warnings.push(
+          'Ignored invalid --max-sources; expected a positive number.',
+        );
+      } else {
+        maxSources = value;
+      }
       cursor += 2;
+    } else if (lower === '--max-sources') {
+      warnings.push(
+        'Ignored invalid --max-sources; expected a positive number.',
+      );
+      cursor += 1;
     } else if (
       lower.startsWith('--') &&
       SEARCH_TIME_RANGES.has(lower.slice(2))
@@ -312,6 +344,7 @@ function parseSearchArgs(raw: string): {
     ...(includeImages ? { includeImages } : {}),
     ...(includeRawContent ? { includeRawContent } : {}),
     ...(autoParameters ? { autoParameters } : {}),
+    ...(warnings.length ? { warnings } : {}),
     query: tokens.slice(cursor).join(' ').trim(),
   };
 }
@@ -360,9 +393,9 @@ function parseSearchScore(value: string): number | undefined {
 
 function parseSearchMaxSources(value: string): number | undefined {
   const maxSources = Number(value);
-  return Number.isFinite(maxSources) && maxSources > 0
-    ? Math.floor(maxSources)
-    : undefined;
+  if (!Number.isFinite(maxSources) || maxSources <= 0) return undefined;
+  const floored = Math.floor(maxSources);
+  return floored >= 1 ? floored : undefined;
 }
 
 function researchMaxSourcesForDepth(depth: ResearchDepth): number {
@@ -681,6 +714,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       includeImages?: boolean;
       includeRawContent?: boolean;
       autoParameters?: boolean;
+      warnings?: string[];
     } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
@@ -701,6 +735,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         includeImages,
         includeRawContent,
         autoParameters,
+        warnings,
       } = parsed;
       if (!query) return null;
       const maxSources = requestedMaxSources ?? researchMaxSourcesForDepth(depth);
@@ -764,6 +799,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           ...(minScore != null ? [`Research minimum score: ${minScore}.`] : []),
           ...(requestedMaxSources != null
             ? [`Research max sources: ${requestedMaxSources}.`]
+            : []),
+          ...(warnings?.length
+            ? warnings.map((warning) => `Research parser warning: ${warning}`)
             : []),
           ...(includeImages ? ['Research images: enabled.'] : []),
           ...(includeRawContent ? ['Research raw content: enabled.'] : []),
