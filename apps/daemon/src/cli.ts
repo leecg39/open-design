@@ -474,6 +474,10 @@ async function runMediaGenerate(rawArgs) {
     printMediaHelp();
     process.exit(2);
   }
+  if (flags.help || flags.h) {
+    printMediaHelp();
+    return;
+  }
 
   const daemonUrl = flags['daemon-url'] || process.env.OD_DAEMON_URL || 'http://127.0.0.1:7456';
   const projectId = flags.project || process.env.OD_PROJECT_ID;
@@ -537,6 +541,10 @@ async function runMediaGenerate(rawArgs) {
 }
 
 async function runMediaWait(rawArgs) {
+  if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+    printMediaHelp();
+    return;
+  }
   const taskId = rawArgs.find((a) => a && !a.startsWith('--'));
   if (!taskId) {
     console.error('usage: od media wait <taskId> [--since <n>] [--daemon-url <url>]');
