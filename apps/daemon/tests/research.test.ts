@@ -1842,12 +1842,12 @@ describe('research search', () => {
       projectRoot: await tempProjectRoot(),
       query: 'OpenAI platform release notes',
       includeDomains: [
-        'OpenAI.com',
+        '"OpenAI.com"',
         'https://docs.openai.com/platform',
         'not a domain',
         'openai.com',
       ],
-      excludeDomains: ['Reddit.com', 'localhost'],
+      excludeDomains: ["'Reddit.com'", 'localhost'],
     });
 
     expect(findings).toMatchObject({

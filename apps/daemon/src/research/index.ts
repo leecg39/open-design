@@ -500,7 +500,7 @@ function isInvalidBooleanControl(value: unknown): boolean {
 
 function normalizeResearchDomain(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
-  let text = value.trim().toLowerCase();
+  let text = stripResearchWrappingQuotes(value).toLowerCase();
   if (!text) return undefined;
   if (/^https?:\/\//.test(text)) {
     try {
