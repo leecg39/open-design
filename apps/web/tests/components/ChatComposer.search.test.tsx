@@ -203,6 +203,44 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('keeps multi-word /search country names out of the query', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --country South Korea AI design market' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] =
+      onSend.mock.calls[0]!;
+    expect(prompt).toContain(
+      '--depth shallow --country south-korea --max-sources 5',
+    );
+    expect(prompt).toContain('Research country: south korea.');
+    expect(prompt).toContain('AI design market');
+    expect(prompt).not.toContain('Canonical query:\n\n```text\nKorea AI');
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'AI design market',
+        depth: 'shallow',
+        country: 'south korea',
+      },
+    });
+  });
+
   it('warns when /search country shortcuts are ignored for news topics', () => {
     const onSend = vi.fn();
 

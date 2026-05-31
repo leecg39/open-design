@@ -106,6 +106,11 @@ const SEARCH_COUNTRY_ALIASES: Record<string, string> = {
   uk: 'united kingdom',
   'u.k.': 'united kingdom',
 };
+const SEARCH_MULTI_TOKEN_COUNTRIES = new Set([
+  'south korea',
+  'united states',
+  'united kingdom',
+]);
 
 function parseSearchArgs(raw: string): {
   query: string;
@@ -214,13 +219,10 @@ function parseSearchArgs(raw: string): {
       }
       cursor += 1;
     } else if (lower === '--country') {
-      const value =
-        nextToken && !nextToken.startsWith('--')
-          ? normalizeSearchCountry(nextToken)
-          : undefined;
-      if (value) {
-        country = value;
-        cursor += 2;
+      const parsed = parseSearchCountryTokens(tokens, cursor + 1);
+      if (parsed) {
+        country = parsed.value;
+        cursor += 1 + parsed.consumed;
       } else {
         warnings.push('Ignored invalid --country value.');
         cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
@@ -499,6 +501,25 @@ function normalizeSearchCountry(value: string): string | undefined {
   const alias = SEARCH_COUNTRY_ALIASES[key];
   const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   return SEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
+}
+
+function parseSearchCountryTokens(
+  tokens: string[],
+  start: number,
+): { value: string; consumed: number } | undefined {
+  const first = tokens[start];
+  if (!first || first.startsWith('--')) return undefined;
+
+  const second = tokens[start + 1];
+  if (second && !second.startsWith('--')) {
+    const combined = normalizeSearchCountry(`${first} ${second}`);
+    if (combined && SEARCH_MULTI_TOKEN_COUNTRIES.has(combined)) {
+      return { value: combined, consumed: 2 };
+    }
+  }
+
+  const value = normalizeSearchCountry(first);
+  return value ? { value, consumed: 1 } : undefined;
 }
 
 function isSearchDate(value: string): boolean {
