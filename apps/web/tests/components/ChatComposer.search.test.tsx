@@ -217,6 +217,34 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('normalizes /search time range aliases into research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --time-range w Open Design weekly updates' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] =
+      onSend.mock.calls[0]!;
+    expect(prompt).toContain('--time-range week');
+    expect(prompt).toContain('Research time range: week.');
+    expect(prompt).not.toContain('Ignored invalid --time-range');
+    expect(meta.research?.timeRange).toBe('week');
+  });
+
   it('expands /search country shortcuts into research metadata', () => {
     const onSend = vi.fn();
 

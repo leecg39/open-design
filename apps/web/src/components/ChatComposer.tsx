@@ -87,7 +87,16 @@ export interface ChatSendMeta {
 
 const SEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const SEARCH_TOPICS = new Set(['general', 'news', 'finance']);
-const SEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
+const SEARCH_TIME_RANGE_ALIASES: Record<string, ResearchTimeRange> = {
+  d: 'day',
+  day: 'day',
+  m: 'month',
+  month: 'month',
+  w: 'week',
+  week: 'week',
+  y: 'year',
+  year: 'year',
+};
 const SEARCH_MAX_SOURCES_LIMIT = 20;
 const SEARCH_INCLUDE_DOMAIN_FILTER_LIMIT = 300;
 const SEARCH_EXCLUDE_DOMAIN_FILTER_LIMIT = 150;
@@ -234,11 +243,11 @@ function parseSearchArgs(raw: string): {
         cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
       }
     } else if (lower.startsWith('--time-range=')) {
-      const value = stripSearchWrappingQuotes(
+      const value = normalizeSearchTimeRange(
         token.slice('--time-range='.length),
-      ).toLowerCase();
-      if (SEARCH_TIME_RANGES.has(value)) {
-        timeRange = value as ResearchTimeRange;
+      );
+      if (value) {
+        timeRange = value;
       } else {
         warnings.push(
           'Ignored invalid --time-range; expected day, week, month, or year.',
@@ -246,8 +255,9 @@ function parseSearchArgs(raw: string): {
       }
       cursor += 1;
     } else if (lower === '--time-range') {
-      if (next && SEARCH_TIME_RANGES.has(next)) {
-        timeRange = next as ResearchTimeRange;
+      const value = nextValue ? normalizeSearchTimeRange(nextValue) : undefined;
+      if (value) {
+        timeRange = value;
         cursor += 2;
       } else {
         warnings.push(
@@ -453,9 +463,9 @@ function parseSearchArgs(raw: string): {
       cursor += 2;
     } else if (
       lower.startsWith('--') &&
-      SEARCH_TIME_RANGES.has(lower.slice(2))
+      normalizeSearchTimeRange(lower.slice(2))
     ) {
-      timeRange = lower.slice(2) as ResearchTimeRange;
+      timeRange = normalizeSearchTimeRange(lower.slice(2));
       cursor += 1;
     } else if (lower.startsWith('--')) {
       const flagName = token.includes('=')
@@ -601,6 +611,12 @@ function isSearchDate(value: string): boolean {
     date.getUTCMonth() === month - 1 &&
     date.getUTCDate() === day
   );
+}
+
+function normalizeSearchTimeRange(value: string): ResearchTimeRange | undefined {
+  return SEARCH_TIME_RANGE_ALIASES[
+    stripSearchWrappingQuotes(value).toLowerCase()
+  ];
 }
 
 function parseSearchDomains(value: string, limit: number): {

@@ -70,6 +70,16 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('--depth shallow --country south-korea --max-sources 5');
   });
 
+  it('normalizes time range aliases in the command contract', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design weekly updates',
+      timeRange: 'w',
+      maxSources: 5,
+    });
+
+    expect(prompt).toContain('--time-range week');
+  });
+
   it('does not tell successful /search runs to create a duplicate report', () => {
     const prompt = renderResearchCommandContract({
       query: 'Open Design report save',

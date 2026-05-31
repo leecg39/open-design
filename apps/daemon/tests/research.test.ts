@@ -1188,6 +1188,39 @@ describe('research search', () => {
     });
   });
 
+  it('normalizes Tavily time range aliases before provider requests', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Weekly alias summary.',
+          results: [
+            {
+              title: 'Weekly alias source',
+              url: 'https://example.com/weekly-alias',
+              content: 'Weekly alias content.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design weekly updates',
+      timeRange: 'w',
+    });
+
+    expect(findings.timeRange).toBe('week');
+    expect(findings.warnings).toBeUndefined();
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body.time_range).toBe('week');
+  });
+
   it('warns when enum-like research controls are ignored', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

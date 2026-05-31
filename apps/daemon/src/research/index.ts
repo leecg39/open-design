@@ -29,6 +29,16 @@ const RESEARCH_COUNTRY_ALIASES: Record<string, string> = {
   uk: 'united kingdom',
   'u.k.': 'united kingdom',
 };
+const RESEARCH_TIME_RANGE_ALIASES: Record<string, ResearchTimeRange> = {
+  d: 'day',
+  day: 'day',
+  m: 'month',
+  month: 'month',
+  w: 'week',
+  week: 'week',
+  y: 'year',
+  year: 'year',
+};
 const SUPPORTED_RESEARCH_PROVIDERS = new Set(['tavily']);
 
 export class ResearchError extends Error {
@@ -415,12 +425,10 @@ function stripResearchWrappingQuotes(value: string): string {
 function normalizeResearchTimeRange(
   value: unknown,
 ): ResearchTimeRange | undefined {
-  return value === 'day' ||
-    value === 'week' ||
-    value === 'month' ||
-    value === 'year'
-    ? value
-    : undefined;
+  if (typeof value !== 'string') return undefined;
+  return RESEARCH_TIME_RANGE_ALIASES[
+    stripResearchWrappingQuotes(value).toLowerCase()
+  ];
 }
 
 function normalizeResearchDate(value: unknown): string | undefined {

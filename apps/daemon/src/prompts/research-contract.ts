@@ -4,7 +4,19 @@ const RESEARCH_INCLUDE_DOMAIN_FILTER_LIMIT = 300;
 const RESEARCH_EXCLUDE_DOMAIN_FILTER_LIMIT = 150;
 const RESEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const RESEARCH_TOPICS = new Set(['general', 'news', 'finance']);
-const RESEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
+const RESEARCH_TIME_RANGE_ALIASES: Record<
+  string,
+  'day' | 'week' | 'month' | 'year'
+> = {
+  d: 'day',
+  day: 'day',
+  m: 'month',
+  month: 'month',
+  w: 'week',
+  week: 'week',
+  y: 'year',
+  year: 'year',
+};
 const RESEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const RESEARCH_DOMAIN_RE =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
@@ -227,8 +239,10 @@ function stripWrappingQuotes(value: string): string {
 function normalizeTimeRange(
   value: unknown,
 ): 'day' | 'week' | 'month' | 'year' | undefined {
-  return typeof value === 'string' && RESEARCH_TIME_RANGES.has(value)
-    ? (value as 'day' | 'week' | 'month' | 'year')
+  return typeof value === 'string'
+    ? RESEARCH_TIME_RANGE_ALIASES[
+        stripWrappingQuotes(value).toLowerCase()
+      ]
     : undefined;
 }
 
