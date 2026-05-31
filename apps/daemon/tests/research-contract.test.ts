@@ -69,6 +69,23 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('--depth shallow --country south-korea --max-sources 5');
   });
 
+  it('does not tell successful /search runs to create a duplicate report', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design report save',
+      maxSources: 5,
+    });
+
+    expect(prompt).toContain(
+      'When the OD command succeeds, use the returned `reportPath`; do not create a second report.',
+    );
+    expect(prompt).toContain(
+      'If fallback search is used, create a Markdown report in Design Files before summarizing findings with citations.',
+    );
+    expect(prompt).not.toContain(
+      'After the command returns JSON or fallback search results, create the Markdown report',
+    );
+  });
+
   it('includes visual research flags when image evidence is requested', () => {
     const prompt = renderResearchCommandContract({
       query: 'AI dashboard visual references',
