@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { searchResearch, ResearchError } from '../src/research/index.js';
+import { tavilySearch } from '../src/research/tavily.js';
 
 const TAVILY_ENV_KEYS = ['OD_TAVILY_API_KEY', 'TAVILY_API_KEY'];
 type FetchInput = Parameters<typeof fetch>[0];
@@ -17,6 +18,7 @@ describe('research search', () => {
 
   afterEach(async () => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
     for (const key of TAVILY_ENV_KEYS) {
       if (originalEnv[key] == null) delete process.env[key];
       else process.env[key] = originalEnv[key];
@@ -227,9 +229,34 @@ describe('research search', () => {
       }),
     ).rejects.toMatchObject({
       code: 'RESEARCH_PROVIDER_FAILED',
-      message: 'Tavily request failed: aborted before network',
+      message: 'Tavily request aborted',
       status: 502,
     });
+  });
+
+  it('reports provider timeouts explicitly', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(
+      (_input: FetchInput, init?: FetchInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          (init?.signal as AbortSignal | undefined)?.addEventListener(
+            'abort',
+            () => reject(new Error('aborted by timeout')),
+            { once: true },
+          );
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pending = tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design timeout research',
+    });
+    const assertion = expect(pending).rejects.toMatchObject({
+      message: 'Tavily request timed out after 30000ms',
+    });
+    await vi.advanceTimersByTimeAsync(30_000);
+    await assertion;
   });
 
   it('maps medium and deep depth requests to advanced Tavily search', async () => {

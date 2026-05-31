@@ -126,7 +126,11 @@ export async function tavilySearch(
       : {}),
   };
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), DEFAULT_TIMEOUT_MS);
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    ctrl.abort();
+  }, DEFAULT_TIMEOUT_MS);
   let removeAbortListener: (() => void) | undefined;
   if (input.signal) {
     if (input.signal.aborted) {
@@ -149,6 +153,14 @@ export async function tavilySearch(
       signal: ctrl.signal,
     });
   } catch (err) {
+    if (timedOut) {
+      throw new TavilyError(
+        `Tavily request timed out after ${DEFAULT_TIMEOUT_MS}ms`,
+      );
+    }
+    if (ctrl.signal.aborted) {
+      throw new TavilyError('Tavily request aborted');
+    }
     throw new TavilyError(
       `Tavily request failed: ${(err as Error).message || String(err)}`,
     );
