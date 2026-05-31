@@ -809,6 +809,40 @@ describe('research search', () => {
     );
   });
 
+  it('omits blank direct Tavily string filters before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Blank filter summary.',
+          results: [
+            {
+              title: 'Blank filter source',
+              url: 'https://example.com/blank-filter',
+              content: 'Blank string filters should not reach Tavily.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily filters',
+      country: '   ',
+      startDate: '  ',
+      endDate: '\n\t',
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).not.toHaveProperty('country');
+    expect(body).not.toHaveProperty('start_date');
+    expect(body).not.toHaveProperty('end_date');
+  });
+
   it('maps medium and deep depth requests to advanced Tavily search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

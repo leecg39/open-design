@@ -102,6 +102,9 @@ export async function tavilySearch(
   if (!query) {
     throw new TavilyError('Tavily query is required');
   }
+  const country = input.country?.trim() ?? '';
+  const startDate = input.startDate?.trim() ?? '';
+  const endDate = input.endDate?.trim() ?? '';
   const configuredBaseUrl = input.baseUrl?.trim() ?? '';
   const base = (configuredBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
   const requestedMax =
@@ -125,10 +128,10 @@ export async function tavilySearch(
         ? {}
         : { search_depth: 'basic' }),
     ...(input.topic ? { topic: input.topic } : {}),
-    ...(input.country ? { country: input.country } : {}),
+    ...(country ? { country } : {}),
     ...(input.timeRange ? { time_range: input.timeRange } : {}),
-    ...(input.startDate ? { start_date: input.startDate } : {}),
-    ...(input.endDate ? { end_date: input.endDate } : {}),
+    ...(startDate ? { start_date: startDate } : {}),
+    ...(endDate ? { end_date: endDate } : {}),
     ...(input.includeDomains?.length
       ? { include_domains: input.includeDomains }
       : {}),
