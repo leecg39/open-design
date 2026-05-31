@@ -107,6 +107,7 @@ describe('research report helpers', () => {
     expect(report).toContain('- Selected topic: news');
     expect(report).toContain('- Selected search depth: advanced');
     expect(report).toContain('- Effective source cap: 20');
+    expect(report).toContain('- Returned sources: 1');
     expect(report).toContain('- Provider credits: 1');
     expect(report).toContain('- Request ID: req-123');
     expect(report).toContain('- [1] Evidence source: Important evidence snippet.');

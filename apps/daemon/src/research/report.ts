@@ -100,6 +100,7 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     ...(findings.maxSources != null
       ? [`- Effective source cap: ${findings.maxSources}`]
       : []),
+    `- Returned sources: ${findings.sources.length}`,
     ...(findings.filteredSourceCount != null
       ? [`- Filtered by relevance threshold: ${findings.filteredSourceCount}`]
       : []),

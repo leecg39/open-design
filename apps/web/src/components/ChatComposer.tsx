@@ -901,7 +901,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
           'The saved report must include the query, fetched time, a source-content safety note before the summary saying source content is external untrusted evidence, short summary, key findings, source list with visible domains and [1], [2] citations, and raw evidence excerpts when rawContent is present.',
           'If the research JSON includes warnings, mention the ignored constraints before summarizing findings.',
           'If the research JSON includes discardedSourceCount, mention that duplicate or unusable provider source URLs were excluded from citations.',
-          'If the research JSON includes maxSources, include the effective source cap in the report metadata.',
+          'If the research JSON includes maxSources, include the effective source cap and returned source count in the report metadata.',
           'If the research JSON includes usage, requestId, or responseTime, include those provider diagnostics in the report metadata.',
           ...(includeImages
             ? ['If the research JSON includes images, add a Visual references section with image URLs and descriptions. Keep source-level images tied to their source citation when present.']
