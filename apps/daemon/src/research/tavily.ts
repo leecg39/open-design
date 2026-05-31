@@ -83,9 +83,12 @@ export async function tavilySearch(
     throw new TavilyError('Tavily API key is not configured');
   }
   const base = (input.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
-  const requestedMax = input.maxResults ?? 5;
+  const requestedMax =
+    typeof input.maxResults === 'number' && Number.isFinite(input.maxResults)
+      ? Math.floor(input.maxResults)
+      : 5;
   const maxResults = Math.max(
-    0,
+    1,
     Math.min(requestedMax, TAVILY_MAX_RESULTS_LIMIT),
   );
   const chunksPerSource =

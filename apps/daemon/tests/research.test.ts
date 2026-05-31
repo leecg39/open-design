@@ -317,6 +317,36 @@ describe('research search', () => {
     await assertion;
   });
 
+  it('normalizes direct Tavily maxResults to a positive integer', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Normalized max results summary.',
+          results: [
+            {
+              title: 'Normalized source',
+              url: 'https://example.com/normalized',
+              content: 'Direct helper max results should be safe.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily max results',
+      maxResults: 0.5,
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({ max_results: 1 });
+  });
+
   it('maps medium and deep depth requests to advanced Tavily search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
