@@ -64,6 +64,7 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
   const fetchedAt = Number.isFinite(findings.fetchedAt)
     ? new Date(findings.fetchedAt).toISOString()
     : 'unknown';
+  const rawEvidence = renderRawEvidence(findings.sources);
   const lines = [
     `# Research: ${findings.query}`,
     '',
@@ -126,6 +127,9 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     '## Sources',
     '',
     ...renderSources(findings.sources),
+    ...(rawEvidence.length
+      ? ['', '## Raw Evidence Excerpts', '', ...rawEvidence]
+      : []),
     ...(findings.images?.length
       ? ['', '## Visual References', '', ...findings.images.map(renderImage)]
       : []),
@@ -180,6 +184,17 @@ function renderSources(sources: ResearchSource[]): string[] {
     ].filter(Boolean);
     const suffix = details.length ? ` (${details.join('; ')})` : '';
     return `${index + 1}. [${title}](${source.url})${suffix}`;
+  });
+}
+
+function renderRawEvidence(sources: ResearchSource[]): string[] {
+  return sources.flatMap((source, index) => {
+    const rawContent = source.rawContent?.trim();
+    if (!rawContent) return [];
+    const title = escapeMarkdownText(source.title);
+    const excerpt = escapeMarkdownText(clip(rawContent, 700));
+    const marker = source.rawContentTruncated ? ' (truncated excerpt)' : '';
+    return [`- [${index + 1}] ${title}${marker}: ${excerpt}`];
   });
 }
 

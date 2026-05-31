@@ -147,4 +147,30 @@ describe('research report helpers', () => {
       '- Image \\[alt\\] \\#\\# Fake Image: https://example.com/image.png',
     );
   });
+
+  it('renders raw evidence excerpts when raw content is present', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Raw evidence',
+      summary: 'Raw evidence should be reusable from the saved report.',
+      provider: 'tavily',
+      depth: 'deep',
+      includeRawContent: true,
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Primary source',
+          url: 'https://example.com/raw',
+          snippet: 'Short snippet wins the key finding line.',
+          rawContent: 'Full page excerpt with **markdown** and ## headings.',
+          rawContentTruncated: true,
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain('## Raw Evidence Excerpts');
+    expect(report).toContain(
+      '- [1] Primary source (truncated excerpt): Full page excerpt with \\*\\*markdown\\*\\* and \\#\\# headings.',
+    );
+  });
 });

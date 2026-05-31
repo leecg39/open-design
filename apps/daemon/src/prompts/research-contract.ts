@@ -128,7 +128,7 @@ export function renderResearchCommandContract(
     '- If the command fails, report the actual stderr/error instead of inventing a cause.',
     '',
     'The command saves a reusable Markdown report into the project files so it appears in Design Files.',
-    'It uses `research/<safe-query-slug>.md` by default, moves to the next available suffixed path when that file already exists, and returns `reportPath` in stdout JSON. The report must include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
+    'It uses `research/<safe-query-slug>.md` by default, moves to the next available suffixed path when that file already exists, and returns `reportPath` in stdout JSON. The report must include the query, fetched time, short summary, key findings, source list with [1], [2] citations, raw evidence excerpts when rawContent is present, and a note that source content is external untrusted evidence.',
     'If the JSON includes warnings, mention the ignored constraints before summarizing findings.',
     'If the JSON includes discardedSourceCount, mention that duplicate or unusable provider source URLs were excluded from citations.',
     'If the JSON includes maxSources, include the effective source cap in the report metadata.',

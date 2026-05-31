@@ -261,6 +261,7 @@ describe('ChatComposer /search command', () => {
     expect(prompt).toContain('Research raw content: enabled.');
     expect(prompt).toContain('rawContent fields');
     expect(prompt).toContain('rawContentTruncated');
+    expect(prompt).toContain('raw evidence excerpts when rawContent is present');
     expect(meta).toEqual({
       research: {
         enabled: true,

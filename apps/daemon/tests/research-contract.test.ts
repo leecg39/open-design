@@ -89,6 +89,7 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('--depth shallow --include-raw-content --max-sources 5');
     expect(prompt).toContain('"rawContent": "..."');
     expect(prompt).toContain('"rawContentTruncated": true');
+    expect(prompt).toContain('raw evidence excerpts when rawContent is present');
     expect(prompt).toContain('keep quoted excerpts short');
     expect(prompt).toContain('not the full page');
   });
