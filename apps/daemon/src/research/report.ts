@@ -334,7 +334,7 @@ function renderSourceImages(sources: ResearchSource[]): string[] {
         ? `${escapeMarkdownText(image.description)}: `
         : '';
       return `- ${imageCitation} ${sourceCitation} ${title}: ${description}${escapeMarkdownText(
-        image.url,
+        displayUrlText(image.url),
       )}`;
     });
   });
@@ -344,7 +344,7 @@ function renderImage(image: NonNullable<ResearchFindings['images']>[number]): st
   const description = image.description
     ? `${escapeMarkdownText(image.description)}: `
     : '';
-  return `- ${description}${escapeMarkdownText(image.url)}`;
+  return `- ${description}${escapeMarkdownText(displayUrlText(image.url))}`;
 }
 
 function renderMetadataList(values: string[]): string {
@@ -379,14 +379,13 @@ function markdownLinkDestination(url: string): string {
 }
 
 function displayUrlText(url: string): string {
+  const safeUrl = url.trim().replace(/\s+/g, ' ');
   try {
-    const parsed = new URL(url.trim().replace(/\s+/g, ' '));
+    const parsed = new URL(safeUrl);
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       return 'about:blank';
     }
-    parsed.username = '';
-    parsed.password = '';
-    return parsed.toString();
+    return stripLinkCredentials(safeUrl, parsed);
   } catch {
     return 'about:blank';
   }

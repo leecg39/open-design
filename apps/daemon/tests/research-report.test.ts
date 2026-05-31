@@ -382,6 +382,43 @@ describe('research report helpers', () => {
     );
   });
 
+  it('strips credentials from visual evidence urls', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Visual credential safety',
+      summary: 'Image URLs should not expose credentials.',
+      provider: 'tavily',
+      depth: 'shallow',
+      includeImages: true,
+      fetchedAt: Date.UTC(2026, 5, 1),
+      sources: [
+        {
+          title: 'Visual source',
+          url: 'https://example.com/source',
+          snippet: 'Visual evidence.',
+          images: [
+            {
+              url: 'https://user:secret@example.com/source-image.png',
+              provider: 'tavily',
+            },
+          ],
+          provider: 'tavily',
+        },
+      ],
+      images: [
+        {
+          url: 'https://user:secret@example.com/top-image.png',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain(
+      '- [1.1] [1] Visual source: https://example.com/source-image.png',
+    );
+    expect(report).toContain('- https://example.com/top-image.png');
+    expect(report).not.toContain('user:secret@');
+  });
+
   it('wraps source link destinations so URLs with parentheses stay intact', () => {
     const report = buildResearchMarkdownReport({
       query: 'Link destination',
