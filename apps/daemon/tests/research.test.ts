@@ -953,6 +953,45 @@ describe('research search', () => {
     expect(body.time_range).toBe('week');
   });
 
+  it('normalizes direct Tavily boolean and answer controls before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Boolean control summary.',
+          results: [
+            {
+              title: 'Boolean control source',
+              url: 'https://example.com/boolean-control',
+              content: 'Boolean controls should not be inferred from strings.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily boolean controls',
+      exactMatch: 'true',
+      includeImages: 'true',
+      includeRawContent: 'true',
+      autoParameters: 'true',
+      includeAnswer: 'full',
+    } as any);
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).not.toHaveProperty('exact_match');
+    expect(body).not.toHaveProperty('include_images');
+    expect(body).not.toHaveProperty('include_image_descriptions');
+    expect(body).not.toHaveProperty('auto_parameters');
+    expect(body.include_answer).toBe(true);
+    expect(body.include_raw_content).toBe(false);
+  });
+
   it('omits unsupported direct Tavily country boosts before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(

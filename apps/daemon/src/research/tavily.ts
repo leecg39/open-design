@@ -139,6 +139,11 @@ export async function tavilySearch(
   const country = normalizeTavilyCountry(input.country);
   const topic = normalizeTavilyTopic(input.topic);
   const timeRange = normalizeTavilyTimeRange(input.timeRange);
+  const exactMatch = input.exactMatch === true;
+  const includeImages = input.includeImages === true;
+  const includeRawContent = input.includeRawContent === true;
+  const autoParameters = input.autoParameters === true;
+  const includeAnswer = normalizeTavilyIncludeAnswer(input.includeAnswer);
   const startDate = normalizeTavilyDate(input.startDate);
   const endDate = normalizeTavilyDate(input.endDate);
   if (startDate && endDate && startDate > endDate) {
@@ -174,7 +179,7 @@ export async function tavilySearch(
     query,
     ...(input.searchDepth
       ? { search_depth: input.searchDepth }
-      : input.autoParameters
+      : autoParameters
         ? {}
         : { search_depth: 'basic' }),
     ...(topic ? { topic } : {}),
@@ -188,16 +193,16 @@ export async function tavilySearch(
     ...(excludeDomains.length
       ? { exclude_domains: excludeDomains }
       : {}),
-    ...(input.exactMatch ? { exact_match: true } : {}),
-    ...(input.includeImages
+    ...(exactMatch ? { exact_match: true } : {}),
+    ...(includeImages
       ? { include_images: true, include_image_descriptions: true }
       : {}),
     include_favicon: true,
     include_usage: true,
     max_results: maxResults,
-    include_answer: input.includeAnswer ?? true,
-    include_raw_content: input.includeRawContent ? 'markdown' : false,
-    ...(input.autoParameters ? { auto_parameters: true } : {}),
+    include_answer: includeAnswer,
+    include_raw_content: includeRawContent ? 'markdown' : false,
+    ...(autoParameters ? { auto_parameters: true } : {}),
     ...(input.searchDepth === 'advanced' && chunksPerSource
       ? { chunks_per_source: chunksPerSource }
       : {}),
@@ -440,6 +445,17 @@ function normalizeTavilyTimeRange(
   return TAVILY_TIME_RANGE_ALIASES[
     stripTavilyWrappingQuotes(value).toLowerCase()
   ];
+}
+
+function normalizeTavilyIncludeAnswer(
+  value: boolean | 'basic' | 'advanced' | undefined,
+): boolean | 'basic' | 'advanced' {
+  return value === false ||
+    value === true ||
+    value === 'basic' ||
+    value === 'advanced'
+    ? value
+    : true;
 }
 
 function normalizeTavilyDate(value: string | undefined): string {
