@@ -4,6 +4,7 @@ import { startServer } from './server.js';
 import { runLiveArtifactsMcpServer } from './mcp-live-artifacts-server.js';
 import { runConnectorsToolCli } from './tools-connectors-cli.js';
 import { runLiveArtifactsToolCli } from './tools-live-artifacts-cli.js';
+import { parseFlags } from './cli-flags.js';
 import {
   parseOptionalNumberFlag,
   splitResearchSubcommand,
@@ -683,51 +684,6 @@ function surfaceFetchError(err, daemonUrl) {
         'reached from a regular shell.',
     );
   }
-}
-
-function parseFlags(argv, opts = {}) {
-  const stringFlags = opts.string instanceof Set ? opts.string : new Set();
-  const booleanFlags = opts.boolean instanceof Set ? opts.boolean : new Set();
-  const knownFlags = new Set([...stringFlags, ...booleanFlags]);
-  const out = {};
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (!a || !a.startsWith('--')) {
-      throw new Error(`unexpected positional argument: ${a}`);
-    }
-    const eq = a.indexOf('=');
-    const key = eq >= 0 ? a.slice(2, eq) : a.slice(2);
-    if (knownFlags.size > 0 && !knownFlags.has(key)) {
-      throw new Error(
-        `unknown flag: --${key}. Run with --help for the list of accepted flags.`,
-      );
-    }
-    if (eq >= 0) {
-      out[key] = a.slice(eq + 1);
-      continue;
-    }
-    if (booleanFlags.has(key)) {
-      out[key] = true;
-      continue;
-    }
-    if (stringFlags.has(key)) {
-      const next = argv[i + 1];
-      if (next == null) {
-        throw new Error(`flag --${key} requires a value`);
-      }
-      out[key] = next;
-      i++;
-      continue;
-    }
-    const next = argv[i + 1];
-    if (next != null && !next.startsWith('--')) {
-      out[key] = next;
-      i++;
-    } else {
-      out[key] = true;
-    }
-  }
-  return out;
 }
 
 function printMediaHelp() {
