@@ -67,16 +67,42 @@ export async function searchResearch(
   if (!query) {
     throw new ResearchError('query required', 400, 'QUERY_REQUIRED');
   }
+  const warnings: string[] = [];
   const depth = normalizeResearchDepth(input.depth);
+  if (
+    hasNonEmptyString(input.depth) &&
+    input.depth !== 'shallow' &&
+    input.depth !== 'medium' &&
+    input.depth !== 'deep'
+  ) {
+    warnings.push('Ignored invalid depth; expected shallow, medium, or deep.');
+  }
   const topic = normalizeResearchTopic(input.topic);
+  if (hasNonEmptyString(input.topic) && !topic) {
+    warnings.push('Ignored invalid topic; expected general, news, or finance.');
+  }
+  const normalizedCountry = normalizeResearchCountry(input.country);
   const country =
-    topic === 'news' || topic === 'finance'
-      ? undefined
-      : normalizeResearchCountry(input.country);
+    topic === 'news' || topic === 'finance' ? undefined : normalizedCountry;
+  if (hasNonEmptyString(input.country) && !normalizedCountry) {
+    warnings.push('Ignored invalid country boost.');
+  } else if (
+    hasNonEmptyString(input.country) &&
+    normalizedCountry &&
+    (topic === 'news' || topic === 'finance')
+  ) {
+    warnings.push(
+      'Ignored country boost because topic news/finance does not support it.',
+    );
+  }
   const timeRange = normalizeResearchTimeRange(input.timeRange);
+  if (hasNonEmptyString(input.timeRange) && !timeRange) {
+    warnings.push(
+      'Ignored invalid timeRange; expected day, week, month, or year.',
+    );
+  }
   const startDate = normalizeResearchDate(input.startDate);
   const endDate = normalizeResearchDate(input.endDate);
-  const warnings: string[] = [];
   if (hasNonEmptyString(input.startDate) && !startDate) {
     warnings.push('Ignored invalid startDate; expected YYYY-MM-DD.');
   }

@@ -246,6 +246,7 @@ describe('research search', () => {
       timeRange: 'week',
       sources: [{ publishedAt: '2026-05-30' }],
     });
+    expect(findings.warnings).toBeUndefined();
     const body = JSON.parse(
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );
@@ -255,6 +256,52 @@ describe('research search', () => {
       time_range: 'week',
       max_results: 5,
     });
+  });
+
+  it('warns when enum-like research controls are ignored', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Fallback enum summary.',
+          results: [
+            {
+              title: 'Fallback source',
+              url: 'https://example.com/fallback',
+              content: 'Fallback search content.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design ignored filters',
+      depth: 'full',
+      topic: 'blogs',
+      timeRange: 'quarter',
+      country: 'south korea!',
+    } as any);
+
+    expect(findings).toMatchObject({
+      depth: 'shallow',
+      warnings: [
+        'Ignored invalid depth; expected shallow, medium, or deep.',
+        'Ignored invalid topic; expected general, news, or finance.',
+        'Ignored invalid country boost.',
+        'Ignored invalid timeRange; expected day, week, month, or year.',
+      ],
+    });
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({ search_depth: 'basic' });
+    expect(body).not.toHaveProperty('topic');
+    expect(body).not.toHaveProperty('time_range');
+    expect(body).not.toHaveProperty('country');
   });
 
   it('forwards country boosts only for general searches', async () => {
@@ -289,7 +336,11 @@ describe('research search', () => {
     });
 
     expect(general.country).toBe('south korea');
+    expect(general.warnings).toBeUndefined();
     expect(news.country).toBeUndefined();
+    expect(news.warnings).toEqual([
+      'Ignored country boost because topic news/finance does not support it.',
+    ]);
     const generalBody = JSON.parse(
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );
