@@ -255,4 +255,27 @@ describe('research report helpers', () => {
       '1. [Parenthesized URL](<https://example.com/docs/research_(2026)>)',
     );
   });
+
+  it('keeps provider summaries from changing markdown structure', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Summary safety',
+      summary: 'Provider answer\n## Injected Summary\n**bold claim**',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Source',
+          url: 'https://example.com/source',
+          snippet: 'Evidence.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).not.toContain('\n## Injected Summary');
+    expect(report).toContain(
+      'Provider answer \\#\\# Injected Summary \\*\\*bold claim\\*\\*',
+    );
+  });
 });

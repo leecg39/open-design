@@ -65,6 +65,9 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     ? new Date(findings.fetchedAt).toISOString()
     : 'unknown';
   const query = escapeMarkdownText(findings.query);
+  const summary = findings.summary
+    ? escapeMarkdownText(findings.summary)
+    : '(No provider summary.)';
   const rawEvidence = renderRawEvidence(findings.sources);
   const sourceImages = renderSourceImages(findings.sources);
   const lines = [
@@ -125,7 +128,7 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     '',
     '## Summary',
     '',
-    findings.summary || '(No provider summary.)',
+    summary,
     '',
     '## Key Findings',
     '',
