@@ -280,7 +280,7 @@ export async function tavilySearch(
     throw new TavilyError('Tavily returned invalid JSON');
   }
   const answer =
-    typeof json.answer === 'string'
+    includeAnswer !== false && typeof json.answer === 'string'
       ? json.answer.trim().slice(0, TAVILY_ANSWER_LIMIT)
       : '';
   if (json.results != null && !Array.isArray(json.results)) {

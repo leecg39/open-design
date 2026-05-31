@@ -1095,6 +1095,37 @@ describe('research search', () => {
     expect(output.selectedParameters).toBeUndefined();
   });
 
+  it('uses normalized direct Tavily answer controls when reading responses', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Unexpected provider answer.',
+          results: [
+            {
+              title: 'Answer control source',
+              url: 'https://example.com/answer-control',
+              content: 'Disabled answers should not be surfaced.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const output = await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily answer controls',
+      includeAnswer: false,
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body.include_answer).toBe(false);
+    expect(output.answer).toBe('');
+  });
+
   it('uses normalized direct Tavily evidence controls when reading responses', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
