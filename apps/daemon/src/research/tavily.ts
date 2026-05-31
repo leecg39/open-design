@@ -11,6 +11,14 @@ const DEFAULT_BASE_URL = 'https://api.tavily.com';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const TAVILY_MAX_RESULTS_LIMIT = 20;
 const TAVILY_RAW_CONTENT_LIMIT = 4_000;
+const TRACKING_QUERY_PARAMETERS = new Set([
+  'fbclid',
+  'gclid',
+  'igshid',
+  'mc_cid',
+  'mc_eid',
+  'msclkid',
+]);
 
 export interface TavilySearchInput {
   apiKey: string;
@@ -296,9 +304,23 @@ function normalizeSourceUrl(value: unknown): string | undefined {
     if (url.pathname.length > 1) {
       url.pathname = url.pathname.replace(/\/+$/, '');
     }
+    stripTrackingQueryParameters(url);
     return url.toString();
   } catch {
     return undefined;
+  }
+}
+
+function stripTrackingQueryParameters(url: URL): void {
+  const keysToDelete = Array.from(url.searchParams.keys()).filter((key) => {
+    const normalizedKey = key.toLowerCase();
+    return (
+      normalizedKey.startsWith('utm_') ||
+      TRACKING_QUERY_PARAMETERS.has(normalizedKey)
+    );
+  });
+  for (const key of keysToDelete) {
+    url.searchParams.delete(key);
   }
 }
 
