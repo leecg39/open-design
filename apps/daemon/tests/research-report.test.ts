@@ -448,6 +448,27 @@ describe('research report helpers', () => {
     expect(report).not.toContain('](<javascript:alert(1)>)');
   });
 
+  it('strips credentials from source link destinations', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Link credential safety',
+      summary: 'Credentials should not be rendered in source links.',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Credential URL',
+          url: 'https://user:secret@example.com/source',
+          snippet: 'Evidence.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain('1. [Credential URL](<https://example.com/source>)');
+    expect(report).not.toContain('user:secret@');
+  });
+
   it('keeps provider summaries from changing markdown structure', () => {
     const report = buildResearchMarkdownReport({
       query: 'Summary safety',

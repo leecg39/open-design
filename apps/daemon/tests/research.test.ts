@@ -168,7 +168,7 @@ describe('research search', () => {
           results: [
             {
               title: 'Primary source',
-              url: 'https://example.com/source#section-a',
+              url: 'https://user:secret@example.com/source#section-a',
               content: 'Primary source content.',
             },
             {
@@ -553,7 +553,7 @@ describe('research search', () => {
           answer: 'Visual product summary.',
           images: [
             {
-              url: 'https://images.example.com/product.jpg#hero',
+              url: 'https://user:secret@images.example.com/product.jpg#hero',
               description: 'A product interface reference.',
             },
             'https://images.example.com/product.jpg?utm_source=newsletter&fbclid=abc',
@@ -568,7 +568,8 @@ describe('research search', () => {
               content: 'Visual design coverage.',
               images: [
                 {
-                  url: 'https://images.example.com/source-interface.png#screen',
+                  url:
+                    'https://user:secret@images.example.com/source-interface.png#screen',
                   description: 'A source-level interface reference.',
                 },
                 'https://images.example.com/source-interface.png?utm_medium=email',

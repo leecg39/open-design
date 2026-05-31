@@ -361,7 +361,7 @@ function formatFetchedAt(value: number): string {
 }
 
 function markdownLinkDestination(url: string): string {
-  const safeUrl = url
+  let safeUrl = url
     .trim()
     .replace(/\s+/g, '%20')
     .replace(/</g, '%3C')
@@ -371,10 +371,27 @@ function markdownLinkDestination(url: string): string {
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       return '<about:blank>';
     }
+    safeUrl = stripLinkCredentials(safeUrl, parsed);
   } catch {
     return '<about:blank>';
   }
   return `<${safeUrl}>`;
+}
+
+function stripLinkCredentials(safeUrl: string, parsed: URL): string {
+  if (!parsed.username && !parsed.password) return safeUrl;
+  const authorityStart = `${parsed.protocol}//`.length;
+  const authorityTail = safeUrl.slice(authorityStart);
+  const authorityRelativeEnd = authorityTail.search(/[/?#]/);
+  const authorityEnd =
+    authorityRelativeEnd < 0
+      ? safeUrl.length
+      : authorityStart + authorityRelativeEnd;
+  const credentialsEnd = safeUrl.lastIndexOf('@', authorityEnd - 1);
+  if (credentialsEnd < authorityStart) return safeUrl;
+  return `${safeUrl.slice(0, authorityStart)}${safeUrl.slice(
+    credentialsEnd + 1,
+  )}`;
 }
 
 function clip(value: string, maxLength: number): string {

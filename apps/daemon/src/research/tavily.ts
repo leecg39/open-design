@@ -300,6 +300,7 @@ function normalizeSourceUrl(value: unknown): string | undefined {
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       return undefined;
     }
+    stripUrlCredentials(url);
     url.hash = '';
     if (url.pathname.length > 1) {
       url.pathname = url.pathname.replace(/\/+$/, '');
@@ -322,6 +323,11 @@ function stripTrackingQueryParameters(url: URL): void {
   for (const key of keysToDelete) {
     url.searchParams.delete(key);
   }
+}
+
+function stripUrlCredentials(url: URL): void {
+  url.username = '';
+  url.password = '';
 }
 
 function normalizeNonNegativeNumber(value: unknown): number | undefined {
@@ -377,6 +383,7 @@ function normalizeImageUrl(value: unknown): string | undefined {
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       return undefined;
     }
+    stripUrlCredentials(url);
     url.hash = '';
     stripTrackingQueryParameters(url);
     return url.toString();
