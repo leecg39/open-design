@@ -567,7 +567,7 @@ describe('ChatComposer /search command', () => {
     fireEvent.change(screen.getByTestId('chat-composer-input'), {
       target: {
         value:
-          '/search --include-domains OpenAI.com,docs.openai.com --exclude-domains reddit.com OpenAI platform releases',
+          '/search --include-domains "OpenAI.com,docs.openai.com" --exclude-domains reddit.com OpenAI platform releases',
       },
     });
     fireEvent.click(screen.getByTestId('chat-send'));

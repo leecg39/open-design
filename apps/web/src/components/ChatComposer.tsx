@@ -563,7 +563,7 @@ function parseSearchDomains(value: string): {
 } {
   const out: string[] = [];
   const seen = new Set<string>();
-  const raw = value
+  const raw = stripSearchWrappingQuotes(value)
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
@@ -589,7 +589,7 @@ function dedupeSearchDomains(values: string[]): boolean {
 }
 
 function normalizeSearchDomain(value: string): string | null {
-  let text = value.trim().toLowerCase();
+  let text = stripSearchWrappingQuotes(value).toLowerCase();
   if (!text) return null;
   if (/^https?:\/\//.test(text)) {
     try {
