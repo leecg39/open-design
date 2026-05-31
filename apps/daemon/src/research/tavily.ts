@@ -6,6 +6,10 @@ import type {
   ResearchTopic,
   ResearchUsage,
 } from '@open-design/contracts/api/research';
+import {
+  isBlockedExternalApiHostname,
+  isLoopbackApiHost,
+} from '@open-design/contracts/api/connectionTest';
 
 const DEFAULT_BASE_URL = 'https://api.tavily.com';
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -362,6 +366,12 @@ function normalizeTavilyBaseUrl(value: string): string {
   }
   if (url.username || url.password) {
     throw new TavilyError('Tavily base URL must not include credentials');
+  }
+  const hostname = url.hostname.toLowerCase();
+  if (!isLoopbackApiHost(hostname) && isBlockedExternalApiHostname(hostname)) {
+    throw new TavilyError(
+      'Tavily base URL must not point to an internal network host',
+    );
   }
   url.hash = '';
   url.search = '';

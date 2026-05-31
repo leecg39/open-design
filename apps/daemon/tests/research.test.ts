@@ -841,6 +841,22 @@ describe('research search', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('rejects private-network direct Tavily base URLs before provider fetch', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      tavilySearch({
+        apiKey: 'tvly-test',
+        baseUrl: 'http://192.168.0.10',
+        query: 'Open Design direct Tavily base URL',
+      }),
+    ).rejects.toMatchObject({
+      message: 'Tavily base URL must not point to an internal network host',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('omits blank direct Tavily string filters before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
