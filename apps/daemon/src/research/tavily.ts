@@ -127,8 +127,15 @@ export async function tavilySearch(
   };
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), DEFAULT_TIMEOUT_MS);
+  let removeAbortListener: (() => void) | undefined;
   if (input.signal) {
-    input.signal.addEventListener('abort', () => ctrl.abort(), { once: true });
+    if (input.signal.aborted) {
+      ctrl.abort();
+    } else {
+      const abort = () => ctrl.abort();
+      input.signal.addEventListener('abort', abort, { once: true });
+      removeAbortListener = () => input.signal?.removeEventListener('abort', abort);
+    }
   }
   let resp: Response;
   try {
@@ -147,6 +154,7 @@ export async function tavilySearch(
     );
   } finally {
     clearTimeout(timer);
+    removeAbortListener?.();
   }
   if (!resp.ok) {
     const text = await resp.text().catch(() => '');

@@ -195,6 +195,43 @@ describe('research search', () => {
     });
   });
 
+  it('respects research signals aborted before provider fetch starts', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const ctrl = new AbortController();
+    ctrl.abort();
+    const fetchMock = vi.fn(async (_input: FetchInput, init?: FetchInit) => {
+      if ((init?.signal as AbortSignal | undefined)?.aborted) {
+        throw new Error('aborted before network');
+      }
+      return new Response(
+        JSON.stringify({
+          answer: 'Unexpected success.',
+          results: [
+            {
+              title: 'Unexpected source',
+              url: 'https://example.com/unexpected',
+              content: 'This request should have been aborted.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      searchResearch({
+        projectRoot: await tempProjectRoot(),
+        query: 'Open Design cancelled research',
+        signal: ctrl.signal,
+      }),
+    ).rejects.toMatchObject({
+      code: 'RESEARCH_PROVIDER_FAILED',
+      message: 'Tavily request failed: aborted before network',
+      status: 502,
+    });
+  });
+
   it('maps medium and deep depth requests to advanced Tavily search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
