@@ -134,6 +134,7 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
   const summary = escapedSummary || '(No provider summary.)';
   const rawEvidence = renderRawEvidence(findings.sources);
   const sourceImages = renderSourceImages(findings.sources);
+  const sourceDomainSummary = renderSourceDomainSummary(findings.sources);
   const lines = [
     `# Research: ${query}`,
     '',
@@ -190,6 +191,7 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     ...(findings.discardedSourceCount != null
       ? [`- Discarded unusable provider results: ${findings.discardedSourceCount}`]
       : []),
+    ...(sourceDomainSummary ? [`- Source domains: ${sourceDomainSummary}`] : []),
     ...(findings.requestId
       ? [`- Request ID: ${escapeMarkdownText(findings.requestId)}`]
       : []),
@@ -352,6 +354,22 @@ function sourceDomain(url: string): string {
   } catch {
     return '';
   }
+}
+
+function renderSourceDomainSummary(sources: ResearchSource[]): string {
+  const counts = new Map<string, number>();
+  for (const source of sources) {
+    const domain = sourceDomain(source.url);
+    if (!domain) continue;
+    counts.set(domain, (counts.get(domain) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([domain, count]) =>
+      count > 1
+        ? `${escapeMarkdownText(domain)} (${count})`
+        : escapeMarkdownText(domain),
+    )
+    .join(', ');
 }
 
 function renderRawEvidence(sources: ResearchSource[]): string[] {

@@ -304,6 +304,41 @@ describe('research report helpers', () => {
     );
   });
 
+  it('summarizes source domain coverage in report metadata', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Domain coverage',
+      summary: 'Evidence diversity should be visible near the top of the report.',
+      provider: 'tavily',
+      depth: 'deep',
+      fetchedAt: Date.UTC(2026, 5, 1),
+      sources: [
+        {
+          title: 'Primary source',
+          url: 'https://example.com/one',
+          snippet: 'First evidence.',
+          provider: 'tavily',
+        },
+        {
+          title: 'Second source',
+          url: 'https://docs.example.com/two',
+          snippet: 'Second evidence.',
+          provider: 'tavily',
+        },
+        {
+          title: 'Third source',
+          url: 'https://example.com/three',
+          snippet: 'Third evidence.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain('- Source domains: example.com (2), docs.example.com');
+    expect(report.indexOf('- Source domains:')).toBeLessThan(
+      report.indexOf('## Summary'),
+    );
+  });
+
   it('renders raw evidence excerpts when raw content is present', () => {
     const report = buildResearchMarkdownReport({
       query: 'Raw evidence',
