@@ -1,3 +1,5 @@
+import { RESEARCH_SUPPORTED_COUNTRY_SET } from '@open-design/contracts/api/research';
+
 const DEFAULT_MAX_SOURCES = 5;
 const TAVILY_MAX_RESULTS_LIMIT = 20;
 const RESEARCH_INCLUDE_DOMAIN_FILTER_LIMIT = 300;
@@ -222,7 +224,10 @@ function normalizeCountry(value: unknown): string | undefined {
   const key = stripWrappingQuotes(value).toLowerCase();
   const alias = RESEARCH_COUNTRY_ALIASES[key];
   const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
-  return RESEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
+  return RESEARCH_COUNTRY_RE.test(normalized) &&
+    RESEARCH_SUPPORTED_COUNTRY_SET.has(normalized)
+    ? normalized
+    : undefined;
 }
 
 function stripWrappingQuotes(value: string): string {

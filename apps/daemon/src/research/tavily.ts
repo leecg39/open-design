@@ -1,10 +1,11 @@
-import type {
-  ResearchImage,
-  ResearchSelectedParameters,
-  ResearchSource,
-  ResearchTimeRange,
-  ResearchTopic,
-  ResearchUsage,
+import {
+  RESEARCH_SUPPORTED_COUNTRY_SET,
+  type ResearchImage,
+  type ResearchSelectedParameters,
+  type ResearchSource,
+  type ResearchTimeRange,
+  type ResearchTopic,
+  type ResearchUsage,
 } from '@open-design/contracts/api/research';
 import {
   isBlockedExternalApiHostname,
@@ -405,7 +406,10 @@ function normalizeTavilyCountry(value: string | undefined): string {
   const key = stripTavilyWrappingQuotes(value).toLowerCase();
   const alias = TAVILY_COUNTRY_ALIASES[key];
   const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
-  return TAVILY_COUNTRY_RE.test(normalized) ? normalized : '';
+  return TAVILY_COUNTRY_RE.test(normalized) &&
+    RESEARCH_SUPPORTED_COUNTRY_SET.has(normalized)
+    ? normalized
+    : '';
 }
 
 function normalizeTavilyDate(value: string | undefined): string {

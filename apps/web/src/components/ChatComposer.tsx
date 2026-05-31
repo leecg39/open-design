@@ -19,6 +19,7 @@ import type {
   ResearchTimeRange,
   ResearchTopic,
 } from '@open-design/contracts';
+import { RESEARCH_SUPPORTED_COUNTRY_SET } from '@open-design/contracts';
 import { Icon } from "./Icon";
 import { BUILT_IN_PETS, CUSTOM_PET_ID, resolveActivePet } from "./pet/pets";
 
@@ -566,7 +567,10 @@ function normalizeSearchCountry(value: string): string | undefined {
   const key = stripSearchWrappingQuotes(value).toLowerCase();
   const alias = SEARCH_COUNTRY_ALIASES[key];
   const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
-  return SEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
+  return SEARCH_COUNTRY_RE.test(normalized) &&
+    RESEARCH_SUPPORTED_COUNTRY_SET.has(normalized)
+    ? normalized
+    : undefined;
 }
 
 function stripSearchWrappingQuotes(value: string): string {

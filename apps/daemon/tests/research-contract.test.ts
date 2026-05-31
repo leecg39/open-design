@@ -70,6 +70,16 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('--depth shallow --country south-korea --max-sources 5');
   });
 
+  it('omits unsupported country boosts in the command contract', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design unknown country market',
+      country: 'atlantis',
+      maxSources: 5,
+    });
+
+    expect(prompt).not.toContain('--country atlantis');
+  });
+
   it('normalizes time range aliases in the command contract', () => {
     const prompt = renderResearchCommandContract({
       query: 'Open Design weekly updates',

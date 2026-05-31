@@ -921,6 +921,36 @@ describe('research search', () => {
     expect(body.country).toBe('south korea');
   });
 
+  it('omits unsupported direct Tavily country boosts before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Unsupported country summary.',
+          results: [
+            {
+              title: 'Unsupported country source',
+              url: 'https://example.com/unsupported-country',
+              content: 'Unsupported country boosts should not reach Tavily.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily unsupported country',
+      country: 'atlantis',
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).not.toHaveProperty('country');
+  });
+
   it('omits invalid direct Tavily exact date filters before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
@@ -1313,6 +1343,39 @@ describe('research search', () => {
     expect(generalBody).toMatchObject({ country: 'south korea' });
     expect(newsBody).toMatchObject({ topic: 'news' });
     expect(newsBody).not.toHaveProperty('country');
+  });
+
+  it('warns before forwarding unsupported country boosts', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Unsupported country summary.',
+          results: [
+            {
+              title: 'Unsupported country source',
+              url: 'https://example.com/unsupported-country',
+              content: 'Unsupported country boosts should be ignored.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design country enum',
+      country: 'atlantis',
+    });
+
+    expect(findings.country).toBeUndefined();
+    expect(findings.warnings).toEqual(['Ignored invalid country boost.']);
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).not.toHaveProperty('country');
   });
 
   it('returns visual image evidence only when requested', async () => {

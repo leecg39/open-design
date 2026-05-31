@@ -5,7 +5,10 @@ import type {
   ResearchTimeRange,
   ResearchTopic,
 } from '@open-design/contracts/api/research';
-import { RESEARCH_DEFAULT_MAX_SOURCES } from '@open-design/contracts/api/research';
+import {
+  RESEARCH_DEFAULT_MAX_SOURCES,
+  RESEARCH_SUPPORTED_COUNTRY_SET,
+} from '@open-design/contracts/api/research';
 import { resolveProviderConfig } from '../media-config.js';
 import { tavilySearch, TavilyError } from './tavily.js';
 
@@ -408,7 +411,10 @@ function normalizeResearchCountry(value: unknown): string | undefined {
   const key = stripResearchWrappingQuotes(value).toLowerCase();
   const alias = RESEARCH_COUNTRY_ALIASES[key];
   const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
-  return RESEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
+  return RESEARCH_COUNTRY_RE.test(normalized) &&
+    RESEARCH_SUPPORTED_COUNTRY_SET.has(normalized)
+    ? normalized
+    : undefined;
 }
 
 function stripResearchWrappingQuotes(value: string): string {

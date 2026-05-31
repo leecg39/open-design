@@ -389,6 +389,33 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('warns when /search country values are outside Tavily country options', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --country Atlantis Open Design market' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] =
+      onSend.mock.calls[0]!;
+    expect(prompt).not.toContain('--country atlantis');
+    expect(prompt).toContain('Research parser warning: Ignored invalid --country value.');
+    expect(meta.research?.country).toBeUndefined();
+  });
+
   it('expands /search image flags into visual research metadata', () => {
     const onSend = vi.fn();
 
