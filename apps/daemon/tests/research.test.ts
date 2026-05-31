@@ -76,6 +76,21 @@ describe('research search', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('rejects blank direct Tavily queries before provider fetch', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      tavilySearch({
+        apiKey: 'tvly-test',
+        query: '   ',
+      }),
+    ).rejects.toMatchObject({
+      message: 'Tavily query is required',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('warns when long queries are truncated before provider search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

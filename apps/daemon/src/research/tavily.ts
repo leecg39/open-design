@@ -97,6 +97,10 @@ export async function tavilySearch(
   if (!apiKey) {
     throw new TavilyError('Tavily API key is not configured');
   }
+  const query = input.query.trim();
+  if (!query) {
+    throw new TavilyError('Tavily query is required');
+  }
   const configuredBaseUrl = input.baseUrl?.trim() ?? '';
   const base = (configuredBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
   const requestedMax =
@@ -113,7 +117,7 @@ export async function tavilySearch(
       ? Math.max(1, Math.min(Math.floor(input.chunksPerSource), 3))
       : undefined;
   const body = {
-    query: input.query,
+    query,
     ...(input.searchDepth
       ? { search_depth: input.searchDepth }
       : input.autoParameters
