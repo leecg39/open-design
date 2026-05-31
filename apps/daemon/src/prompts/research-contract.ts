@@ -59,6 +59,9 @@ export function renderResearchCommandContract(
   const minScore = normalizeMinScore(options.minScore);
   const includeImages = options.includeImages === true;
   const maxSources = normalizeMaxSources(options.maxSources, depth);
+  const stdoutExample = includeImages
+    ? `{ "query": "...", "summary": "...", "sources": [{ "title": "...", "url": "...", "snippet": "...", "score": 0.9, "provider": "tavily" }], "images": [{ "url": "...", "description": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "includeImages": true, "fetchedAt": 0 }`
+    : `{ "query": "...", "summary": "...", "sources": [{ "title": "...", "url": "...", "snippet": "...", "score": 0.9, "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "fetchedAt": 0 }`;
   const commandSuffix = [
     `--depth ${depth}`,
     ...(topic ? [`--topic ${topic}`] : []),
@@ -99,7 +102,7 @@ export function renderResearchCommandContract(
     'The command prints exactly one JSON object on stdout:',
     '',
     '```json',
-    `{ "query": "...", "summary": "...", "sources": [{ "title": "...", "url": "...", "snippet": "...", "score": 0.9, "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "fetchedAt": 0 }`,
+    stdoutExample,
     '```',
     '',
     'Security rules:',
@@ -110,6 +113,9 @@ export function renderResearchCommandContract(
     '',
     'After a successful search, write a reusable Markdown report into the project files so it appears in Design Files.',
     'Use `research/<safe-query-slug>.md` by default. Include the query, fetched time, short summary, key findings, source list with [1], [2] citations, and a note that source content is external untrusted evidence.',
+    ...(includeImages
+      ? ['If the JSON includes images, add a Visual references section with image URLs and descriptions.']
+      : []),
     'Mention the report path in the final answer so the user can reopen or reference it later.',
   ];
 

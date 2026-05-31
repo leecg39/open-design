@@ -355,7 +355,7 @@ Flags:
   --exclude-domains  Optional comma-separated source domains to exclude.
   --exact-match      Require exact quoted phrases in returned results.
   --min-score    Optional relevance threshold from 0 to 1.
-  --include-images  Include visual reference images in the findings.
+  --include-images  Include visual reference images in the findings (aliases: --images, --visuals).
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }

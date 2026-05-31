@@ -44,6 +44,7 @@ describe('renderResearchCommandContract', () => {
       '"%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --min-score 0.5 --max-sources 15',
     );
     expect(prompt).not.toContain('--country');
+    expect(prompt).not.toContain('"images"');
     expect(prompt).toContain('"depth": "deep"');
   });
 
@@ -65,6 +66,8 @@ describe('renderResearchCommandContract', () => {
     });
 
     expect(prompt).toContain('--depth shallow --include-images --max-sources 5');
+    expect(prompt).toContain('"images": [{ "url": "..."');
+    expect(prompt).toContain('Visual references section');
   });
 
   it('defaults and clamps the requested source cap to the supported range', () => {
