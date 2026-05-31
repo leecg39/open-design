@@ -51,11 +51,11 @@ export interface SearchResearchInput {
   endDate?: string;
   includeDomains?: unknown;
   excludeDomains?: unknown;
-  exactMatch?: boolean;
+  exactMatch?: unknown;
   minScore?: unknown;
-  includeImages?: boolean;
-  includeRawContent?: boolean;
-  autoParameters?: boolean;
+  includeImages?: unknown;
+  includeRawContent?: unknown;
+  autoParameters?: unknown;
   maxSources?: unknown;
   providers?: unknown;
   signal?: AbortSignal;
@@ -163,7 +163,10 @@ export async function searchResearch(
       excludeDomains = resolvedExcludes;
     }
   }
-  const exactMatch = input.exactMatch === true;
+  const exactMatch = normalizeBooleanControl(input.exactMatch);
+  if (isInvalidBooleanControl(input.exactMatch)) {
+    warnings.push('Ignored invalid exactMatch; expected a boolean.');
+  }
   const minScore = normalizeMinScore(input.minScore);
   if (input.minScore != null && minScore == null) {
     warnings.push('Ignored invalid minScore; expected a number from 0 to 1.');
@@ -174,9 +177,18 @@ export async function searchResearch(
   ) {
     warnings.push('Clamped minScore to the supported range 0..1.');
   }
-  const includeImages = input.includeImages === true;
-  const includeRawContent = input.includeRawContent === true;
-  const autoParameters = input.autoParameters === true;
+  const includeImages = normalizeBooleanControl(input.includeImages);
+  if (isInvalidBooleanControl(input.includeImages)) {
+    warnings.push('Ignored invalid includeImages; expected a boolean.');
+  }
+  const includeRawContent = normalizeBooleanControl(input.includeRawContent);
+  if (isInvalidBooleanControl(input.includeRawContent)) {
+    warnings.push('Ignored invalid includeRawContent; expected a boolean.');
+  }
+  const autoParameters = normalizeBooleanControl(input.autoParameters);
+  if (isInvalidBooleanControl(input.autoParameters)) {
+    warnings.push('Ignored invalid autoParameters; expected a boolean.');
+  }
   const providers = normalizeResearchProviders(input.providers);
   if (input.providers != null && !Array.isArray(input.providers)) {
     warnings.push('Ignored invalid providers; expected an array of provider ids.');
@@ -430,6 +442,14 @@ function normalizeResearchProviders(value: unknown): string[] {
     out.push(provider);
   }
   return out;
+}
+
+function normalizeBooleanControl(value: unknown): boolean {
+  return value === true;
+}
+
+function isInvalidBooleanControl(value: unknown): boolean {
+  return value != null && typeof value !== 'boolean';
 }
 
 function normalizeResearchDomain(value: unknown): string | undefined {
