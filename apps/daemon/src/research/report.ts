@@ -35,6 +35,9 @@ export function resolveResearchReportPath(
   if (parts.includes('..')) {
     throw new Error('report path must stay inside the project');
   }
+  if (parts[parts.length - 1] === '.') {
+    throw new Error('report path must include a file name');
+  }
   const relativePath = parts.join('/');
   const projectRoot = path.resolve(cwd);
   const absolutePath = path.resolve(projectRoot, relativePath);

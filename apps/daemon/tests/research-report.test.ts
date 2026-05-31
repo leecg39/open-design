@@ -47,6 +47,9 @@ describe('research report helpers', () => {
     expect(() => resolveResearchReportPath(root, 'research/')).toThrow(
       'report path must include a file name',
     );
+    expect(() => resolveResearchReportPath(root, 'research/.')).toThrow(
+      'report path must include a file name',
+    );
   });
 
   it('keeps automatic report paths from overwriting existing reports', async () => {
