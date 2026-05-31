@@ -117,7 +117,7 @@ export async function searchResearch(
     );
   }
   const includeDomains = normalizeResearchDomains(input.includeDomains);
-  const excludeDomains = normalizeResearchDomains(input.excludeDomains);
+  let excludeDomains = normalizeResearchDomains(input.excludeDomains);
   if (countResearchDomainInputs(input.includeDomains) > includeDomains.length) {
     warnings.push(
       'Ignored invalid, duplicate, or excess includeDomains entries.',
@@ -127,6 +127,18 @@ export async function searchResearch(
     warnings.push(
       'Ignored invalid, duplicate, or excess excludeDomains entries.',
     );
+  }
+  if (includeDomains.length && excludeDomains.length) {
+    const included = new Set(includeDomains);
+    const resolvedExcludes = excludeDomains.filter(
+      (domain) => !included.has(domain),
+    );
+    if (resolvedExcludes.length < excludeDomains.length) {
+      warnings.push(
+        'Removed excludeDomains entries that also appear in includeDomains.',
+      );
+      excludeDomains = resolvedExcludes;
+    }
   }
   const exactMatch = input.exactMatch === true;
   const minScore = normalizeMinScore(input.minScore);

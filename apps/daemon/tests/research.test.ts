@@ -793,6 +793,48 @@ describe('research search', () => {
     });
   });
 
+  it('removes exclude domain filters that conflict with includes', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Domain conflict summary.',
+          results: [
+            {
+              title: 'Included source',
+              url: 'https://example.com/source',
+              content: 'Included source content.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design domain filters',
+      includeDomains: ['example.com', 'docs.example.com'],
+      excludeDomains: ['example.com', 'reddit.com'],
+    });
+
+    expect(findings).toMatchObject({
+      includeDomains: ['example.com', 'docs.example.com'],
+      excludeDomains: ['reddit.com'],
+      warnings: [
+        'Removed excludeDomains entries that also appear in includeDomains.',
+      ],
+    });
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body).toMatchObject({
+      include_domains: ['example.com', 'docs.example.com'],
+      exclude_domains: ['reddit.com'],
+    });
+  });
+
   it('forwards exact match only when requested', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
