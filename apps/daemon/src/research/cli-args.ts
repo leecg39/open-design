@@ -51,6 +51,9 @@ export function parseOptionalNumberFlag(
   flagName: string,
 ): number | undefined {
   if (value == null) return undefined;
+  if (typeof value === 'string' && !value.trim()) {
+    throw new Error(`flag --${flagName} requires a finite number`);
+  }
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
     throw new Error(`flag --${flagName} requires a finite number`);

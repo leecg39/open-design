@@ -114,6 +114,13 @@ describe('research CLI', () => {
 
   it('parses optional numeric flags before CLI request serialization', () => {
     expect(parseOptionalNumberFlag(undefined, 'min-score')).toBeUndefined();
+    expect(() => parseOptionalNumberFlag('', 'min-score')).toThrow(
+      'flag --min-score requires a finite number',
+    );
+    expect(() => parseOptionalNumberFlag('   ', 'min-score')).toThrow(
+      'flag --min-score requires a finite number',
+    );
+    expect(parseOptionalNumberFlag('0', 'min-score')).toBe(0);
     expect(parseOptionalNumberFlag('0.5', 'min-score')).toBe(0.5);
     expect(parseOptionalNumberFlag('50', 'max-sources')).toBe(50);
     expect(() => parseOptionalNumberFlag('high', 'min-score')).toThrow(
