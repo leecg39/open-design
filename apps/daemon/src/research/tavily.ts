@@ -177,7 +177,7 @@ export async function tavilySearch(
       ? Math.floor(input.maxResults)
       : 5;
   const maxResults = Math.max(
-    1,
+    0,
     Math.min(requestedMax, TAVILY_MAX_RESULTS_LIMIT),
   );
   const chunksPerSource =

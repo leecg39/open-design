@@ -750,7 +750,7 @@ describe('research search', () => {
     });
   });
 
-  it('normalizes direct Tavily maxResults to a positive integer', async () => {
+  it('normalizes direct Tavily maxResults to the provider range', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
         JSON.stringify({
@@ -771,13 +771,13 @@ describe('research search', () => {
     await tavilySearch({
       apiKey: 'tvly-test',
       query: 'Open Design direct Tavily max results',
-      maxResults: 0.5,
+      maxResults: 0,
     });
 
     const body = JSON.parse(
       String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
     );
-    expect(body).toMatchObject({ max_results: 1 });
+    expect(body).toMatchObject({ max_results: 0 });
   });
 
   it('falls back to the default Tavily base URL when direct baseUrl is blank', async () => {
