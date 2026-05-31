@@ -44,14 +44,15 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('Mention the returned reportPath in the final answer');
     expect(prompt).toContain('EV market 2025 trends');
     expect(prompt).toContain(
-      '"$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --min-score 0.5 --max-sources 15',
+      '"$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --depth deep --topic news --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --min-score 0.5 --max-sources 15',
     );
     expect(prompt).toContain(
-      '& $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --min-score 0.5 --max-sources 15',
+      '& $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --depth deep --topic news --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --min-score 0.5 --max-sources 15',
     );
     expect(prompt).toContain(
-      '"%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --depth deep --topic news --time-range week --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --min-score 0.5 --max-sources 15',
+      '"%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --depth deep --topic news --start-date 2026-05-01 --end-date 2026-05-31 --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --exact-match --min-score 0.5 --max-sources 15',
     );
+    expect(prompt).not.toContain('--time-range week --start-date');
     expect(prompt).not.toContain('--country');
     expect(prompt).not.toContain('"images"');
     expect(prompt).toContain('"depth": "deep"');
@@ -122,6 +123,18 @@ describe('renderResearchCommandContract', () => {
     expect(renderResearchCommandContract({ maxSources: 50 })).toContain(
       '--depth shallow --max-sources 20',
     );
+  });
+
+  it('omits relative time range when exact date filters are provided', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design dated research',
+      timeRange: 'week',
+      startDate: '2026-05-01',
+      endDate: '2026-05-31',
+    });
+
+    expect(prompt).toContain('--start-date 2026-05-01 --end-date 2026-05-31');
+    expect(prompt).not.toContain('--time-range week');
   });
 
   it('omits impossible exact date filters from the command examples', () => {
