@@ -388,10 +388,21 @@ function normalizeResearchTopic(value: unknown): ResearchTopic | undefined {
 
 function normalizeResearchCountry(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
-  const key = value.trim().toLowerCase();
+  const key = stripResearchWrappingQuotes(value).toLowerCase();
   const alias = RESEARCH_COUNTRY_ALIASES[key];
   const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   return RESEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
+}
+
+function stripResearchWrappingQuotes(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length < 2) return trimmed;
+  const first = trimmed[0];
+  const last = trimmed[trimmed.length - 1];
+  if ((first === '"' || first === "'") && last === first) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
 }
 
 function normalizeResearchTimeRange(

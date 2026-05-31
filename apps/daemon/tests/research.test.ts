@@ -1137,7 +1137,7 @@ describe('research search', () => {
     const general = await searchResearch({
       projectRoot: await tempProjectRoot(),
       query: 'Open Design competitors',
-      country: 'kr',
+      country: '"South Korea"',
     });
     const news = await searchResearch({
       projectRoot: projectRoot!,
