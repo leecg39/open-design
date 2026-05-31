@@ -41,6 +41,14 @@ describe('research report helpers', () => {
     );
   });
 
+  it('rejects explicit report paths that look like directories', () => {
+    const root = path.resolve('/tmp/open-design-project');
+
+    expect(() => resolveResearchReportPath(root, 'research/')).toThrow(
+      'report path must include a file name',
+    );
+  });
+
   it('keeps automatic report paths from overwriting existing reports', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'open-design-research-report-'));
     try {

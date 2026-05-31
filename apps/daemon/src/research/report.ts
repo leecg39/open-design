@@ -25,6 +25,9 @@ export function resolveResearchReportPath(
   if (!normalized) {
     throw new Error('report path required');
   }
+  if (normalized.endsWith('/')) {
+    throw new Error('report path must include a file name');
+  }
   if (path.isAbsolute(normalized)) {
     throw new Error('report path must be project-relative');
   }
