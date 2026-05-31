@@ -88,6 +88,7 @@ export interface ChatSendMeta {
 const SEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
 const SEARCH_TOPICS = new Set(['general', 'news', 'finance']);
 const SEARCH_TIME_RANGES = new Set(['day', 'week', 'month', 'year']);
+const SEARCH_MAX_SOURCES_LIMIT = 20;
 const SEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const SEARCH_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
 const SEARCH_DOMAIN_RE =
@@ -361,23 +362,33 @@ function parseSearchArgs(raw: string): {
       );
       cursor += 1;
     } else if (lower.startsWith('--max-sources=')) {
-      const value = parseSearchMaxSources(token.slice('--max-sources='.length));
-      if (value == null) {
+      const parsed = parseSearchMaxSources(token.slice('--max-sources='.length));
+      if (parsed.value == null) {
         warnings.push(
           'Ignored invalid --max-sources; expected a positive number.',
         );
       } else {
-        maxSources = value;
+        maxSources = parsed.value;
+        if (parsed.clamped) {
+          warnings.push(
+            `Clamped maxSources to provider limit ${SEARCH_MAX_SOURCES_LIMIT}.`,
+          );
+        }
       }
       cursor += 1;
     } else if (lower === '--max-sources' && nextToken) {
-      const value = parseSearchMaxSources(nextToken);
-      if (value == null) {
+      const parsed = parseSearchMaxSources(nextToken);
+      if (parsed.value == null) {
         warnings.push(
           'Ignored invalid --max-sources; expected a positive number.',
         );
       } else {
-        maxSources = value;
+        maxSources = parsed.value;
+        if (parsed.clamped) {
+          warnings.push(
+            `Clamped maxSources to provider limit ${SEARCH_MAX_SOURCES_LIMIT}.`,
+          );
+        }
       }
       cursor += 2;
     } else if (lower === '--max-sources') {
@@ -498,11 +509,18 @@ function parseSearchScore(value: string): number | undefined {
   return Number.isFinite(score) && score >= 0 && score <= 1 ? score : undefined;
 }
 
-function parseSearchMaxSources(value: string): number | undefined {
+function parseSearchMaxSources(value: string): {
+  value?: number;
+  clamped?: boolean;
+} {
   const maxSources = Number(value);
-  if (!Number.isFinite(maxSources) || maxSources <= 0) return undefined;
+  if (!Number.isFinite(maxSources) || maxSources <= 0) return {};
   const floored = Math.floor(maxSources);
-  return floored >= 1 ? floored : undefined;
+  if (floored < 1) return {};
+  return {
+    value: Math.min(floored, SEARCH_MAX_SOURCES_LIMIT),
+    ...(floored > SEARCH_MAX_SOURCES_LIMIT ? { clamped: true } : {}),
+  };
 }
 
 function researchMaxSourcesForDepth(depth: ResearchDepth): number {
