@@ -135,4 +135,16 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).not.toContain('--end-date 2026-99-01');
     expect(prompt).toContain('--depth shallow --max-sources 5');
   });
+
+  it('omits reversed exact date ranges from the command examples', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design reversed dates',
+      startDate: '2026-05-31',
+      endDate: '2026-05-01',
+    });
+
+    expect(prompt).not.toContain('--start-date 2026-05-31');
+    expect(prompt).not.toContain('--end-date 2026-05-01');
+    expect(prompt).toContain('--depth shallow --max-sources 5');
+  });
 });

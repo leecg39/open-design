@@ -54,8 +54,12 @@ export function renderResearchCommandContract(
       ? undefined
       : normalizeCountry(options.country);
   const timeRange = normalizeTimeRange(options.timeRange);
-  const startDate = normalizeDate(options.startDate);
-  const endDate = normalizeDate(options.endDate);
+  let startDate = normalizeDate(options.startDate);
+  let endDate = normalizeDate(options.endDate);
+  if (startDate && endDate && startDate > endDate) {
+    startDate = undefined;
+    endDate = undefined;
+  }
   const includeDomains = normalizeDomains(options.includeDomains);
   const excludeDomains = normalizeDomains(options.excludeDomains);
   const minScore = normalizeMinScore(options.minScore);
