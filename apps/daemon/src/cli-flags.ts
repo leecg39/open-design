@@ -3,7 +3,7 @@ export interface ParseFlagOptions {
   boolean?: Set<string>;
 }
 
-export type ParsedFlags = Record<string, string | true>;
+export type ParsedFlags = Record<string, string | boolean>;
 
 export function parseFlags(
   argv: string[],
@@ -27,7 +27,19 @@ export function parseFlags(
       );
     }
     if (eq >= 0) {
-      out[key] = a.slice(eq + 1);
+      const value = a.slice(eq + 1);
+      if (booleanFlags.has(key)) {
+        if (value === 'true') {
+          out[key] = true;
+          continue;
+        }
+        if (value === 'false') {
+          out[key] = false;
+          continue;
+        }
+        throw new Error(`flag --${key} requires a boolean value`);
+      }
+      out[key] = value;
       continue;
     }
     if (booleanFlags.has(key)) {

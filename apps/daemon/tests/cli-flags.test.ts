@@ -22,4 +22,20 @@ describe('parseFlags', () => {
       'include-images': true,
     });
   });
+
+  it('parses equals-form boolean values as booleans', () => {
+    expect(
+      parseFlags(['--help=false', '--verbose=true'], {
+        boolean: new Set(['help', 'verbose']),
+      }),
+    ).toEqual({
+      help: false,
+      verbose: true,
+    });
+    expect(() =>
+      parseFlags(['--help=maybe'], {
+        boolean: new Set(['help']),
+      }),
+    ).toThrow('flag --help requires a boolean value');
+  });
 });
