@@ -469,6 +469,29 @@ describe('research report helpers', () => {
     expect(report).not.toContain('user:secret@');
   });
 
+  it('strips credentials from key finding URL fallbacks', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Key finding URL credential safety',
+      summary: 'URL fallbacks should not expose credentials.',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 5, 1),
+      sources: [
+        {
+          title: 'Credential URL fallback',
+          url: 'https://user:secret@example.com/source',
+          snippet: '',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain(
+      '- [1] Credential URL fallback: https://example.com/source',
+    );
+    expect(report).not.toContain('user:secret@');
+  });
+
   it('keeps provider summaries from changing markdown structure', () => {
     const report = buildResearchMarkdownReport({
       query: 'Summary safety',

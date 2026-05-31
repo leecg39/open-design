@@ -277,8 +277,9 @@ function renderKeyFindings(sources: ResearchSource[]): string[] {
   if (!sources.length) return ['- No sources returned.'];
   return sources.map((source, index) => {
     const title = escapeMarkdownText(source.title);
+    const fallback = source.snippet || source.rawContent || displayUrlText(source.url);
     const snippet = escapeMarkdownText(
-      clip(source.snippet || source.rawContent || source.url, 240),
+      clip(fallback, 240),
     );
     return `- [${index + 1}] ${title}: ${snippet}`;
   });
@@ -375,6 +376,20 @@ function markdownLinkDestination(url: string): string {
     return '<about:blank>';
   }
   return `<${safeUrl}>`;
+}
+
+function displayUrlText(url: string): string {
+  try {
+    const parsed = new URL(url.trim().replace(/\s+/g, ' '));
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return 'about:blank';
+    }
+    parsed.username = '';
+    parsed.password = '';
+    return parsed.toString();
+  } catch {
+    return 'about:blank';
+  }
 }
 
 function stripLinkCredentials(safeUrl: string, parsed: URL): string {
