@@ -488,7 +488,7 @@ describe('research report helpers', () => {
 
     expect(report).not.toContain('\n## Injected Summary');
     expect(report).toContain(
-      'Provider answer \\#\\# Injected Summary \\*\\*bold claim\\*\\*',
+      'Provider answer\n\\#\\# Injected Summary\n\\*\\*bold claim\\*\\*',
     );
   });
 

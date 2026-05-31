@@ -112,7 +112,7 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
   const fetchedAt = formatFetchedAt(findings.fetchedAt);
   const query = escapeMarkdownText(findings.query);
   const summary = findings.summary
-    ? escapeMarkdownText(findings.summary)
+    ? escapeMarkdownBlock(findings.summary)
     : '(No provider summary.)';
   const rawEvidence = renderRawEvidence(findings.sources);
   const sourceImages = renderSourceImages(findings.sources);
@@ -407,4 +407,13 @@ function escapeMarkdownText(value: string): string {
   return text
     .replace(/^([>+-])/, '\\$1')
     .replace(/^(\d+)\./, '$1\\.');
+}
+
+function escapeMarkdownBlock(value: string): string {
+  return value
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => escapeMarkdownText(line))
+    .join('\n')
+    .trim();
 }
