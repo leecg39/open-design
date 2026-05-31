@@ -1240,6 +1240,55 @@ describe('research search', () => {
     }
   });
 
+  it('preserves invalid API provider controls for daemon warnings', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const realFetch = globalThis.fetch;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Provider warning summary.',
+          results: [
+            {
+              title: 'Provider result',
+              url: 'https://example.com/provider',
+              content: 'Provider validation should be visible to callers.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { startServer } = await import('../src/server.js');
+    const started = (await startServer({
+      port: 0,
+      returnServer: true,
+    })) as StartedServer;
+
+    try {
+      const response = await realFetch(`${started.url}/api/research/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: 'Open Design provider validation',
+          providers: 'bing',
+        }),
+      });
+      const findings = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(findings).toMatchObject({
+        provider: 'tavily',
+        warnings: [
+          'Ignored invalid providers; expected an array of provider ids.',
+        ],
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      await closeServer(started.server);
+    }
+  });
+
   it('explains when minScore filters all provider sources', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

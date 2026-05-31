@@ -4724,9 +4724,7 @@ export async function startServer({
         includeRawContent: req.body?.includeRawContent === true,
         autoParameters: req.body?.autoParameters === true,
         maxSources: req.body?.maxSources,
-        providers: Array.isArray(req.body?.providers)
-          ? req.body.providers
-          : undefined,
+        providers: req.body?.providers,
       });
       res.json(result);
     } catch (err) {

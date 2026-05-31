@@ -57,7 +57,7 @@ export interface SearchResearchInput {
   includeRawContent?: boolean;
   autoParameters?: boolean;
   maxSources?: unknown;
-  providers?: string[];
+  providers?: unknown;
   signal?: AbortSignal;
 }
 
@@ -165,10 +165,15 @@ export async function searchResearch(
   const includeImages = input.includeImages === true;
   const includeRawContent = input.includeRawContent === true;
   const autoParameters = input.autoParameters === true;
-  const requested = Array.isArray(input.providers) ? input.providers : [];
-  const providers = requested.filter(
-    (p: unknown): p is string => typeof p === 'string' && p.length > 0,
-  );
+  const providers = normalizeResearchProviders(input.providers);
+  if (input.providers != null && !Array.isArray(input.providers)) {
+    warnings.push('Ignored invalid providers; expected an array of provider ids.');
+  } else if (
+    Array.isArray(input.providers) &&
+    input.providers.length > providers.length
+  ) {
+    warnings.push('Ignored invalid, duplicate, or empty provider entries.');
+  }
   const provider = providers[0] ?? 'tavily';
   const maxSources = clampMaxSources(
     input.maxSources,
@@ -395,6 +400,20 @@ function countResearchDomainInputs(value: unknown): number {
       .filter(Boolean).length;
   }
   return 0;
+}
+
+function normalizeResearchProviders(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    if (typeof item !== 'string') continue;
+    const provider = item.trim().toLowerCase();
+    if (!provider || seen.has(provider)) continue;
+    seen.add(provider);
+    out.push(provider);
+  }
+  return out;
 }
 
 function normalizeResearchDomain(value: unknown): string | undefined {
