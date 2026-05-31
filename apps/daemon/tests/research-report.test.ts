@@ -492,6 +492,26 @@ describe('research report helpers', () => {
     );
   });
 
+  it('falls back when report summaries are blank after trimming', () => {
+    const report = buildResearchMarkdownReport({
+      query: 'Blank summary safety',
+      summary: '  \n  ',
+      provider: 'tavily',
+      depth: 'shallow',
+      fetchedAt: Date.UTC(2026, 4, 31),
+      sources: [
+        {
+          title: 'Source',
+          url: 'https://example.com/source',
+          snippet: 'Evidence.',
+          provider: 'tavily',
+        },
+      ],
+    });
+
+    expect(report).toContain('## Summary\n\n(No provider summary.)\n\n## Key Findings');
+  });
+
   it('escapes link-breaking source titles and leading summary markers', () => {
     const report = buildResearchMarkdownReport({
       query: 'Escape coverage',

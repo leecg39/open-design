@@ -111,9 +111,8 @@ export async function writeResearchReportFile(
 export function buildResearchMarkdownReport(findings: ResearchFindings): string {
   const fetchedAt = formatFetchedAt(findings.fetchedAt);
   const query = escapeMarkdownText(findings.query);
-  const summary = findings.summary
-    ? escapeMarkdownBlock(findings.summary)
-    : '(No provider summary.)';
+  const escapedSummary = findings.summary ? escapeMarkdownBlock(findings.summary) : '';
+  const summary = escapedSummary || '(No provider summary.)';
   const rawEvidence = renderRawEvidence(findings.sources);
   const sourceImages = renderSourceImages(findings.sources);
   const lines = [
