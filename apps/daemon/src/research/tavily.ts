@@ -360,6 +360,9 @@ function normalizeTavilyBaseUrl(value: string): string {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     throw new TavilyError('Tavily base URL must use http or https');
   }
+  if (url.username || url.password) {
+    throw new TavilyError('Tavily base URL must not include credentials');
+  }
   url.hash = '';
   url.search = '';
   return url.toString().replace(/\/+$/, '');

@@ -825,6 +825,22 @@ describe('research search', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('rejects direct Tavily base URL credentials before provider fetch', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      tavilySearch({
+        apiKey: 'tvly-test',
+        baseUrl: 'https://user:pass@example.com',
+        query: 'Open Design direct Tavily base URL',
+      }),
+    ).rejects.toMatchObject({
+      message: 'Tavily base URL must not include credentials',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('omits blank direct Tavily string filters before provider fetch', async () => {
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
       new Response(
