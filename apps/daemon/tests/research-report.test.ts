@@ -116,7 +116,10 @@ describe('research report helpers', () => {
 
       await expect(
         writeResearchReportFile(root, 'research/report.md', 'new report'),
-      ).rejects.toMatchObject({ code: 'EEXIST' });
+      ).rejects.toMatchObject({
+        code: 'EEXIST',
+        message: 'report path already exists: research/report.md',
+      });
       await expect(readFile(path.join(root, 'research/report.md'), 'utf8')).resolves.toBe(
         'existing report',
       );

@@ -94,10 +94,17 @@ export async function writeResearchReportFile(
   await mkdir(path.dirname(report.absolutePath), { recursive: true });
   const reportContents =
     typeof contents === 'function' ? contents(report) : contents;
-  await writeFile(report.absolutePath, reportContents, {
-    encoding: 'utf8',
-    flag: 'wx',
-  });
+  try {
+    await writeFile(report.absolutePath, reportContents, {
+      encoding: 'utf8',
+      flag: 'wx',
+    });
+  } catch (err) {
+    if (isFileExistsError(err)) {
+      throw reportPathExistsError(report.relativePath);
+    }
+    throw err;
+  }
   return report;
 }
 
@@ -245,6 +252,14 @@ function isFileExistsError(err: unknown): boolean {
     'code' in err &&
     (err as { code?: unknown }).code === 'EEXIST'
   );
+}
+
+function reportPathExistsError(relativePath: string): Error & { code: string } {
+  const error = new Error(`report path already exists: ${relativePath}`) as Error & {
+    code: string;
+  };
+  error.code = 'EEXIST';
+  return error;
 }
 
 function slugifyResearchQuery(query: string): string {
