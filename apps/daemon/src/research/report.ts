@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises';
+import { access, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { ResearchFindings, ResearchSource } from '@open-design/contracts/api/research';
@@ -42,19 +42,30 @@ export async function resolveAvailableResearchReportPath(
   cwd: string,
   requestedPath: string,
 ): Promise<{ absolutePath: string; relativePath: string }> {
-  const first = resolveResearchReportPath(cwd, requestedPath);
-  if (!(await pathExists(first.absolutePath))) {
-    return first;
-  }
-
-  const extension = path.extname(first.relativePath);
-  const stem = extension
-    ? first.relativePath.slice(0, -extension.length)
-    : first.relativePath;
-  for (let index = 2; index <= 1000; index += 1) {
-    const candidate = resolveResearchReportPath(cwd, `${stem}-${index}${extension}`);
+  for (const candidate of researchReportPathCandidates(cwd, requestedPath)) {
     if (!(await pathExists(candidate.absolutePath))) {
       return candidate;
+    }
+  }
+  throw new Error('could not find an available research report path');
+}
+
+export async function writeAvailableResearchReportFile(
+  cwd: string,
+  requestedPath: string,
+  contents: string,
+): Promise<{ absolutePath: string; relativePath: string }> {
+  for (const candidate of researchReportPathCandidates(cwd, requestedPath)) {
+    await mkdir(path.dirname(candidate.absolutePath), { recursive: true });
+    try {
+      await writeFile(candidate.absolutePath, contents, {
+        encoding: 'utf8',
+        flag: 'wx',
+      });
+      return candidate;
+    } catch (err) {
+      if (isFileExistsError(err)) continue;
+      throw err;
     }
   }
   throw new Error('could not find an available research report path');
@@ -158,6 +169,32 @@ async function pathExists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function researchReportPathCandidates(
+  cwd: string,
+  requestedPath: string,
+): Array<{ absolutePath: string; relativePath: string }> {
+  const first = resolveResearchReportPath(cwd, requestedPath);
+  const extension = path.extname(first.relativePath);
+  const stem = extension
+    ? first.relativePath.slice(0, -extension.length)
+    : first.relativePath;
+  return [
+    first,
+    ...Array.from({ length: 999 }, (_unused, index) =>
+      resolveResearchReportPath(cwd, `${stem}-${index + 2}${extension}`),
+    ),
+  ];
+}
+
+function isFileExistsError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code?: unknown }).code === 'EEXIST'
+  );
 }
 
 function slugifyResearchQuery(query: string): string {

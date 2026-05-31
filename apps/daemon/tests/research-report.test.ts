@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -9,6 +9,7 @@ import {
   defaultResearchReportPath,
   resolveAvailableResearchReportPath,
   resolveResearchReportPath,
+  writeAvailableResearchReportFile,
 } from '../src/research/report.js';
 
 describe('research report helpers', () => {
@@ -49,6 +50,35 @@ describe('research report helpers', () => {
         absolutePath: path.join(root, 'research/open-design-2.md'),
         relativePath: 'research/open-design-2.md',
       });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('writes automatic report paths exclusively and retries collisions', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'open-design-research-report-'));
+    try {
+      await mkdir(path.join(root, 'research'), { recursive: true });
+      await writeFile(path.join(root, 'research/open-design.md'), 'existing report', 'utf8');
+      await writeFile(path.join(root, 'research/open-design-2.md'), 'second report', 'utf8');
+
+      const report = await writeAvailableResearchReportFile(
+        root,
+        'research/open-design.md',
+        'new report',
+      );
+
+      expect(report).toEqual({
+        absolutePath: path.join(root, 'research/open-design-3.md'),
+        relativePath: 'research/open-design-3.md',
+      });
+      await expect(
+        readFile(path.join(root, 'research/open-design.md'), 'utf8'),
+      ).resolves.toBe('existing report');
+      await expect(
+        readFile(path.join(root, 'research/open-design-2.md'), 'utf8'),
+      ).resolves.toBe('second report');
+      await expect(readFile(report.absolutePath, 'utf8')).resolves.toBe('new report');
     } finally {
       await rm(root, { recursive: true, force: true });
     }

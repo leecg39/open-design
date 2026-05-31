@@ -13,8 +13,8 @@ import {
 import {
   buildResearchMarkdownReport,
   defaultResearchReportPath,
-  resolveAvailableResearchReportPath,
   resolveResearchReportPath,
+  writeAvailableResearchReportFile,
 } from './research/report.js';
 
 const argv = process.argv.slice(2);
@@ -373,12 +373,19 @@ async function runResearchSearch(rawArgs) {
         typeof flags.report === 'string' && flags.report.trim()
           ? flags.report.trim()
           : defaultResearchReportPath(findings.query || query);
+      const reportContents = buildResearchMarkdownReport(findings);
       const report =
         typeof flags.report === 'string' && flags.report.trim()
           ? resolveResearchReportPath(process.cwd(), requestedReportPath)
-          : await resolveAvailableResearchReportPath(process.cwd(), requestedReportPath);
-      await mkdir(path.dirname(report.absolutePath), { recursive: true });
-      await writeFile(report.absolutePath, buildResearchMarkdownReport(findings), 'utf8');
+          : await writeAvailableResearchReportFile(
+              process.cwd(),
+              requestedReportPath,
+              reportContents,
+            );
+      if (typeof flags.report === 'string' && flags.report.trim()) {
+        await mkdir(path.dirname(report.absolutePath), { recursive: true });
+        await writeFile(report.absolutePath, reportContents, 'utf8');
+      }
       process.stdout.write(`${JSON.stringify({ ...findings, reportPath: report.relativePath })}\n`);
       return;
     } catch (err) {
