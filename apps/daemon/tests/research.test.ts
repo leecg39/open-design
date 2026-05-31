@@ -843,6 +843,38 @@ describe('research search', () => {
     expect(body).not.toHaveProperty('end_date');
   });
 
+  it('cleans direct Tavily domain filters before provider fetch', async () => {
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Domain filter summary.',
+          results: [
+            {
+              title: 'Domain filter source',
+              url: 'https://example.com/domain-filter',
+              content: 'Domain filters should be clean before Tavily.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tavilySearch({
+      apiKey: 'tvly-test',
+      query: 'Open Design direct Tavily domains',
+      includeDomains: [' Example.com ', 'example.com', ' ', 'OpenAI.com'],
+      excludeDomains: [' Docs.Example.com ', 'docs.example.com', '\t'],
+    });
+
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(body.include_domains).toEqual(['example.com', 'openai.com']);
+    expect(body.exclude_domains).toEqual(['docs.example.com']);
+  });
+
   it('maps medium and deep depth requests to advanced Tavily search', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

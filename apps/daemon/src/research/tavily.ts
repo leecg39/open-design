@@ -105,6 +105,8 @@ export async function tavilySearch(
   const country = input.country?.trim() ?? '';
   const startDate = input.startDate?.trim() ?? '';
   const endDate = input.endDate?.trim() ?? '';
+  const includeDomains = normalizeTavilyDomainFilters(input.includeDomains);
+  const excludeDomains = normalizeTavilyDomainFilters(input.excludeDomains);
   const configuredBaseUrl = input.baseUrl?.trim() ?? '';
   const base = (configuredBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
   const requestedMax =
@@ -132,11 +134,11 @@ export async function tavilySearch(
     ...(input.timeRange ? { time_range: input.timeRange } : {}),
     ...(startDate ? { start_date: startDate } : {}),
     ...(endDate ? { end_date: endDate } : {}),
-    ...(input.includeDomains?.length
-      ? { include_domains: input.includeDomains }
+    ...(includeDomains.length
+      ? { include_domains: includeDomains }
       : {}),
-    ...(input.excludeDomains?.length
-      ? { exclude_domains: input.excludeDomains }
+    ...(excludeDomains.length
+      ? { exclude_domains: excludeDomains }
       : {}),
     ...(input.exactMatch ? { exact_match: true } : {}),
     ...(input.includeImages
@@ -331,6 +333,18 @@ function normalizeTavilyAutoParameters(
         ...(searchDepth ? { searchDepth } : {}),
       }
     : undefined;
+}
+
+function normalizeTavilyDomainFilters(domains: string[] | undefined): string[] {
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const value of domains ?? []) {
+    const domain = value.trim().toLowerCase();
+    if (!domain || seen.has(domain)) continue;
+    seen.add(domain);
+    normalized.push(domain);
+  }
+  return normalized;
 }
 
 function normalizeTavilyUsage(value: unknown): ResearchUsage | undefined {
