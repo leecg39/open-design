@@ -101,6 +101,8 @@ export interface ResearchFindings {
   responseTime?: number;
   /** Unix ms when the search returned. */
   fetchedAt: number;
+  /** Project-relative Markdown report path when the CLI saved one. */
+  reportPath?: string;
 }
 
 export const RESEARCH_DEFAULT_MAX_SOURCES: Record<ResearchDepth, number> = {

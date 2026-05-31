@@ -227,7 +227,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--auto-parameters] [--max-sources <n>] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--auto-parameters] [--max-sources <n>] [--save-report] [--report research/file.md] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
