@@ -61,6 +61,7 @@ const MCP_BOOLEAN_FLAGS = new Set([
 
 const RESEARCH_SEARCH_STRING_FLAGS = new Set([
   'query',
+  'depth',
   'max-sources',
   'daemon-url',
 ]);
@@ -197,7 +198,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--max-sources 5] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--max-sources <n>] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
@@ -269,6 +270,7 @@ async function runResearchSearch(rawArgs) {
     flags['daemon-url'] || process.env.OD_DAEMON_URL || 'http://127.0.0.1:7456';
   const maxSources =
     flags['max-sources'] == null ? undefined : Number(flags['max-sources']);
+  const depth = typeof flags.depth === 'string' ? flags.depth.trim() : '';
   const url = `${daemonUrl.replace(/\/$/, '')}/api/research/search`;
   let resp;
   try {
@@ -277,6 +279,7 @@ async function runResearchSearch(rawArgs) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         query,
+        ...(depth ? { depth } : {}),
         ...(Number.isFinite(maxSources) ? { maxSources } : {}),
       }),
     });
@@ -294,15 +297,16 @@ async function runResearchSearch(rawArgs) {
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--max-sources 5] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--max-sources <n>] [--daemon-url <url>]
 
-Runs Tavily-backed shallow research through the local Open Design daemon.
+Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
   { "query": "...", "summary": "...", "sources": [...], "provider": "tavily", "depth": "shallow", "fetchedAt": 0 }
 
 Flags:
   --query        Required search query.
-  --max-sources  Optional source cap. Defaults to 5, clamped to Tavily's max.
+  --depth        Optional research depth. Defaults to shallow.
+  --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }
 

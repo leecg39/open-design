@@ -93,4 +93,58 @@ describe('research search', () => {
       include_raw_content: false,
     });
   });
+
+  it('maps medium and deep depth requests to advanced Tavily search', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: 'Detailed research summary.',
+          results: [
+            {
+              title: 'Research report',
+              url: 'https://example.com/research',
+              content: 'Relevant chunks for the research request.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const medium = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'AI design tools product research',
+      depth: 'medium',
+    });
+    const deep = await searchResearch({
+      projectRoot: projectRoot!,
+      query: 'AI design tools product research',
+      depth: 'deep',
+    });
+
+    expect(medium.depth).toBe('medium');
+    expect(deep.depth).toBe('deep');
+
+    const mediumBody = JSON.parse(
+      String((fetchMock.mock.calls[0] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(mediumBody).toMatchObject({
+      search_depth: 'advanced',
+      max_results: 12,
+      include_answer: true,
+      chunks_per_source: 2,
+    });
+
+    const deepBody = JSON.parse(
+      String((fetchMock.mock.calls[1] as [FetchInput, FetchInit])[1]!.body),
+    );
+    expect(deepBody).toMatchObject({
+      search_depth: 'advanced',
+      max_results: 20,
+      include_answer: 'advanced',
+      chunks_per_source: 3,
+    });
+  });
 });

@@ -10,7 +10,7 @@ export interface ResearchOptions {
   enabled: boolean;
   /** Optional override; defaults to the user's chat message. */
   query?: string;
-  /** Phase 1 only honours 'shallow'. */
+  /** Controls the provider relevance/cost tradeoff. */
   depth?: ResearchDepth;
   /** Cap on returned sources. Defaults follow the depth. */
   maxSources?: number;

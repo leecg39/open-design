@@ -13,7 +13,7 @@ import { patchProject } from "../state/projects";
 import { fetchMcpServers } from "../state/mcp";
 import type { McpServerConfig } from "../state/mcp";
 import type { AppConfig, ChatAttachment, ChatCommentAttachment, ProjectFile, ProjectMetadata } from "../types";
-import type { ResearchOptions } from '@open-design/contracts';
+import type { ResearchDepth, ResearchOptions } from '@open-design/contracts';
 import { Icon } from "./Icon";
 import { BUILT_IN_PETS, CUSTOM_PET_ID, resolveActivePet } from "./pet/pets";
 
@@ -78,6 +78,26 @@ export interface ChatComposerHandle {
 
 export interface ChatSendMeta {
   research?: ResearchOptions;
+}
+
+function parseSearchArgs(raw: string): { query: string; depth: ResearchDepth } {
+  const input = raw.trim();
+  const match =
+    /^(?:(?:--depth(?:=|\s+)(shallow|medium|deep))|--(shallow|medium|deep))(?:\s+|$)/i.exec(
+      input,
+    );
+  if (!match) return { query: input, depth: 'shallow' };
+  const depth = (match[1] ?? match[2])!.toLowerCase() as ResearchDepth;
+  return {
+    depth,
+    query: input.slice(match[0].length).trim(),
+  };
+}
+
+function researchMaxSourcesForDepth(depth: ResearchDepth): number {
+  if (depth === 'deep') return 20;
+  if (depth === 'medium') return 12;
+  return 5;
 }
 
 /**
@@ -371,21 +391,28 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       return true;
     }
 
-    function expandSearchCommand(input: string): { prompt: string; query: string } | null {
+    function expandSearchCommand(
+      input: string,
+    ): { prompt: string; query: string; depth: ResearchDepth } | null {
       const m = /^\/search(?:\s+([\s\S]*))?$/i.exec(input.trim());
       if (!m) return null;
-      const query = m[1]?.trim() ?? '';
+      const parsed = parseSearchArgs(m[1]?.trim() ?? '');
+      const { query, depth } = parsed;
       if (!query) return null;
+      const maxSources = researchMaxSourcesForDepth(depth);
+      const commandSuffix = `--depth ${depth} --max-sources ${maxSources}`;
       return {
         query,
+        depth,
         prompt: [
           `Search for: ${query}`,
           '',
           'Before answering, your first tool action must be the OD research command for your shell.',
-          'POSIX: "$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --max-sources 5',
-          'PowerShell: & $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --max-sources 5',
-          'cmd.exe: "%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --max-sources 5',
+          `POSIX: "$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" ${commandSuffix}`,
+          `PowerShell: & $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" ${commandSuffix}`,
+          `cmd.exe: "%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" ${commandSuffix}`,
           'Use the canonical query below as the exact search query, with safe quoting for your shell.',
+          `Research depth: ${depth}.`,
           '',
           'Canonical query:',
           '',
@@ -617,7 +644,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       if (search) {
         if (streaming) return;
         onSend(search.prompt, staged, commentAttachments, {
-          research: { enabled: true, query: search.query },
+          research: { enabled: true, query: search.query, depth: search.depth },
         });
         reset();
         return;

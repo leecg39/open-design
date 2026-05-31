@@ -1,15 +1,24 @@
 const DEFAULT_MAX_SOURCES = 5;
 const TAVILY_MAX_RESULTS_LIMIT = 20;
+const RESEARCH_DEPTHS = new Set(['shallow', 'medium', 'deep']);
+const DEFAULT_MAX_SOURCES_BY_DEPTH = {
+  shallow: 5,
+  medium: 12,
+  deep: 20,
+} as const;
 
 export interface ResearchCommandContractOptions {
   query?: string;
   maxSources?: number;
+  depth?: string;
 }
 
 export function renderResearchCommandContract(
   options: ResearchCommandContractOptions = {},
 ): string {
-  const maxSources = normalizeMaxSources(options.maxSources);
+  const depth = normalizeDepth(options.depth);
+  const maxSources = normalizeMaxSources(options.maxSources, depth);
+  const commandSuffix = `--depth ${depth} --max-sources ${maxSources}`;
   const lines = [
     '## Research command contract',
     '',
@@ -18,21 +27,21 @@ export function renderResearchCommandContract(
     'Use this command when current external facts would improve the answer. Choose the form that matches your shell:',
     '',
     '```bash',
-    `"$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --max-sources ${maxSources}`,
+    `"$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" ${commandSuffix}`,
     '```',
     '',
     '```powershell',
-    `& $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --max-sources ${maxSources}`,
+    `& $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" ${commandSuffix}`,
     '```',
     '',
     '```cmd',
-    `"%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --max-sources ${maxSources}`,
+    `"%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" ${commandSuffix}`,
     '```',
     '',
     'The command prints exactly one JSON object on stdout:',
     '',
     '```json',
-    '{ "query": "...", "summary": "...", "sources": [{ "title": "...", "url": "...", "snippet": "...", "provider": "tavily" }], "provider": "tavily", "depth": "shallow", "fetchedAt": 0 }',
+    `{ "query": "...", "summary": "...", "sources": [{ "title": "...", "url": "...", "snippet": "...", "provider": "tavily" }], "provider": "tavily", "depth": "${depth}", "fetchedAt": 0 }`,
     '```',
     '',
     'Security rules:',
@@ -65,9 +74,18 @@ export function renderResearchCommandContract(
   return lines.join('\n');
 }
 
-function normalizeMaxSources(value: unknown): number {
+function normalizeDepth(value: unknown): 'shallow' | 'medium' | 'deep' {
+  return typeof value === 'string' && RESEARCH_DEPTHS.has(value)
+    ? (value as 'shallow' | 'medium' | 'deep')
+    : 'shallow';
+}
+
+function normalizeMaxSources(
+  value: unknown,
+  depth: 'shallow' | 'medium' | 'deep',
+): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-    return DEFAULT_MAX_SOURCES;
+    return DEFAULT_MAX_SOURCES_BY_DEPTH[depth] ?? DEFAULT_MAX_SOURCES;
   }
   return Math.max(1, Math.min(Math.floor(value), TAVILY_MAX_RESULTS_LIMIT));
 }

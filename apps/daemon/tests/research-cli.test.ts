@@ -17,4 +17,28 @@ describe('research CLI', () => {
       subArgs: ['--query', 'search', '--daemon-url', 'http://127.0.0.1:7456'],
     });
   });
+
+  it('keeps depth flags inside the search subcommand args', () => {
+    expect(
+      splitResearchSubcommand([
+        'search',
+        '--query',
+        'AI design tools',
+        '--depth',
+        'deep',
+        '--max-sources',
+        '20',
+      ]),
+    ).toEqual({
+      sub: 'search',
+      subArgs: [
+        '--query',
+        'AI design tools',
+        '--depth',
+        'deep',
+        '--max-sources',
+        '20',
+      ],
+    });
+  });
 });

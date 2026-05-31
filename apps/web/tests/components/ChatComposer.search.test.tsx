@@ -35,14 +35,15 @@ describe('ChatComposer /search command', () => {
       'Before answering, your first tool action must be the OD research command for your shell.',
     );
     expect(prompt).toContain(
-      'POSIX: "$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --max-sources 5',
+      'POSIX: "$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --depth shallow --max-sources 5',
     );
     expect(prompt).toContain(
-      'PowerShell: & $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --max-sources 5',
+      'PowerShell: & $env:OD_NODE_BIN $env:OD_BIN research search --query "<search query>" --depth shallow --max-sources 5',
     );
     expect(prompt).toContain(
-      'cmd.exe: "%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --max-sources 5',
+      'cmd.exe: "%OD_NODE_BIN%" "%OD_BIN%" research search --query "<search query>" --depth shallow --max-sources 5',
     );
+    expect(prompt).toContain('Research depth: shallow.');
     expect(prompt).toContain('Canonical query:');
     expect(prompt).toContain('EV market 2025 trends');
     expect(prompt).toContain(
@@ -58,7 +59,7 @@ describe('ChatComposer /search command', () => {
     expect(attachments).toEqual([]);
     expect(commentAttachments).toEqual([]);
     expect(meta).toEqual({
-      research: { enabled: true, query: 'EV market 2025 trends' },
+      research: { enabled: true, query: 'EV market 2025 trends', depth: 'shallow' },
     });
   });
 
@@ -85,12 +86,42 @@ describe('ChatComposer /search command', () => {
 
     const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
     expect(prompt).toContain(
-      'POSIX: "$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --max-sources 5',
+      'POSIX: "$OD_NODE_BIN" "$OD_BIN" research search --query "<search query>" --depth shallow --max-sources 5',
     );
     expect(prompt).toContain('Canonical query:');
     expect(prompt).toContain(query);
     expect(meta).toEqual({
-      research: { enabled: true, query },
+      research: { enabled: true, query, depth: 'shallow' },
+    });
+  });
+
+  it('expands /search depth flags into deeper research metadata', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --depth deep AI design tools market' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain('--depth deep --max-sources 20');
+    expect(prompt).toContain('Research depth: deep.');
+    expect(prompt).toContain('AI design tools market');
+    expect(prompt).not.toContain('--depth deep AI design tools market');
+    expect(meta).toEqual({
+      research: { enabled: true, query: 'AI design tools market', depth: 'deep' },
     });
   });
 

@@ -10,7 +10,8 @@ export interface TavilySearchInput {
   query: string;
   searchDepth?: 'basic' | 'advanced';
   maxResults?: number;
-  includeAnswer?: boolean;
+  includeAnswer?: boolean | 'basic' | 'advanced';
+  chunksPerSource?: number;
   signal?: AbortSignal;
 }
 
@@ -54,12 +55,20 @@ export async function tavilySearch(
     0,
     Math.min(requestedMax, TAVILY_MAX_RESULTS_LIMIT),
   );
+  const chunksPerSource =
+    typeof input.chunksPerSource === 'number' &&
+    Number.isFinite(input.chunksPerSource)
+      ? Math.max(1, Math.min(Math.floor(input.chunksPerSource), 3))
+      : undefined;
   const body = {
     query: input.query,
     search_depth: input.searchDepth ?? 'basic',
     max_results: maxResults,
     include_answer: input.includeAnswer ?? true,
     include_raw_content: false,
+    ...(input.searchDepth === 'advanced' && chunksPerSource
+      ? { chunks_per_source: chunksPerSource }
+      : {}),
   };
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), DEFAULT_TIMEOUT_MS);
