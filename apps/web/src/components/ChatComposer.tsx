@@ -507,10 +507,21 @@ function parseSearchArgs(raw: string): {
 }
 
 function normalizeSearchCountry(value: string): string | undefined {
-  const key = value.trim().toLowerCase();
+  const key = stripSearchWrappingQuotes(value).toLowerCase();
   const alias = SEARCH_COUNTRY_ALIASES[key];
   const normalized = (alias ?? key).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   return SEARCH_COUNTRY_RE.test(normalized) ? normalized : undefined;
+}
+
+function stripSearchWrappingQuotes(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length < 2) return trimmed;
+  const first = trimmed[0];
+  const last = trimmed[trimmed.length - 1];
+  if ((first === '"' || first === "'") && last === first) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
 }
 
 function parseSearchCountryTokens(

@@ -222,7 +222,7 @@ describe('ChatComposer /search command', () => {
     );
 
     fireEvent.change(screen.getByTestId('chat-composer-input'), {
-      target: { value: '/search --country South Korea AI design market' },
+      target: { value: '/search --country "South Korea" AI design market' },
     });
     fireEvent.click(screen.getByTestId('chat-send'));
 
