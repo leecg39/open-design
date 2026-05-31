@@ -70,6 +70,17 @@ describe('research report helpers', () => {
     );
   });
 
+  it('rejects explicit report paths with Windows-invalid characters', () => {
+    const root = path.resolve('/tmp/open-design-project');
+
+    expect(() => resolveResearchReportPath(root, 'research/bad:name.md')).toThrow(
+      'report path contains characters reserved on Windows',
+    );
+    expect(() => resolveResearchReportPath(root, 'research/bad<name>.md')).toThrow(
+      'report path contains characters reserved on Windows',
+    );
+  });
+
   it('keeps automatic report paths from overwriting existing reports', async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'open-design-research-report-'));
     try {
