@@ -563,6 +563,28 @@ describe('research search', () => {
     await assertion;
   });
 
+  it('compacts Tavily network error messages before surfacing them', async () => {
+    const noisyMessage = `  DNS lookup failed\n${'temporary outage '.repeat(30)}`;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error(noisyMessage);
+      }),
+    );
+
+    await expect(
+      tavilySearch({
+        apiKey: 'tvly-test',
+        query: 'Open Design provider network error surface',
+      }),
+    ).rejects.toMatchObject({
+      message: `Tavily request failed: ${noisyMessage
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 200)}`,
+    });
+  });
+
   it('reports invalid Tavily JSON responses clearly', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     vi.stubGlobal(
