@@ -62,6 +62,7 @@ describe('@open-design/contracts package runtime shape', () => {
     expect(connectionTest.isLoopbackApiHost).toEqual(expect.any(Function));
     expect(connectionTest.isBlockedExternalApiHostname).toEqual(expect.any(Function));
     expect(research.RESEARCH_DEFAULT_MAX_SOURCES.shallow).toBe(5);
+    expect(research.RESEARCH_DEFAULT_MAX_SOURCES.deep).toBe(20);
     expect(critique.defaultCritiqueConfig()).toMatchObject({
       enabled: false,
       protocolVersion: critique.CRITIQUE_PROTOCOL_VERSION,

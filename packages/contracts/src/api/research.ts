@@ -79,5 +79,5 @@ export interface ResearchFindings {
 export const RESEARCH_DEFAULT_MAX_SOURCES: Record<ResearchDepth, number> = {
   shallow: 5,
   medium: 12,
-  deep: 30,
+  deep: 20,
 };
