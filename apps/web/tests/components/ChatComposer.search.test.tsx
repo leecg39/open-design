@@ -203,6 +203,42 @@ describe('ChatComposer /search command', () => {
     });
   });
 
+  it('warns when /search country shortcuts are ignored for news topics', () => {
+    const onSend = vi.fn();
+
+    render(
+      <ChatComposer
+        projectId="project-1"
+        projectFiles={[]}
+        streaming={false}
+        researchAvailable
+        onEnsureProject={async () => 'project-1'}
+        onSend={onSend}
+        onStop={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-composer-input'), {
+      target: { value: '/search --news --kr Korean AI regulation updates' },
+    });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
+    expect(prompt).toContain('--depth shallow --topic news --max-sources 5');
+    expect(prompt).not.toContain('--country south-korea');
+    expect(prompt).toContain(
+      'Research parser warning: Ignored country boost because topic news/finance does not support it.',
+    );
+    expect(meta).toEqual({
+      research: {
+        enabled: true,
+        query: 'Korean AI regulation updates',
+        depth: 'shallow',
+        topic: 'news',
+      },
+    });
+  });
+
   it('expands /search image flags into visual research metadata', () => {
     const onSend = vi.fn();
 

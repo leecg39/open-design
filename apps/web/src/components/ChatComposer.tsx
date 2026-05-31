@@ -402,6 +402,11 @@ function parseSearchArgs(raw: string): {
     startDate = undefined;
     endDate = undefined;
   }
+  if (country && (topic === 'news' || topic === 'finance')) {
+    warnings.push(
+      'Ignored country boost because topic news/finance does not support it.',
+    );
+  }
   return {
     depth,
     ...(topic ? { topic } : {}),
