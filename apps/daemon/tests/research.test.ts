@@ -189,6 +189,36 @@ describe('research search', () => {
     expect(findings.usage).toBeUndefined();
   });
 
+  it('bounds provider answers before returning findings', async () => {
+    process.env.OD_TAVILY_API_KEY = 'tvly-test';
+    const longAnswer = `Detailed provider answer\n${'summary detail '.repeat(400)}`;
+    const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>
+      new Response(
+        JSON.stringify({
+          answer: longAnswer,
+          results: [
+            {
+              title: 'Answer source',
+              url: 'https://example.com/answer-bound',
+              content: 'Provider answer should be bounded.',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const findings = await searchResearch({
+      projectRoot: await tempProjectRoot(),
+      query: 'Open Design provider answer quality',
+    });
+
+    expect(findings.summary).toHaveLength(4000);
+    expect(findings.summary).toBe(longAnswer.trim().slice(0, 4000));
+    expect(findings.summary).toContain('\n');
+  });
+
   it('drops duplicate and non-web source URLs before citation output', async () => {
     process.env.OD_TAVILY_API_KEY = 'tvly-test';
     const fetchMock = vi.fn(async (_input: FetchInput, _init?: FetchInit) =>

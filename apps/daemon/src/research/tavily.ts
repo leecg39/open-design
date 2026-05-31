@@ -14,6 +14,7 @@ const TAVILY_SOURCE_TITLE_LIMIT = 300;
 const TAVILY_SOURCE_SNIPPET_LIMIT = 800;
 const TAVILY_PUBLISHED_AT_LIMIT = 100;
 const TAVILY_REQUEST_ID_LIMIT = 120;
+const TAVILY_ANSWER_LIMIT = 4_000;
 const TAVILY_RAW_CONTENT_LIMIT = 4_000;
 const TAVILY_ERROR_TEXT_LIMIT = 200;
 const TRACKING_QUERY_PARAMETERS = new Set([
@@ -200,7 +201,10 @@ export async function tavilySearch(
   } catch {
     throw new TavilyError('Tavily returned invalid JSON');
   }
-  const answer = typeof json.answer === 'string' ? json.answer.trim() : '';
+  const answer =
+    typeof json.answer === 'string'
+      ? json.answer.trim().slice(0, TAVILY_ANSWER_LIMIT)
+      : '';
   if (json.results != null && !Array.isArray(json.results)) {
     throw new TavilyError('Tavily returned invalid results list');
   }
