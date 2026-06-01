@@ -306,9 +306,7 @@ export async function searchResearch(
     const out = await tavilySearch({
       apiKey: cfg.apiKey,
       query,
-      ...(autoParameters && depth === 'shallow'
-        ? {}
-        : { searchDepth: depth === 'shallow' ? 'basic' : 'advanced' }),
+      searchDepth: depth === 'shallow' ? 'basic' : 'advanced',
       ...(topic ? { topic } : {}),
       ...(country ? { country } : {}),
       ...(timeRange ? { timeRange } : {}),

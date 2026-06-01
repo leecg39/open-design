@@ -2156,11 +2156,11 @@ describe('research search', () => {
     expect(plainBody).not.toHaveProperty('auto_parameters');
     expect(autoBody).toMatchObject({
       auto_parameters: true,
+      search_depth: 'basic',
       include_answer: true,
       include_raw_content: false,
       max_results: 5,
     });
-    expect(autoBody).not.toHaveProperty('search_depth');
   });
 
   it('bounds and compacts provider diagnostics metadata', async () => {
