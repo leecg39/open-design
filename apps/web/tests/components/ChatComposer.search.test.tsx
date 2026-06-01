@@ -703,16 +703,18 @@ describe('ChatComposer /search command', () => {
     fireEvent.change(screen.getByTestId('chat-composer-input'), {
       target: {
         value:
-          '/search --include-domains "OpenAI.com,docs.openai.com" --exclude-domains reddit.com OpenAI platform releases',
+          '/search --include-domains "*.com,OpenAI.com,docs.openai.com" --exclude-domains reddit.com OpenAI platform releases',
       },
     });
     fireEvent.click(screen.getByTestId('chat-send'));
 
     const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
     expect(prompt).toContain(
-      '--depth shallow --include-domains openai.com,docs.openai.com --exclude-domains reddit.com --max-sources 5',
+      '--depth shallow --include-domains *.com,openai.com,docs.openai.com --exclude-domains reddit.com --max-sources 5',
     );
-    expect(prompt).toContain('Research include domains: openai.com, docs.openai.com.');
+    expect(prompt).toContain(
+      'Research include domains: *.com, openai.com, docs.openai.com.',
+    );
     expect(prompt).toContain('Research exclude domains: reddit.com.');
     expect(prompt).toContain('OpenAI platform releases');
     expect(meta).toEqual({
@@ -720,7 +722,7 @@ describe('ChatComposer /search command', () => {
         enabled: true,
         query: 'OpenAI platform releases',
         depth: 'shallow',
-        includeDomains: ['openai.com', 'docs.openai.com'],
+        includeDomains: ['*.com', 'openai.com', 'docs.openai.com'],
         excludeDomains: ['reddit.com'],
       },
     });
