@@ -21,7 +21,7 @@ const RESEARCH_TIME_RANGE_ALIASES: Record<
 };
 const RESEARCH_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const RESEARCH_DOMAIN_RE =
-  /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+  /^(?:(?:\*\.(?:[a-z]{2,}|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}))|(?:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}))$/;
 const RESEARCH_COUNTRY_RE = /^[a-z]+(?: [a-z]+)*$/;
 const RESEARCH_COUNTRY_ALIASES: Record<string, string> = {
   korea: 'south korea',
@@ -208,14 +208,18 @@ export function renderResearchCommandContract(
 }
 
 function normalizeDepth(value: unknown): 'shallow' | 'medium' | 'deep' {
-  return typeof value === 'string' && RESEARCH_DEPTHS.has(value)
-    ? (value as 'shallow' | 'medium' | 'deep')
+  const normalized =
+    typeof value === 'string' ? stripWrappingQuotes(value).toLowerCase() : '';
+  return RESEARCH_DEPTHS.has(normalized)
+    ? (normalized as 'shallow' | 'medium' | 'deep')
     : 'shallow';
 }
 
 function normalizeTopic(value: unknown): 'general' | 'news' | 'finance' | undefined {
-  return typeof value === 'string' && RESEARCH_TOPICS.has(value)
-    ? (value as 'general' | 'news' | 'finance')
+  const normalized =
+    typeof value === 'string' ? stripWrappingQuotes(value).toLowerCase() : '';
+  return RESEARCH_TOPICS.has(normalized)
+    ? (normalized as 'general' | 'news' | 'finance')
     : undefined;
 }
 
@@ -253,7 +257,7 @@ function normalizeTimeRange(
 
 function normalizeDate(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
+  const trimmed = stripWrappingQuotes(value);
   const match = RESEARCH_DATE_RE.exec(trimmed);
   if (!match) return undefined;
   const year = Number(match[1]);
@@ -283,7 +287,7 @@ function normalizeDomains(value: unknown, limit: number): string[] {
 
 function normalizeDomain(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
-  let text = value.trim().toLowerCase();
+  let text = stripWrappingQuotes(value).toLowerCase();
   if (!text) return undefined;
   if (/^https?:\/\//.test(text)) {
     try {

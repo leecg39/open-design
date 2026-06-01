@@ -90,6 +90,22 @@ describe('renderResearchCommandContract', () => {
     expect(prompt).toContain('--time-range week');
   });
 
+  it('normalizes quoted enum, date, and wildcard domain controls in the command contract', () => {
+    const prompt = renderResearchCommandContract({
+      query: 'Open Design copied filters',
+      depth: '"Deep"',
+      topic: "'News'",
+      startDate: '"2026-05-01"',
+      endDate: "'2026-05-31'",
+      includeDomains: ['*.com', '"Docs.Example.com"'],
+      maxSources: 5,
+    });
+
+    expect(prompt).toContain(
+      '--depth deep --topic news --start-date 2026-05-01 --end-date 2026-05-31 --include-domains *.com,docs.example.com --max-sources 5',
+    );
+  });
+
   it('does not tell successful /search runs to create a duplicate report', () => {
     const prompt = renderResearchCommandContract({
       query: 'Open Design report save',
