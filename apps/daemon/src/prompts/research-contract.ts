@@ -1,3 +1,4 @@
+import type { ResearchRawContentMode } from '@open-design/contracts/api/research';
 import { RESEARCH_SUPPORTED_COUNTRY_SET } from '@open-design/contracts/api/research';
 
 const DEFAULT_MAX_SOURCES = 5;
@@ -55,7 +56,7 @@ export interface ResearchCommandContractOptions {
   exactMatch?: boolean;
   minScore?: number;
   includeImages?: boolean;
-  includeRawContent?: boolean;
+  includeRawContent?: ResearchRawContentMode;
   autoParameters?: boolean;
 }
 
@@ -92,7 +93,7 @@ export function renderResearchCommandContract(
   }
   const minScore = normalizeMinScore(options.minScore);
   const includeImages = options.includeImages === true;
-  const includeRawContent = options.includeRawContent === true;
+  const includeRawContent = normalizeRawContentMode(options.includeRawContent);
   const autoParameters = options.autoParameters === true;
   const maxSources = normalizeMaxSources(options.maxSources, depth);
   const sourceImageExample = includeImages
@@ -103,7 +104,7 @@ export function renderResearchCommandContract(
     : `{ "title": "...", "url": "...", "snippet": "...", "score": 0.9${sourceImageExample}, "provider": "tavily" }`;
   const stdoutOptionFields = [
     includeImages ? '"includeImages": true' : '',
-    includeRawContent ? '"includeRawContent": true' : '',
+    renderRawContentStdoutField(includeRawContent),
     autoParameters
       ? '"autoParameters": true, "selectedParameters": { "topic": "general", "searchDepth": "basic" }'
       : '',
@@ -130,7 +131,7 @@ export function renderResearchCommandContract(
     ...(options.exactMatch === true ? ['--exact-match'] : []),
     ...(minScore != null ? [`--min-score ${minScore}`] : []),
     ...(includeImages ? ['--include-images'] : []),
-    ...(includeRawContent ? ['--include-raw-content'] : []),
+    ...renderRawContentCommandFlags(includeRawContent),
     ...(autoParameters ? ['--auto-parameters'] : []),
     `--max-sources ${maxSources}`,
     '--save-report',
@@ -221,6 +222,35 @@ function normalizeTopic(value: unknown): 'general' | 'news' | 'finance' | undefi
   return RESEARCH_TOPICS.has(normalized)
     ? (normalized as 'general' | 'news' | 'finance')
     : undefined;
+}
+
+function normalizeRawContentMode(
+  value: unknown,
+): ResearchRawContentMode | undefined {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return undefined;
+  const normalized = stripWrappingQuotes(value).toLowerCase();
+  return normalized === 'markdown' || normalized === 'text'
+    ? normalized
+    : undefined;
+}
+
+function renderRawContentCommandFlags(
+  mode: ResearchRawContentMode | undefined,
+): string[] {
+  if (mode === 'markdown' || mode === 'text') {
+    return [`--raw-content-mode ${mode}`];
+  }
+  return mode === true ? ['--include-raw-content'] : [];
+}
+
+function renderRawContentStdoutField(
+  mode: ResearchRawContentMode | undefined,
+): string {
+  if (mode === 'markdown' || mode === 'text') {
+    return `"includeRawContent": "${mode}"`;
+  }
+  return mode === true ? '"includeRawContent": true' : '';
 }
 
 function normalizeCountry(value: unknown): string | undefined {

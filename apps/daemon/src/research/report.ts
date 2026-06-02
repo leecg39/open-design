@@ -169,7 +169,15 @@ export function buildResearchMarkdownReport(findings: ResearchFindings): string 
     ...(findings.exactMatch ? ['- Exact match: enabled'] : []),
     ...(findings.minScore != null ? [`- Minimum score: ${findings.minScore}`] : []),
     ...(findings.includeImages ? ['- Image evidence: enabled'] : []),
-    ...(findings.includeRawContent ? ['- Raw content evidence: enabled'] : []),
+    ...(findings.includeRawContent
+      ? [
+          `- Raw content evidence: ${
+            typeof findings.includeRawContent === 'string'
+              ? findings.includeRawContent
+              : 'enabled'
+          }`,
+        ]
+      : []),
     ...(findings.autoParameters ? ['- Auto parameters: enabled'] : []),
     ...(findings.selectedParameters?.topic
       ? [`- Selected topic: ${escapeMarkdownText(findings.selectedParameters.topic)}`]

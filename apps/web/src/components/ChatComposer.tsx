@@ -16,6 +16,7 @@ import type { AppConfig, ChatAttachment, ChatCommentAttachment, ProjectFile, Pro
 import type {
   ResearchDepth,
   ResearchOptions,
+  ResearchRawContentMode,
   ResearchTimeRange,
   ResearchTopic,
 } from '@open-design/contracts';
@@ -137,7 +138,7 @@ function parseSearchArgs(raw: string): {
   minScore?: number;
   maxSources?: number;
   includeImages?: boolean;
-  includeRawContent?: boolean;
+  includeRawContent?: ResearchRawContentMode;
   autoParameters?: boolean;
   warnings?: string[];
 } {
@@ -153,7 +154,7 @@ function parseSearchArgs(raw: string): {
   let minScore: number | undefined;
   let maxSources: number | undefined;
   let includeImages = false;
-  let includeRawContent = false;
+  let includeRawContent: ResearchRawContentMode | undefined;
   let autoParameters = false;
   const warnings: string[] = [];
   const includeDomains: string[] = [];
@@ -374,6 +375,31 @@ function parseSearchArgs(raw: string): {
     ) {
       includeImages = true;
       cursor += 1;
+    } else if (lower.startsWith('--raw-content-mode=')) {
+      const value = normalizeSearchRawContentMode(
+        token.slice('--raw-content-mode='.length),
+      );
+      if (value) {
+        includeRawContent = value;
+      } else {
+        warnings.push(
+          'Ignored invalid --raw-content-mode; expected markdown or text.',
+        );
+      }
+      cursor += 1;
+    } else if (lower === '--raw-content-mode') {
+      const value = nextValue
+        ? normalizeSearchRawContentMode(nextValue)
+        : undefined;
+      if (value) {
+        includeRawContent = value;
+        cursor += 2;
+      } else {
+        warnings.push(
+          'Ignored invalid --raw-content-mode; expected markdown or text.',
+        );
+        cursor += nextToken && !nextToken.startsWith('--') ? 2 : 1;
+      }
     } else if (
       lower === '--include-raw-content' ||
       lower === '--raw-content' ||
@@ -621,6 +647,15 @@ function normalizeSearchTimeRange(value: string): ResearchTimeRange | undefined 
   return SEARCH_TIME_RANGE_ALIASES[
     stripSearchWrappingQuotes(value).toLowerCase()
   ];
+}
+
+function normalizeSearchRawContentMode(
+  value: string,
+): ResearchRawContentMode | undefined {
+  const normalized = stripSearchWrappingQuotes(value).toLowerCase();
+  return normalized === 'markdown' || normalized === 'text'
+    ? normalized
+    : undefined;
 }
 
 function parseSearchDomains(value: string, limit: number): {
@@ -1001,7 +1036,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       minScore?: number;
       maxSources?: number;
       includeImages?: boolean;
-      includeRawContent?: boolean;
+      includeRawContent?: ResearchRawContentMode;
       autoParameters?: boolean;
       warnings?: string[];
     } | null {
@@ -1044,7 +1079,11 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         ...(exactMatch ? ['--exact-match'] : []),
         ...(minScore != null ? [`--min-score ${minScore}`] : []),
         ...(includeImages ? ['--include-images'] : []),
-        ...(includeRawContent ? ['--include-raw-content'] : []),
+        ...(includeRawContent === 'markdown' || includeRawContent === 'text'
+          ? [`--raw-content-mode ${includeRawContent}`]
+          : includeRawContent
+            ? ['--include-raw-content']
+            : []),
         ...(autoParameters ? ['--auto-parameters'] : []),
         `--max-sources ${maxSources}`,
         '--save-report',
@@ -1094,7 +1133,15 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
             ? warnings.map((warning) => `Research parser warning: ${warning}`)
             : []),
           ...(includeImages ? ['Research images: enabled.'] : []),
-          ...(includeRawContent ? ['Research raw content: enabled.'] : []),
+          ...(includeRawContent
+            ? [
+                `Research raw content: ${
+                  typeof includeRawContent === 'string'
+                    ? includeRawContent
+                    : 'enabled'
+                }.`,
+              ]
+            : []),
           ...(autoParameters ? ['Research auto parameters: enabled.'] : []),
           '',
           'Canonical query:',

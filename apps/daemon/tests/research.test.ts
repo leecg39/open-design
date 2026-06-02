@@ -1973,13 +1973,13 @@ describe('research search', () => {
     const raw = await searchResearch({
       projectRoot: projectRoot!,
       query: 'Open Design evidence',
-      includeRawContent: true,
+      includeRawContent: 'text',
     });
 
     expect(plain.includeRawContent).toBeUndefined();
     expect(plain.sources[0]).not.toHaveProperty('rawContent');
     expect(plain.sources[0]).not.toHaveProperty('rawContentTruncated');
-    expect(raw.includeRawContent).toBe(true);
+    expect(raw.includeRawContent).toBe('text');
     expect(raw.sources[0]?.rawContent).toBe(longRawContent.slice(0, 4000));
     expect(raw.sources[0]?.rawContentTruncated).toBe(true);
     const plainBody = JSON.parse(
@@ -1989,7 +1989,7 @@ describe('research search', () => {
       String((fetchMock.mock.calls[1] as [FetchInput, FetchInit])[1]!.body),
     );
     expect(plainBody).toMatchObject({ include_raw_content: false });
-    expect(rawBody).toMatchObject({ include_raw_content: 'markdown' });
+    expect(rawBody).toMatchObject({ include_raw_content: 'text' });
   });
 
   it('uses raw content excerpts in fallback summaries when snippets are empty', async () => {
@@ -2892,7 +2892,7 @@ describe('research search', () => {
         warnings: [
           'Ignored invalid exactMatch; expected a boolean.',
           'Ignored invalid includeImages; expected a boolean.',
-          'Ignored invalid includeRawContent; expected a boolean.',
+          'Ignored invalid includeRawContent; expected a boolean, markdown, or text.',
           'Ignored invalid autoParameters; expected a boolean.',
         ],
       });

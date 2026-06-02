@@ -208,7 +208,7 @@ export interface ResearchOptions {
   /** Include query-related image evidence for visual research. */
   includeImages?: boolean;
   /** Include bounded cleaned page content for evidence-heavy reports. */
-  includeRawContent?: boolean;
+  includeRawContent?: ResearchRawContentMode;
   /** Let the provider tune supported search parameters from the query intent. */
   autoParameters?: boolean;
   /** Cap on returned sources. Defaults follow the depth. */
@@ -216,6 +216,8 @@ export interface ResearchOptions {
   /** Provider preference order. Phase 1 supports ['tavily']. */
   providers?: string[];
 }
+
+export type ResearchRawContentMode = boolean | 'markdown' | 'text';
 
 export interface ResearchSelectedParameters {
   topic?: ResearchTopic;
@@ -265,7 +267,7 @@ export interface ResearchFindings {
   filteredSourceCount?: number;
   discardedSourceCount?: number;
   includeImages?: boolean;
-  includeRawContent?: boolean;
+  includeRawContent?: ResearchRawContentMode;
   autoParameters?: boolean;
   selectedParameters?: ResearchSelectedParameters;
   warnings?: string[];

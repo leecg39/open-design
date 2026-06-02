@@ -1,6 +1,7 @@
 import type {
   ResearchDepth,
   ResearchFindings,
+  ResearchRawContentMode,
   ResearchSource,
   ResearchTimeRange,
   ResearchTopic,
@@ -222,9 +223,11 @@ export async function searchResearch(
   if (isInvalidBooleanControl(input.includeImages)) {
     warnings.push('Ignored invalid includeImages; expected a boolean.');
   }
-  const includeRawContent = normalizeBooleanControl(input.includeRawContent);
-  if (isInvalidBooleanControl(input.includeRawContent)) {
-    warnings.push('Ignored invalid includeRawContent; expected a boolean.');
+  const includeRawContent = normalizeRawContentControl(input.includeRawContent);
+  if (isInvalidRawContentControl(input.includeRawContent)) {
+    warnings.push(
+      'Ignored invalid includeRawContent; expected a boolean, markdown, or text.',
+    );
   }
   const autoParameters = normalizeBooleanControl(input.autoParameters);
   if (isInvalidBooleanControl(input.autoParameters)) {
@@ -531,6 +534,23 @@ function normalizeBooleanControl(value: unknown): boolean {
 
 function isInvalidBooleanControl(value: unknown): boolean {
   return value != null && typeof value !== 'boolean';
+}
+
+function normalizeRawContentControl(
+  value: unknown,
+): ResearchRawContentMode | undefined {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return undefined;
+  const normalized = stripResearchWrappingQuotes(value).toLowerCase();
+  return normalized === 'markdown' || normalized === 'text'
+    ? normalized
+    : undefined;
+}
+
+function isInvalidRawContentControl(value: unknown): boolean {
+  if (value == null || typeof value === 'boolean') return false;
+  if (typeof value !== 'string') return true;
+  return normalizeRawContentControl(value) == null;
 }
 
 function normalizeResearchDomain(value: unknown): string | undefined {

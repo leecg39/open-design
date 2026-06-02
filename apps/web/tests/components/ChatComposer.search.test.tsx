@@ -467,13 +467,18 @@ describe('ChatComposer /search command', () => {
     );
 
     fireEvent.change(screen.getByTestId('chat-composer-input'), {
-      target: { value: '/search --raw AI dashboard implementation evidence' },
+      target: {
+        value:
+          '/search --raw-content-mode text AI dashboard implementation evidence',
+      },
     });
     fireEvent.click(screen.getByTestId('chat-send'));
 
     const [prompt, _attachments, _commentAttachments, meta] = onSend.mock.calls[0]!;
-    expect(prompt).toContain('--depth shallow --include-raw-content --max-sources 5');
-    expect(prompt).toContain('Research raw content: enabled.');
+    expect(prompt).toContain(
+      '--depth shallow --raw-content-mode text --max-sources 5',
+    );
+    expect(prompt).toContain('Research raw content: text.');
     expect(prompt).toContain('source-content safety note before the summary');
     expect(prompt).toContain('source list with visible domains');
     expect(prompt).toContain('rawContent fields');
@@ -484,7 +489,7 @@ describe('ChatComposer /search command', () => {
         enabled: true,
         query: 'AI dashboard implementation evidence',
         depth: 'shallow',
-        includeRawContent: true,
+        includeRawContent: 'text',
       },
     });
   });

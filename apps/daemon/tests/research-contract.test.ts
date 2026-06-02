@@ -173,14 +173,16 @@ describe('renderResearchCommandContract', () => {
   it('includes raw content research flags when full evidence is requested', () => {
     const prompt = renderResearchCommandContract({
       query: 'AI dashboard implementation evidence',
-      includeRawContent: true,
+      includeRawContent: 'text',
       maxSources: 5,
     });
 
-    expect(prompt).toContain('--depth shallow --include-raw-content --max-sources 5');
+    expect(prompt).toContain(
+      '--depth shallow --raw-content-mode text --max-sources 5',
+    );
     expect(prompt).toContain('"rawContent": "..."');
     expect(prompt).toContain('"rawContentTruncated": true');
-    expect(prompt).toContain('"includeRawContent": true');
+    expect(prompt).toContain('"includeRawContent": "text"');
     expect(prompt).toContain('source-content safety note before the summary');
     expect(prompt).toContain('source list with visible domains');
     expect(prompt).toContain('raw evidence excerpts when rawContent is present');

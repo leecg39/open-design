@@ -82,6 +82,7 @@ const RESEARCH_SEARCH_STRING_FLAGS = new Set([
   'exclude-domains',
   'min-score',
   'max-sources',
+  'raw-content-mode',
   'report',
   'daemon-url',
 ]);
@@ -228,7 +229,7 @@ function printRootHelp() {
   od mcp live-artifacts
       Start the MCP server exposing live-artifact and connector tools.
 
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--auto-parameters] [--max-sources <n>] [--save-report] [--report research/file.md] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--raw-content-mode markdown|text] [--auto-parameters] [--max-sources <n>] [--save-report] [--report research/file.md] [--daemon-url <url>]
       Run agent-callable Tavily research through the local daemon.
 
   "$OD_NODE_BIN" "$OD_BIN" tools ...
@@ -331,10 +332,20 @@ async function runResearchSearch(rawArgs) {
     flags['include-images'] === true ||
     flags.images === true ||
     flags.visuals === true;
-  const includeRawContent =
+  let includeRawContent =
     flags['include-raw-content'] === true ||
     flags['raw-content'] === true ||
-    flags.raw === true;
+    flags.raw === true
+      ? true
+      : undefined;
+  try {
+    includeRawContent =
+      parseRawContentModeFlag(flags['raw-content-mode']) ?? includeRawContent;
+  } catch (err) {
+    console.error(err.message);
+    printResearchHelp();
+    process.exit(2);
+  }
   const autoParameters =
     flags['auto-parameters'] === true || flags.auto === true;
   const url = `${daemonUrl.replace(/\/$/, '')}/api/research/search`;
@@ -411,7 +422,7 @@ async function runResearchSearch(rawArgs) {
 
 function printResearchHelp() {
   console.log(`Usage:
-  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--auto-parameters] [--max-sources <n>] [--save-report] [--report research/file.md] [--daemon-url <url>]
+  od research search --query <text> [--depth shallow|medium|deep] [--topic general|news|finance] [--country <name>] [--time-range day|week|month|year] [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD] [--include-domains domains] [--exclude-domains domains] [--exact-match] [--min-score <0..1>] [--include-images] [--include-raw-content] [--raw-content-mode markdown|text] [--auto-parameters] [--max-sources <n>] [--save-report] [--report research/file.md] [--daemon-url <url>]
 
 Runs Tavily-backed research through the local Open Design daemon.
 Output is JSON only on stdout:
@@ -432,12 +443,20 @@ Flags:
   --min-score    Optional relevance threshold from 0 to 1.
   --include-images  Include visual reference images in the findings (aliases: --images, --visuals).
   --include-raw-content  Include bounded page content evidence (aliases: --raw-content, --raw).
+  --raw-content-mode  Optional raw evidence mode: markdown or text.
   --auto-parameters  Let the provider tune supported parameters (aliases: --auto).
   --max-sources  Optional source cap. Defaults follow depth, clamped to Tavily's max.
   --save-report  Save a Markdown report under research/<safe-query-slug>.md, or the next available suffixed path.
   --report       Save the Markdown report to an explicit project-relative path; fails if the file already exists.
   --daemon-url   Local daemon URL. Defaults to OD_DAEMON_URL or http://127.0.0.1:7456.`);
 }
+function parseRawContentModeFlag(value) {
+  if (value == null) return undefined;
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === 'markdown' || normalized === 'text') return normalized;
+  throw new Error('flag --raw-content-mode must be markdown or text');
+}
+
 
 // ---------------------------------------------------------------------------
 // Subcommand: od media …

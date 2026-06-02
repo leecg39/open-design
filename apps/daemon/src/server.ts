@@ -304,7 +304,9 @@ export function resolveResearchCommandContract(research, message) {
         ? research.includeImages
         : undefined,
     includeRawContent:
-      typeof research.includeRawContent === 'boolean'
+      typeof research.includeRawContent === 'boolean' ||
+      research.includeRawContent === 'markdown' ||
+      research.includeRawContent === 'text'
         ? research.includeRawContent
         : undefined,
     autoParameters:
